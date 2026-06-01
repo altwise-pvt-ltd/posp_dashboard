@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(awk 'NR>=14 && NR<=18' \"src/features/profile/pages/ProfilePage.jsx\")",
+      "PowerShell($p = \"c:\\\\Office\\\\Office Projects\\\\Posp_login\\\\src\\\\features\\\\profile\\\\components\\\\ProfileCard.jsx\"; Test-Path $p; \\(Get-Item $p\\).Length)"
+    ]
+  }
+}
