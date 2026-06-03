@@ -1,53 +1,50 @@
 import React from 'react';
 
 const ProfileCard = () => {
-  // Example data — replace with the real employee record later
   const employee = {
-    name: "Rudrankur Indurkar",
-    title: "Full-Stack Developer",
-    joinedDate: "January 15, 2024",
-    // Temporary rectangular avatar. Swap for the real photo path later.
-    imageUrl: "https://i.pravatar.cc/400?img=12",
+    name: 'Rakesh Pawar',
+    title: 'POSP Insurance Advisor',
+    joinedDate: 'January 15, 2024',
+    policies: 38,
+    imageUrl: 'https://i.pravatar.cc/400?img=12',
   };
 
   return (
-    // No min-h-screen / centering wrapper: the card flows from the top of its
-    // column so it lines up with the sibling cards. w-full fits the column.
-    <div className="w-full bg-white rounded-2xl shadow-sm overflow-hidden border border-slate-200">
-      {/* Top: square (rectangular) avatar */}
-      <div className="aspect-square w-full overflow-hidden bg-slate-100">
+    <div className="card-lift w-full bg-white rounded-2xl shadow-sm overflow-hidden border border-slate-200">
+      {/* ── Avatar: square crop keeps a headshot centered (no face clipping) ── */}
+      <div className="relative aspect-square w-full overflow-hidden bg-slate-100">
         <img
           src={employee.imageUrl}
           alt={employee.name}
           className="w-full h-full object-cover"
         />
+        {/* subtle fade so the image bleeds into the white content below */}
+        <div className="absolute inset-x-0 bottom-0 h-12 bg-linear-to-t from-white to-transparent pointer-events-none" />
       </div>
 
-      {/* Content Area */}
-      <div className="p-6 text-center">
-        {/* Date of Joining / Notification */}
-        <p className="text-xs font-bold uppercase tracking-widest text-orange-600 mb-1">
+      {/* ── Identity ── */}
+      <div className="px-6 pb-6 pt-5 text-center">
+        <p className="text-xs font-bold uppercase tracking-widest text-orange-500 mb-1">
           Joined {employee.joinedDate}
         </p>
 
-        {/* Full Name */}
         <h2 className="text-2xl font-bold text-slate-800 leading-tight">
           {employee.name}
         </h2>
-
-        {/* Role/Title */}
-        <p className="mt-2 text-sm text-slate-500 font-medium">
+        <p className="mt-1.5 text-sm text-slate-500 font-medium">
           {employee.title}
         </p>
 
-        <div className="mt-6 pt-6 border-t border-slate-100 flex justify-around">
+        {/* ── Stats with vertical divider ── */}
+        <div className="mt-6 pt-5 border-t border-slate-100 flex items-center justify-around">
           <div className="text-center">
-            <span className="block text-lg font-bold text-slate-700">12</span>
-            <span className="text-[10px] uppercase text-slate-400 font-semibold">Projects</span>
+            <span className="block text-xl font-bold text-slate-700">{employee.policies}</span>
+            <span className="text-[10px] uppercase text-slate-400 font-semibold tracking-wide">Policies</span>
           </div>
+          <div className="h-8 w-px bg-slate-200" />
           <div className="text-center">
-            <span className="block text-lg font-bold text-slate-700">Active</span>
-            <span className="text-[10px] uppercase text-slate-400 font-semibold">Status</span>
+            <span className="block text-xl font-bold text-emerald-600">Active</span>
+            <span className="text-[10px] uppercase text-slate-400 font-semibold tracking-wide">Status</span>
           </div>
         </div>
       </div>
