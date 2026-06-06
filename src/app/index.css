@@ -116,6 +116,10 @@
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 @keyframes growBar {
   from { transform: scaleY(0); }
   to { transform: scaleY(1); }
@@ -127,6 +131,20 @@
   0%, 100% { transform: scale(1); opacity: 1; }
   50% { transform: scale(1.3); opacity: .7; }
 }
+@keyframes photoReveal {
+  0%   { opacity: 0; transform: scale(1.12); filter: blur(6px); }
+  60%  { opacity: 1; filter: blur(0); }
+  100% { opacity: 1; transform: scale(1); filter: blur(0); }
+}
+@keyframes badgePop {
+  0%   { opacity: 0; transform: scale(0) rotate(-25deg); }
+  60%  { opacity: 1; transform: scale(1.25) rotate(0deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+@keyframes ringFlash {
+  0%   { opacity: .9; transform: scale(.85); }
+  100% { opacity: 0; transform: scale(1.25); }
+}
 
 @utility anim-fade { animation: fadeUp .5s ease-out both; }
 @utility anim-fade-d1 { animation: fadeUp .5s ease-out .08s both; }
@@ -136,6 +154,9 @@
 @utility bar-grow { transform-origin: bottom; animation: growBar .7s cubic-bezier(.2,.8,.2,1) both; }
 @utility progress-fill { animation: fillBar 1.1s cubic-bezier(.2,.8,.2,1) both; }
 @utility pulse-dot { animation: pulseDot 1.8s ease-in-out infinite; }
+@utility anim-photo { animation: photoReveal .6s cubic-bezier(.2,.8,.2,1) both; }
+@utility anim-badge { animation: badgePop .5s cubic-bezier(.34,1.56,.64,1) .25s both; }
+@utility anim-ring-flash { animation: ringFlash .7s ease-out both; }
 
 @utility card-lift {
   transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
