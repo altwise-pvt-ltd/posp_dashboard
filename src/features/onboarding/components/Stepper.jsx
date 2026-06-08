@@ -15,8 +15,11 @@ import { Check, Lock } from "lucide-react";
  *   steps        array   — step objects
  *   activeIndex  number  — index of the current step (used to auto-pan)
  *
- * The outer container is NEVER user-scrollable. When `activeIndex` changes
- * the component smoothly scrolls itself so the active step stays centred.
+ * Responsive behaviour:
+ *   - Up to `lg` the steps keep a minimum width, so all 8 overflow the row and
+ *     the container scrolls horizontally (the active step auto-pans into view).
+ *   - From `lg` up the steps drop their min-width and flex to fill the full row,
+ *     so the whole stepper stays horizontal on desktop with no scrolling.
  *
  * Tailwind note: structural styling (layout, sizing, type) is in classes;
  * the status-driven colors and the connector fill width are computed at
@@ -55,7 +58,7 @@ function DotGrid({ color }) {
     }
   }
   return (
-    <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+    <svg className="h-3 w-3 sm:h-3.5 sm:w-3.5 lg:h-[18px] lg:w-[18px]" viewBox="0 0 18 18" aria-hidden="true">
       {dots}
     </svg>
   );
@@ -69,18 +72,18 @@ function StepCircle({ status }) {
   const bg   = STATUS[status]?.bg   ?? STATUS.pending.bg;
 
   const halo = isCompleted
-    ? "0 0 0 5px rgba(16,185,129,0.15)"
+    ? "0 0 0 4px rgba(16,185,129,0.15)"
     : isInProgress
-    ? "0 0 0 5px rgba(249,115,22,0.15)"
+    ? "0 0 0 4px rgba(249,115,22,0.15)"
     : "none";
 
   return (
     <div
-      className="flex h-[25px] w-[25px] flex-[0_0_auto] items-center justify-center rounded-full box-border transition-all duration-[250ms]"
+      className="flex h-4.5 w-4.5 sm:h-5 sm:w-5 lg:h-6.25 lg:w-6.25 flex-[0_0_auto] items-center justify-center rounded-full box-border transition-all duration-250"
       style={{ background: bg, border: `1px solid ${ring}`, boxShadow: halo }}
     >
-      {isCompleted  && <Check size={22} strokeWidth={3}   color="#fff" />}
-      {isInProgress && <Lock  size={20} strokeWidth={2.5} color="#fff" />}
+      {isCompleted  && <Check className="h-2.5 w-2.5 sm:h-3 sm:w-3 lg:h-4 lg:w-4" strokeWidth={3}   color="#fff" />}
+      {isInProgress && <Lock  className="h-2 w-2 sm:h-2.5 sm:w-2.5 lg:h-3.5 lg:w-3.5" strokeWidth={2.5} color="#fff" />}
       {!isCompleted && !isInProgress && (
         <DotGrid color="var(--stepper-gray)" />
       )}
@@ -91,9 +94,9 @@ function StepCircle({ status }) {
 // Connector line between two steps — `fill` 0..1 controls coloured portion.
 function Connector({ fill = 0, color = "var(--stepper-green)" }) {
   return (
-    <div className="relative mx-1.5 h-1 min-w-[24px] flex-1 overflow-hidden rounded-sm bg-[var(--stepper-track)]">
+    <div className="relative mx-1.5 h-1 min-w-[12px] sm:min-w-[18px] lg:min-w-[24px] flex-1 overflow-hidden rounded-sm bg-(--stepper-track)">
       <div
-        className="absolute bottom-0 left-0 top-0 rounded-sm transition-[width] duration-[350ms]"
+        className="absolute bottom-0 left-0 top-0 rounded-sm transition-[width] duration-350"
         style={{ width: `${Math.max(0, Math.min(1, fill)) * 100}%`, background: color }}
       />
     </div>
@@ -106,7 +109,8 @@ export default function Stepper({ steps = [], activeIndex = 0 }) {
   /* One ref per step item so we can measure its position */
   const stepRefs = useRef([]);
 
-  /* Pan to keep the active step centred whenever it changes */
+  /* Pan to keep the active step centred whenever it changes.
+     On desktop the row fits with no overflow, so scrollTo is a harmless no-op. */
   useEffect(() => {
     const container = containerRef.current;
     const activeEl  = stepRefs.current[activeIndex];
@@ -132,8 +136,9 @@ export default function Stepper({ steps = [], activeIndex = 0 }) {
   return (
     <div
       ref={containerRef}
-      /* no-scrollbar (from index.css) hides the bar; scroll is JS-driven only */
-      className="no-scrollbar box-border w-full overflow-x-auto pb-1"
+      /* Scrolls on small screens (no-scrollbar hides the bar; scroll is JS-driven);
+         from lg up there's no overflow, so it just sits horizontally. */
+      className="no-scrollbar box-border w-full overflow-x-auto pb-1 lg:overflow-x-visible"
       style={{
         /* ── CSS custom properties consumed by the inline styles below ── */
         "--stepper-green":     "#10b981",
@@ -146,8 +151,9 @@ export default function Stepper({ steps = [], activeIndex = 0 }) {
         fontFamily: "'Plus Jakarta Sans', system-ui, -apple-system, sans-serif",
       }}
     >
-      {/* min-w-min so steps never wrap — the scroll container handles overflow */}
-      <div className="flex min-w-min items-start px-1.5 pt-1.5">
+      {/* min-w-min so steps never wrap while scrolling on small screens;
+          lg:min-w-full lets them flex to fill the row on desktop. */}
+      <div className="flex min-w-min lg:min-w-full items-start px-1.5 pt-1.5">
         {steps.map((step, i) => {
           const cfg    = STATUS[step.status] ?? STATUS.pending;
           const conn   = connectorFor(i);
@@ -157,7 +163,9 @@ export default function Stepper({ steps = [], activeIndex = 0 }) {
             <div
               key={i}
               ref={(el) => (stepRefs.current[i] = el)}
-              className="flex min-w-[120px] flex-[1_1_0] flex-col items-start"
+              /* Fixed-ish min-width forces overflow→scroll on small screens;
+                 lg:min-w-0 lets the flex children shrink to fit on desktop. */
+              className="flex min-w-[6.5rem] sm:min-w-[7.5rem] lg:min-w-0 flex-[1_1_0] flex-col items-start"
             >
               {/* Circle + trailing connector in one row */}
               <div className="flex w-full items-center">
@@ -165,19 +173,20 @@ export default function Stepper({ steps = [], activeIndex = 0 }) {
                 {!isLast && <Connector fill={conn.fill} color={conn.color} />}
               </div>
 
-              {/* Caption */}
-              <div className="mt-4 text-[11px] font-bold uppercase tracking-[0.06em] text-[var(--stepper-caption)]">
+               {/* Caption */}
+              <div className="mt-2 lg:mt-4 text-[0.625rem] sm:text-[0.6875rem] font-bold uppercase tracking-[0.06em] text-(--stepper-caption)">
                 {step.label}
               </div>
-
-              {/* Title */}
-              <div className="mt-1 whitespace-nowrap text-[17px] font-bold text-[var(--stepper-title)]">
+ 
+              {/* Title — nowrap while scrolling on mobile; allowed to wrap on
+                  desktop where the columns are narrower. Scales up on xl. */}
+              <div className="mt-0.5 lg:mt-1 whitespace-nowrap lg:whitespace-normal text-[11px] sm:text-[0.8125rem] md:text-[0.9375rem] xl:text-base font-bold text-(--stepper-title)">
                 {step.title}
               </div>
-
-              {/* Status pill — colors are status-driven, so they stay inline */}
+ 
+              {/* Status pill — hidden on mobile to limit stepper height to 80px, colors are status-driven */}
               <div
-                className="mt-2.5 whitespace-nowrap rounded-full px-3 py-[3px] text-[12px] font-semibold"
+                className="hidden lg:block mt-2.5 whitespace-nowrap rounded-full px-2 py-0.5 sm:px-3 sm:py-0.75 text-[0.6875rem] sm:text-[0.75rem] font-semibold"
                 style={{
                   background: cfg.pill.bg,
                   color: cfg.pill.text,

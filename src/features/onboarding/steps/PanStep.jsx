@@ -5,6 +5,7 @@ import { CreditCard, ShieldCheck, Sparkles, Upload } from "lucide-react";
 import Input from "@/shared/components/Input";
 import Button from "@/shared/components/Button";
 import FileUpload from "@/shared/components/FileUpload";
+import { alertOnInvalid } from "@/shared/store/alertStore";
 
 /* Parse a strict dd/mm/yyyy string → Date, or null if it isn't a real calendar date. */
 const parseDob = (v) => {
@@ -17,14 +18,31 @@ const parseDob = (v) => {
   return real ? d : null;
 };
 
+/* POSP applicants must be adults. True if `dob` was at least MIN_AGE years
+   before today (compares against the same calendar day MIN_AGE years on). */
+const MIN_AGE = 18;
+const isOldEnough = (dob) => {
+  const adultOn = new Date(dob.getFullYear() + MIN_AGE, dob.getMonth(), dob.getDate());
+  return adultOn <= new Date();
+};
+
 /* ── Schema ── */
 const panSchema = z.object({
   panNumber:    z.string().trim().length(10, "PAN must be 10 characters.").regex(/^[A-Z]{5}[0-9]{4}[A-Z]$/, "Invalid PAN — expected AAAAA1234A."),
   fullName:     z.string().trim().min(1, "Full name is required.").max(200),
-  dateOfBirth:  z.string().optional().refine(
-    (v) => !v || (parseDob(v) !== null && parseDob(v) <= new Date()),
-    "Enter a valid date as dd/mm/yyyy.",
-  ),
+  // DOB is optional; when present, parse once and check it's a real, past date
+  // and that the applicant is at least 18 — distinct messages for each failure.
+  dateOfBirth:  z.string().optional().superRefine((v, ctx) => {
+    if (!v) return;
+    const d = parseDob(v);
+    if (!d || d > new Date()) {
+      ctx.addIssue({ code: "custom", message: "Enter a valid date as dd/mm/yyyy." });
+      return;
+    }
+    if (!isOldEnough(d)) {
+      ctx.addIssue({ code: "custom", message: `You must be at least ${MIN_AGE} years old.` });
+    }
+  }),
   panFrontImage: z.any().refine((f) => f instanceof File, "Please upload your PAN card image."),
 });
 
@@ -64,28 +82,30 @@ export default function PanStep({ onNext, initialValues }) {
 
   const onSubmit = form.handleSubmit((data) => {
     onNext?.(data);
-  });
+  }, alertOnInvalid);
 
   return (
-    <div className="w-full max-w-lg rounded-2xl border border-slate-100 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04),0_20px_48px_rgba(222,123,61,0.08)] overflow-hidden">
+    /* Card width scales up with the viewport: roomy on mobile, wider on each
+       breakpoint so big screens fill space instead of capping at a small card. */
+    <div className="w-full max-w-77.5 sm:max-w-90 lg:max-w-97.5 xl:max-w-97.5 mx-auto lg:mx-0 rounded-2xl border border-slate-100 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04),0_20px_48px_rgba(222,123,61,0.08)] overflow-hidden">
 
-      {/* Header */}
-      <div className="px-5 sm:px-8 pt-6 sm:pt-7 pb-5 sm:pb-6 bg-linear-to-br from-orange-50/60 to-white border-b border-orange-100/60">
-        <span className="inline-flex items-center gap-1.5 text-xs font-bold tracking-widest uppercase text-orange-500 mb-3">
-          <CreditCard size={13} strokeWidth={2.5} />
+      {/* Header — padding and type scale with breakpoints */}
+      <div className="px-4 sm:px-5 lg:px-6 pt-4 pb-3 bg-linear-to-br from-orange-50/60 to-white border-b border-orange-100/60">
+        <span className="inline-flex items-center gap-1.5 text-[10px] sm:text-xs font-bold tracking-widest uppercase text-orange-500 mb-3">
+          <CreditCard size={12} strokeWidth={2} />
           Step 1 · PAN Verification
         </span>
-        <h2 className="text-xl sm:text-2xl font-extrabold text-slate-800 tracking-tight">
+        <h2 className="text-lg sm:text-xl lg:text-2xl font-extrabold text-slate-800 tracking-tight">
           Verify your PAN card
         </h2>
-        <p className="flex items-center gap-1.5 text-sm text-slate-500 mt-1">
-          <ShieldCheck size={14} className="text-emerald-500 shrink-0" />
-          Your data is encrypted and protected by LetsInsurance.
+        <p className="flex items-center gap-1.5 text-xs sm:text-sm text-slate-500 mt-1 lg:mt-2">
+          <ShieldCheck size={12} className="text-emerald-500 shrink-0" />
+          Your data is encrypted and protected by Lets Insure.
         </p>
       </div>
 
       {/* ── PAN details + document ── */}
-      <form onSubmit={onSubmit} className="px-5 sm:px-8 py-6 sm:py-7 flex flex-col gap-5">
+      <form onSubmit={onSubmit} className="px-4 sm:px-5 lg:px-6 py-4 flex flex-col gap-3.5 sm:gap-4">
         <div>
           <Input
             id="panNumber"
@@ -94,7 +114,7 @@ export default function PanStep({ onNext, initialValues }) {
             autoComplete="off"
             maxLength={10}
             error={form.formState.errors.panNumber?.message}
-            className="font-mono uppercase tracking-widest text-lg"
+            className="font-mono uppercase tracking-widest text-sm sm:text-base"
             {...panField}
             onChange={handlePanChange}
           />
@@ -141,7 +161,7 @@ export default function PanStep({ onNext, initialValues }) {
         )} />
 
         <div className="flex gap-3 pt-1">
-          <Button type="submit" className="flex-1 flex items-center justify-center gap-2">
+          <Button type="submit" className="flex-1 flex items-center justify-center gap-2 lg:text-base">
             <Upload size={16} strokeWidth={2.5} /> Submit PAN
           </Button>
         </div>

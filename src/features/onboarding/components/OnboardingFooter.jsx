@@ -7,9 +7,9 @@ const FOOTER_LINKS = ["Q&A", "Support", "Terms", "Privacy"];
  */
 export default function OnboardingFooter() {
   return (
-    <footer className="border-t border-primary/8 bg-white/70 backdrop-blur-sm">
+    <footer className="border-t border-primary/8 bg-slate-800 backdrop-blur-sm">
       <div className="mx-auto flex max-w-7xl flex-col items-center gap-3 px-4 py-4.5 text-center sm:flex-row sm:justify-between sm:gap-2 sm:px-6 sm:text-left lg:px-10">
-        <span className="text-[13px] text-slate-400">
+        <span className="text-[0.8125rem] text-slate-50">
           © 2026 POSP. All rights reserved.
         </span>
         <nav className="flex flex-wrap justify-center gap-x-5 gap-y-2">
@@ -17,7 +17,7 @@ export default function OnboardingFooter() {
             <a
               key={link}
               href="#"
-              className="text-[13px] text-slate-400 transition-colors duration-150 hover:text-primary"
+              className="text-[0.8125rem] text-slate-50 transition-colors duration-150 hover:text-primary"
             >
               {link}
             </a>

@@ -4,14 +4,20 @@ import { UploadCloud, X, CheckCircle2, FileImage, AlertCircle } from "lucide-rea
 /**
  * FileUpload — drag-and-drop + click-to-browse upload zone.
  *
+ * Presentational + self-contained: it owns its own file/preview state and
+ * reports outward via callbacks. It does NOT talk to the global alert store —
+ * a generic input shouldn't depend on app infrastructure. The inline note below
+ * the zone is the built-in feedback; wire `onError` to a toast if you want one.
+ *
  * Props:
  *   id          string   — unique id for the hidden <input>
  *   label       string   — field label shown above the zone
  *   required    bool     — shows red asterisk
  *   accept      string   — e.g. "image/*" (default)
  *   maxMB       number   — max file size in MB (default 10)
- *   onChange    fn(File|null) — called when file changes
- *   error       string   — validation error message
+ *   onChange    fn(File|null) — called when the accepted file changes
+ *   onError     fn(message)   — called when a file is rejected (e.g. too large)
+ *   error       string   — validation error message (from the caller / RHF)
  *   hint        string   — optional caption below the zone
  *
  * Tailwind note: the zone's border/background swap between discrete states
@@ -25,6 +31,7 @@ export default function FileUpload({
   accept = "image/*",
   maxMB = 10,
   onChange,
+  onError,
   error,
   hint,
 }) {
@@ -39,7 +46,11 @@ export default function FileUpload({
       if (!f) return;
       setSizeError(null);
       if (f.size > maxMB * 1024 * 1024) {
-        setSizeError(`File too large. Max size is ${maxMB} MB.`);
+        const msg = `File too large. Max size is ${maxMB} MB.`;
+        setSizeError(msg);
+        // Report outward so the caller can also surface a toast if it wants —
+        // the component itself stays decoupled from the alert system.
+        onError?.(`"${f.name}" is too large. Max size is ${maxMB} MB.`);
         return;
       }
       setFile(f);
@@ -52,7 +63,7 @@ export default function FileUpload({
         setPreview(null);
       }
     },
-    [maxMB, onChange]
+    [maxMB, onChange, onError]
   );
 
   const handleDrop = (e) => {
@@ -83,13 +94,13 @@ export default function FileUpload({
   const zoneBorder = displayError
     ? "border-red-400"
     : dragging
-    ? "border-primary"
+    ? "border-orange-500"
     : hasFile
     ? "border-emerald-500"
     : "border-slate-200";
 
   const zoneBg = dragging
-    ? "bg-primary/5"
+    ? "bg-orange-500/5"
     : hasFile
     ? "bg-emerald-500/5"
     : "bg-slate-50";
@@ -102,13 +113,12 @@ export default function FileUpload({
         {required && <span className="ml-1 text-orange-500">*</span>}
       </label>
 
-      {/* Drop zone */}
       <div
         onClick={() => !hasFile && inputRef.current?.click()}
         onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
         onDragLeave={() => setDragging(false)}
         onDrop={handleDrop}
-        className={`relative flex min-h-[120px] items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed transition-all duration-200 ${zoneBorder} ${zoneBg} ${
+        className={`relative flex min-h-[110px] items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed transition-all duration-200 ${zoneBorder} ${zoneBg} ${
           hasFile ? "cursor-default" : "cursor-pointer"
         }`}
       >
@@ -133,21 +143,21 @@ export default function FileUpload({
                 <FileImage size={28} className="text-slate-400" />
               )}
             </div>
-
+ 
             {/* File info */}
             <div className="min-w-0 flex-1">
-              <div className="truncate text-[13px] font-semibold text-slate-800">
+              <div className="truncate text-[0.8125rem] font-semibold text-slate-800">
                 {file.name}
               </div>
-              <div className="mt-[3px] text-[12px] text-slate-500">
+              <div className="mt-[3px] text-[0.75rem] text-slate-500">
                 {(file.size / 1024).toFixed(0)} KB · {file.type || "file"}
               </div>
-              <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-[3px] text-[11px] font-semibold text-emerald-600">
+              <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-[3px] text-[0.6875rem] font-semibold text-emerald-600">
                 <CheckCircle2 size={11} />
                 Uploaded
               </div>
             </div>
-
+ 
             {/* Clear button */}
             <button
               type="button"
@@ -159,24 +169,24 @@ export default function FileUpload({
           </div>
         ) : (
           /* ── Empty / drag state ── */
-          <div className="flex flex-col items-center gap-2 px-4 py-6 text-center">
+          <div className="flex flex-col items-center gap-1.5 px-4 py-4 sm:py-5 text-center">
             <div
               className={`flex h-11 w-11 items-center justify-center rounded-xl transition-all duration-200 ${
-                dragging ? "bg-primary/10" : "bg-slate-400/10"
+                dragging ? "bg-orange-500/10" : "bg-slate-400/10"
               }`}
             >
               <UploadCloud
                 size={22}
-                className={`transition-colors duration-200 ${dragging ? "text-primary" : "text-slate-400"}`}
+                className={`transition-colors duration-200 ${dragging ? "text-orange-500" : "text-slate-400"}`}
               />
             </div>
             <div>
-              <span className={`text-[13px] font-semibold ${dragging ? "text-primary" : "text-slate-600"}`}>
+              <span className={`text-[0.8125rem] font-semibold ${dragging ? "text-orange-500" : "text-slate-600"}`}>
                 {dragging ? "Drop it here" : "Click to browse"}
               </span>
-              <span className="text-[13px] text-slate-400"> or drag & drop</span>
+              <span className="text-[0.8125rem] text-slate-400"> or drag & drop</span>
             </div>
-            <div className="text-[11px] text-slate-300">
+            <div className="text-[0.6875rem] text-slate-300">
               JPG, PNG, PDF · Max {maxMB} MB
             </div>
           </div>
@@ -185,12 +195,12 @@ export default function FileUpload({
 
       {/* Hint or error */}
       {displayError ? (
-        <p className="mt-0.5 flex items-center gap-1.5 text-[12px] font-medium text-red-500" role="alert">
+        <p className="mt-0.5 flex items-center gap-1.5 text-[0.75rem] font-medium text-red-500" role="alert">
           <AlertCircle size={12} />
           {displayError}
         </p>
       ) : hint ? (
-        <p className="mt-0.5 text-[12px] text-slate-400">{hint}</p>
+        <p className="mt-0.5 text-[0.75rem] text-slate-400">{hint}</p>
       ) : null}
     </div>
   );

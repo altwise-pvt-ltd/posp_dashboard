@@ -187,3 +187,157 @@
   -webkit-font-feature-settings: 'liga';
   -webkit-font-smoothing: antialiased;
 }
+
+/* Height-responsive styling for compact laptop viewports */
+@media (max-height: 768px) {
+  /* Reduce content shell padding */
+  main .max-w-7xl {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+  }
+
+  /* Make header compact */
+  header.sticky {
+    height: 3rem !important;
+  }
+  header.sticky > div {
+    height: 3rem !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+  header.sticky img {
+    height: 2rem !important;
+  }
+
+  /* Compact breadcrumbs */
+  nav[aria-label="Breadcrumb"] {
+    margin-bottom: 0.5rem !important;
+    padding-top: 0.375rem !important;
+    padding-bottom: 0.375rem !important;
+    font-size: 0.75rem !important;
+  }
+
+  /* Stepper wrapper margin */
+  .anim-fade.mb-4.lg\:mb-5 {
+    margin-bottom: 0.5rem !important;
+  }
+
+  /* Form & Sidebar Grid spacing */
+  .lg\:gap-\[42px\] {
+    gap: 1.25rem !important; /* gap-5 */
+  }
+
+  /* Step Card structural overrides */
+  .rounded-2xl.border.border-slate-100.bg-white {
+    /* Step card header */
+    & > div:first-child:not([class*="SummaryCard"]) {
+      padding-top: 0.875rem !important;
+      padding-bottom: 0.625rem !important;
+      padding-left: 1rem !important;
+      padding-right: 1rem !important;
+      
+      & > span {
+        margin-bottom: 0.375rem !important;
+        font-size: 10px !important;
+      }
+      & > h2 {
+        font-size: 1.125rem !important; /* text-lg */
+        line-height: 1.5rem !important;
+      }
+      & > p {
+        margin-top: 0.25rem !important;
+        font-size: 0.75rem !important; /* text-xs */
+      }
+    }
+
+    /* Form within card */
+    & > form {
+      padding-top: 0.875rem !important;
+      padding-bottom: 0.875rem !important;
+      padding-left: 1rem !important;
+      padding-right: 1rem !important;
+      gap: 0.75rem !important;
+    }
+
+    /* Other step wrapper (e.g. Email / Selfie steps) */
+    & > div:last-child {
+      padding-top: 0.875rem !important;
+      padding-bottom: 0.875rem !important;
+      padding-left: 1rem !important;
+      padding-right: 1rem !important;
+      gap: 0.75rem !important;
+      
+      & > form {
+        gap: 0.75rem !important;
+      }
+    }
+  }
+
+  /* Compact form fields */
+  .mb-3, .sm\:mb-3\.5 {
+    margin-bottom: 0.625rem !important;
+  }
+  
+  /* Compact FileUpload drop zone */
+  .border-dashed.border-2 {
+    min-height: 85px !important;
+    padding-top: 0.625rem !important;
+    padding-bottom: 0.625rem !important;
+    border-radius: 0.75rem !important;
+    
+    & svg {
+      width: 1.25rem !important;
+      height: 1.25rem !important;
+    }
+    & p.text-xs {
+      font-size: 11px !important;
+    }
+  }
+
+  /* Compact Sidebar image */
+  .anim-fade-d1.flex.w-full.flex-col > img {
+    max-height: 160px !important;
+    width: auto !important;
+    margin-bottom: 0 !important;
+  }
+  .anim-fade-d1.flex.w-full.flex-col {
+    gap: 0.75rem !important;
+    padding-top: 0 !important;
+  }
+
+  /* Compact Trust Badges */
+  .anim-fade-d1.flex.w-full.flex-col > div {
+    gap: 0.375rem !important;
+  }
+  .anim-fade-d1.flex.w-full.flex-col .rounded-\[12px\] {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+    border-radius: 10px !important;
+    
+    /* Icon tile — ONLY the direct first-child div, not every descendant.
+       (`& div` matched the text column too, collapsing it to 24px wide.) */
+    & > div:first-child {
+      height: 24px !important;
+      width: 24px !important;
+      & svg {
+        height: 12px !important;
+        width: 12px !important;
+      }
+    }
+
+    /* Text column — the direct last-child div */
+    & > div:last-child {
+      & > div:first-child {
+        font-size: 11px !important;
+        margin-bottom: 0 !important;
+      }
+      & > div:last-child {
+        font-size: 10px !important;
+        line-height: 1.25 !important;
+      }
+    }
+  }
+}
+

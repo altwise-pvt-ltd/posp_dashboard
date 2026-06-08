@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect, useCallback } from "react";
 import { Camera, ShieldCheck, Upload, RotateCcw, Check, UserRound, AlertCircle } from "lucide-react";
 import Button from "@/shared/components/Button";
+import { showAlert } from "@/shared/store/alertStore";
 
 /**
  * SelfieStep — capture a selfie live or upload one from the device.
@@ -94,32 +95,39 @@ export default function SelfieStep({ onNext, initialValues }) {
   };
 
   const submit = () => {
-    if (!photo) return;
+    if (!photo) {
+      showAlert({
+        variant: "warning",
+        title: "Selfie required",
+        message: "Please capture or upload a selfie to continue.",
+      });
+      return;
+    }
     onNext?.({ selfie: photo.file });
   };
 
   return (
-    <div className="w-full max-w-lg rounded-2xl border border-slate-100 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04),0_20px_48px_rgba(222,123,61,0.08)] overflow-hidden">
+    <div className="w-full max-w-[310px] sm:max-w-[360px] lg:max-w-[390px] xl:max-w-[390px] mx-auto lg:mx-0 rounded-2xl border border-slate-100 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04),0_20px_48px_rgba(222,123,61,0.08)] overflow-hidden">
 
-      {/* Header */}
-      <div className="px-5 sm:px-8 pt-6 sm:pt-7 pb-5 sm:pb-6 bg-linear-to-br from-orange-50/60 to-white border-b border-orange-100/60">
-        <span className="inline-flex items-center gap-1.5 text-xs font-bold tracking-widest uppercase text-orange-500 mb-3">
+      {/* Header — padding and type scale with breakpoints */}
+      <div className="px-4 sm:px-5 lg:px-6 pt-5 pb-4 bg-linear-to-br from-orange-50/60 to-white border-b border-orange-100/60">
+        <span className="inline-flex items-center gap-1.5 text-[10px] sm:text-xs font-bold tracking-widest uppercase text-orange-500 mb-3">
           <Camera size={13} strokeWidth={2.5} />
           Step 4 · Selfie Verification
         </span>
-        <h2 className="text-xl sm:text-2xl font-extrabold text-slate-800 tracking-tight">
+        <h2 className="text-lg sm:text-xl lg:text-2xl font-extrabold text-slate-800 tracking-tight">
           Add a selfie
         </h2>
-        <p className="flex items-center gap-1.5 text-sm text-slate-500 mt-1">
+        <p className="flex items-center gap-1.5 text-xs sm:text-sm text-slate-500 mt-1 lg:mt-2">
           <ShieldCheck size={14} className="text-emerald-500 shrink-0" />
           A clear, front-facing photo helps us confirm it's really you.
         </p>
       </div>
 
-      <div className="px-5 sm:px-8 py-7 sm:py-8 flex flex-col items-center gap-6">
+      <div className="px-4 sm:px-5 lg:px-6 py-5 flex flex-col items-center gap-4 sm:gap-5">
 
         {/* ── Circular stage ── */}
-        <div className="relative h-56 w-56 sm:h-64 sm:w-64">
+        <div className="relative h-48 w-48 sm:h-56 sm:w-56 lg:h-64 lg:w-64">
           {/* Soft glow ring */}
           <div className="absolute -inset-2 rounded-full bg-linear-to-br from-orange-200/40 to-rose-200/30 blur-xl" />
 
@@ -155,7 +163,7 @@ export default function SelfieStep({ onNext, initialValues }) {
 
         {/* Error */}
         {error && (
-          <p className="anim-fade -mt-2 flex items-center gap-1.5 text-[13px] font-medium text-red-500 text-center" role="alert">
+          <p className="anim-fade -mt-2 flex items-center gap-1.5 text-[0.8125rem] font-medium text-red-500 text-center" role="alert">
             <AlertCircle size={14} className="shrink-0" />
             {error}
           </p>

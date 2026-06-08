@@ -5,6 +5,7 @@ import { z } from "zod";
 import { Mail, ShieldCheck, ArrowRight, CheckCircle2, RotateCcw } from "lucide-react";
 import Input from "@/shared/components/Input";
 import Button from "@/shared/components/Button";
+import { alertOnInvalid } from "@/shared/store/alertStore";
 
 /* ── Schemas ── */
 const emailSchema = z.object({
@@ -59,7 +60,7 @@ export default function EmailStep({ onNext, initialValues }) {
     setSentTo(data.email.trim());
     otpForm.reset({ otp: "" });
     startCooldown();
-  });
+  }, alertOnInvalid);
 
   const resend = () => {
     if (cooldown > 0) return;
@@ -76,30 +77,30 @@ export default function EmailStep({ onNext, initialValues }) {
   const verify = otpForm.handleSubmit(() => {
     // TODO: verify the code with the API
     onNext?.({ email: sentTo });
-  });
+  }, alertOnInvalid);
 
   return (
-    <div className="w-full max-w-lg rounded-2xl border border-slate-100 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04),0_20px_48px_rgba(222,123,61,0.08)] overflow-hidden">
+    <div className="w-full max-w-[310px] sm:max-w-[360px] lg:max-w-[390px] xl:max-w-[390px] mx-auto lg:mx-0 rounded-2xl border border-slate-100 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04),0_20px_48px_rgba(222,123,61,0.08)] overflow-hidden">
 
-      {/* Header */}
-      <div className="px-5 sm:px-8 pt-6 sm:pt-7 pb-5 sm:pb-6 bg-linear-to-br from-orange-50/60 to-white border-b border-orange-100/60">
-        <span className="inline-flex items-center gap-1.5 text-xs font-bold tracking-widest uppercase text-orange-500 mb-3">
+      {/* Header — padding and type scale with breakpoints */}
+      <div className="px-4 sm:px-5 lg:px-6 pt-5 pb-4 bg-linear-to-br from-orange-50/60 to-white border-b border-orange-100/60">
+        <span className="inline-flex items-center gap-1.5 text-[10px] sm:text-xs font-bold tracking-widest uppercase text-orange-500 mb-3">
           <Mail size={13} strokeWidth={2.5} />
           Step 2 · Email Verification
         </span>
-        <h2 className="text-xl sm:text-2xl font-extrabold text-slate-800 tracking-tight">
+        <h2 className="text-lg sm:text-xl lg:text-2xl font-extrabold text-slate-800 tracking-tight">
           Verify your email
         </h2>
-        <p className="flex items-center gap-1.5 text-sm text-slate-500 mt-1">
+        <p className="flex items-center gap-1.5 text-xs sm:text-sm text-slate-500 mt-1 lg:mt-2">
           <ShieldCheck size={14} className="text-emerald-500 shrink-0" />
           We'll send a one-time code to confirm it's really you.
         </p>
       </div>
 
-      <div className="px-5 sm:px-8 py-6 sm:py-7 flex flex-col gap-5">
+      <div className="px-4 sm:px-5 lg:px-6 py-5 flex flex-col gap-4 sm:gap-5">
 
         {/* ── Email entry ── */}
-        <form onSubmit={sendCode} className="flex flex-col gap-5">
+        <form onSubmit={sendCode} className="flex flex-col gap-4 sm:gap-5">
           <Input
             id="email"
             type="email"
@@ -121,7 +122,7 @@ export default function EmailStep({ onNext, initialValues }) {
 
         {/* ── OTP entry (fades in once the code is sent) ── */}
         {codeSent && (
-          <form onSubmit={verify} className="anim-fade flex flex-col gap-5 pt-1 border-t border-slate-100">
+          <form onSubmit={verify} className="anim-fade flex flex-col gap-4 sm:gap-5 pt-1 border-t border-slate-100">
             <p className="text-sm text-slate-500 pt-4 -mb-1">
               Enter the 6-digit code we sent to <strong className="text-slate-700">{sentTo}</strong>.
             </p>
@@ -134,7 +135,7 @@ export default function EmailStep({ onNext, initialValues }) {
               autoComplete="one-time-code"
               maxLength={6}
               error={otpForm.formState.errors.otp?.message}
-              className="font-mono tracking-[0.6em] text-center text-lg"
+              className="font-mono tracking-[0.4em] text-center text-sm sm:text-base"
               {...otpField}
               onChange={handleOtpChange}
             />

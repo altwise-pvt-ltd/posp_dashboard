@@ -2,10 +2,12 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import OverviewPage from '@/features/overview/pages/OverviewPage';
 import ProfilePage from '@/features/profile/pages/ProfilePage';
 import OnboardingScreen from '@/features/onboarding/pages/OnboardingScreen';
+import AlertContainer from '@/shared/components/alert/AlertContainer';
 
 function App() {
   return (
     <BrowserRouter>
+      <AlertContainer />
       <Routes>
         <Route path="/" element={<OnboardingScreen />} />
         <Route path="/overview" element={<OverviewPage />} />
