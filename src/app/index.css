@@ -170,6 +170,7 @@
   100% {
     transform: translateX(100%);
   }
+}
 
   @keyframes photoReveal {
     0% {
