@@ -10,11 +10,12 @@ import renewal from '@/assets/sidebar/renewal.png';
 import Profile from '@/assets/sidebar/profile.png';
 import iconTraining from '@/assets/sidebar/iconTraining.png';
 
-// `to` is the route path each link navigates to. Only '/' and '/profile'
-// have real pages today; the others fall through App.jsx's catch-all
-// redirect until their pages exist.
+// `to` is the route path each link navigates to. 'Home', 'Profile' and
+// 'POSP Training' map to real pages (/overview, /profile, /posp-training);
+// the others fall through App.jsx's catch-all redirect until their pages
+// exist.
 const NAV_ITEMS = [
-  { label: 'Home', to: '/', icon: iconHome },
+  { label: 'Home', to: '/overview', icon: iconHome },
   { label: 'Customers', to: '/customers', icon: iconCustomers },
   { label: 'Policies', to: '/policies', icon: iconPolicies },
   { label: 'Reports', to: '/reports', icon: iconReports },
