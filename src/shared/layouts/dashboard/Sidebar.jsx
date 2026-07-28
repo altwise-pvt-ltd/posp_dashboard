@@ -35,7 +35,7 @@ function Sidebar({ collapsed = false }) {
         {collapsed ? (
           // Compact brand mark — a centered square badge so the wide
           // wordmark never gets squished into the narrow rail.
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 text-base font-bold text-white shadow-[0_4px_12px_rgba(249,115,22,0.25)] transition-all duration-300 hover:scale-105 active:scale-95">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-linear-to-br from-orange-500 to-amber-500 text-base font-bold text-white shadow-[0_4px_12px_rgba(249,115,22,0.25)] transition-all duration-300 hover:scale-105 active:scale-95">
             L
           </div>
         ) : (
@@ -54,6 +54,7 @@ function Sidebar({ collapsed = false }) {
             <li key={item.label} className="relative">
               <NavLink
                 to={item.to}
+                end={item.to === '/'}
                 title={collapsed ? item.label : undefined}
                 className={({ isActive }) =>
                   `relative flex items-center rounded-xl text-sm font-medium transition-all duration-300 group select-none ${collapsed
@@ -74,7 +75,7 @@ function Sidebar({ collapsed = false }) {
                     {isActive && (
                       <motion.div
                         layoutId="activeIndicator"
-                        className="absolute inset-0 bg-gradient-to-r from-orange-50 to-amber-50/50 border border-orange-100/70 rounded-xl shadow-[0_4px_12px_rgba(249,115,22,0.06)]"
+                        className="absolute inset-0 bg-linear-to-r from-orange-50 to-amber-50/50 border border-orange-100/70 rounded-xl shadow-[0_4px_12px_rgba(249,115,22,0.06)]"
                         transition={{
                           type: 'spring',
                           stiffness: 380,
@@ -87,7 +88,7 @@ function Sidebar({ collapsed = false }) {
                     {isActive && !collapsed && (
                       <motion.div
                         layoutId="activeLeftBar"
-                        className="absolute left-0 top-3 bottom-3 w-1 bg-gradient-to-b from-orange-500 to-amber-500 rounded-r-full"
+                        className="absolute left-0 top-3 bottom-3 w-1 bg-linear-to-b from-orange-500 to-amber-500 rounded-r-full"
                         transition={{
                           type: 'spring',
                           stiffness: 380,

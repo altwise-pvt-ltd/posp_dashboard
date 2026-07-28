@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronRight, Home } from "lucide-react";
 import { showAlert } from "@/shared/store/alertStore";
+import { completeOnboarding } from "@/shared/store/onboardingStore";
 import Topbar from "../components/Topbar";
 import Stepper from "../components/Stepper";
 import OnboardingSidebar from "../components/OnboardingSidebar";
@@ -99,6 +100,9 @@ export default function OnboardingScreen() {
   const handleSubmit = () => {
     // TODO: send `formData` (including File objects) to the onboarding API.
     console.log("Submitting onboarding application:", formData);
+    // Mark onboarding done — this flips the localStorage flag the route guard
+    // reads, which is what unlocks the dashboard from here on.
+    completeOnboarding();
     // The AlertContainer lives above <Routes>, so this success toast survives
     // the navigation and greets the user on the Overview page.
     showAlert({
