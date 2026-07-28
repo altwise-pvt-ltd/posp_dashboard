@@ -23,18 +23,20 @@ function UserMenu({ isOpen, onToggle }) {
             <p className="text-sm font-medium text-slate-900 truncate">{name}</p>
             <p className="text-xs text-slate-500">Signed in</p>
           </div>
-          <a
-            href="#profile"
-            className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+          {/* Inert until these screens exist — anchors here would only dirty
+              the URL with a hash and scroll the page to the top. */}
+          <span
+            aria-disabled="true"
+            className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 cursor-default"
           >
             Your profile
-          </a>
-          <a
-            href="#settings"
-            className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+          </span>
+          <span
+            aria-disabled="true"
+            className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 cursor-default"
           >
             Change Password
-          </a>
+          </span>
         </div>
       )}
     </div>

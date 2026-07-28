@@ -118,6 +118,9 @@ export default function OnboardingScreen() {
   // No step data is submitted; the user can finish these details later from
   // their profile. Same destination as handleSubmit, minus the submit.
   const skipAll = () => {
+    // Still flip the flag — otherwise RequireOnboarding bounces them straight
+    // back here and Skip becomes a no-op.
+    completeOnboarding();
     showAlert({
       variant: "info",
       title: "Onboarding skipped",

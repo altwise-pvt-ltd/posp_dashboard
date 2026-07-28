@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import AppLink from '@/shared/components/AppLink';
 
 function TodayFocusBanner({
   count = 3,
@@ -24,12 +24,12 @@ function TodayFocusBanner({
         </div>
       </div>
 
-      <Link
+      <AppLink
         to={to}
         className="bg-primary-container px-gutter py-unit rounded font-body-lg text-body-lg flex items-center gap-unit shrink-0 hover:bg-primary-container/90 transition-all hover:gap-3 relative z-10 w-full md:w-auto justify-center font-semibold text-white shadow-[0_4px_12px_-4px_rgba(255,107,0,.4)]"
       >
         Start calling <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
-      </Link>
+      </AppLink>
     </section>
   );
 }

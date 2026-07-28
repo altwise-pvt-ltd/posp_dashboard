@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import AppLink from '@/shared/components/AppLink';
 import healthImg from '@/assets/products/Health.png';
 import motorImg from '@/assets/products/Motor.png';
 import termLifeImg from '@/assets/products/TermLife.png';
@@ -82,18 +82,18 @@ function OnboardingHero() {
             Start a new policy in 3 steps
           </p>
         </div>
-        <Link
+        <AppLink
           to="/drafts"
           className="font-data-mono text-data-mono text-primary flex items-center gap-1 hover:underline"
         >
           <span className="material-symbols-outlined text-[16px]">history</span>
           Resume draft
-        </Link>
+        </AppLink>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-unit md:gap-gutter mb-gutter relative z-10">
         {PRODUCTS.map((p) => (
-          <Link
+          <AppLink
             key={p.key}
             to={p.to}
             className={`group flex flex-col rounded-xl border-2 border-gray-200 bg-white overflow-hidden transition-all hover:shadow-sm ${p.hoverBorder}`}
@@ -111,7 +111,7 @@ function OnboardingHero() {
                 {p.subtitle}
               </p>
             </div>
-          </Link>
+          </AppLink>
         ))}
       </div>
 

@@ -13,14 +13,16 @@ export default function OnboardingFooter() {
           © 2026 POSP. All rights reserved.
         </span>
         <nav className="flex flex-wrap justify-center gap-x-5 gap-y-2">
+          {/* No pages behind these yet — rendered inert so a click doesn't
+              scroll to top and leave a stray '#' in the URL. */}
           {FOOTER_LINKS.map((link) => (
-            <a
+            <span
               key={link}
-              href="#"
-              className="text-[0.8125rem] text-slate-50 transition-colors duration-150 hover:text-primary"
+              aria-disabled="true"
+              className="text-[0.8125rem] text-slate-50 transition-colors duration-150 hover:text-primary cursor-default"
             >
               {link}
-            </a>
+            </span>
           ))}
         </nav>
       </div>

@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import AppLink from '@/shared/components/AppLink';
 import KpiCard from './KpiCard';
 
 function Trend({ value, color = 'emerald', arrow = '↑' }) {
@@ -36,12 +36,12 @@ function KpiGrid() {
           <span className="material-symbols-outlined text-emerald-600 text-[22px]">monitoring</span>
           Your numbers this month
         </h3>
-        <Link
+        <AppLink
           to="/reports"
           className="font-data-mono text-data-mono text-primary hover:underline hidden md:inline-flex items-center gap-1"
         >
           View report <span className="material-symbols-outlined text-[14px]">arrow_outward</span>
-        </Link>
+        </AppLink>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 gap-unit md:gap-gutter">

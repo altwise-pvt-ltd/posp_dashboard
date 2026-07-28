@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { isRoutedPath } from '@/app/routes';
 
 const THEMES = {
   sky:     { iconBg: 'bg-sky-50',     iconText: 'text-sky-600',     iconHover: 'hover:bg-sky-100',     listLink: 'text-sky-600' },
@@ -29,12 +30,20 @@ function KpiCard({
   const navigate = useNavigate();
   const t = THEMES[theme] || THEMES.sky;
 
-  const cardClasses = highlighted
-    ? 'bg-gradient-to-br from-primary-fixed/30 to-white rounded-xl border border-gray-200 p-gutter card-lift relative overflow-hidden cursor-pointer'
-    : 'bg-white rounded-xl border border-gray-200 p-gutter card-lift relative cursor-pointer';
+  // Most KPI destinations (/leads, /policies, …) don't have pages yet. Until
+  // they do the card is inert: no pointer cursor, no link role, no navigation.
+  // The toggle button still works, so the card isn't dead — just not a link.
+  const canNavigate = isRoutedPath(to);
+  const canViewAll = isRoutedPath(viewAllTo);
+
+  const cardClasses = `${
+    highlighted
+      ? 'bg-gradient-to-br from-primary-fixed/30 to-white rounded-xl border border-gray-200 p-gutter card-lift relative overflow-hidden'
+      : 'bg-white rounded-xl border border-gray-200 p-gutter card-lift relative'
+  } ${canNavigate ? 'cursor-pointer' : ''}`;
 
   const handleCardClick = () => {
-    if (to) navigate(to);
+    if (canNavigate) navigate(to);
   };
 
   const handleToggle = (e) => {
@@ -46,10 +55,10 @@ function KpiCard({
     <div
       className={cardClasses}
       onClick={handleCardClick}
-      role={to ? 'link' : undefined}
-      tabIndex={to ? 0 : undefined}
+      role={canNavigate ? 'link' : undefined}
+      tabIndex={canNavigate ? 0 : undefined}
       onKeyDown={(e) => {
-        if (to && (e.key === 'Enter' || e.key === ' ')) {
+        if (canNavigate && (e.key === 'Enter' || e.key === ' ')) {
           e.preventDefault();
           navigate(to);
         }
@@ -94,18 +103,26 @@ function KpiCard({
               </span>
             </div>
           ))}
-          {viewAllTo && (
-            <a
-              href={viewAllTo}
-              onClick={(e) => {
-                e.preventDefault();
-                navigate(viewAllTo);
-              }}
-              className={`font-data-mono text-data-mono hover:underline mt-1 ${t.listLink}`}
-            >
-              View all →
-            </a>
-          )}
+          {viewAllTo &&
+            (canViewAll ? (
+              <a
+                href={viewAllTo}
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigate(viewAllTo);
+                }}
+                className={`font-data-mono text-data-mono hover:underline mt-1 ${t.listLink}`}
+              >
+                View all →
+              </a>
+            ) : (
+              <span
+                aria-disabled="true"
+                className={`font-data-mono text-data-mono mt-1 cursor-default ${t.listLink}`}
+              >
+                View all →
+              </span>
+            ))}
         </div>
       )}
     </div>

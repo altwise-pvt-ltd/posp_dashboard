@@ -21,11 +21,32 @@ function App() {
     <BrowserRouter>
       <AlertContainer />
       <Routes>
-        <Route path="/" element={<OnboardingScreen />} />
-        <Route path="/overview" element={<OverviewPage />} />
-        <Route path="/profile" element={<ProfilePage />} />
-        <Route path="/posp-training" element={<TrainingPage />} />
-        <Route path="/onboarding" element={<OnboardingScreen />} />
+        {/* Entry point — send the visitor to whichever stage of the funnel they're at. */}
+        <Route path="/" element={<Navigate to={landingPath()} replace />} />
+
+        {/* Public */}
+        <Route path="/login" element={<LoginPage />} />
+
+        {/* Signed in, but onboarding may still be pending */}
+        <Route
+          path="/onboarding"
+          element={<RequireAuth><OnboardingScreen /></RequireAuth>}
+        />
+
+        {/* Dashboard — signed in *and* onboarded */}
+        <Route
+          path="/overview"
+          element={<RequireAuth><RequireOnboarding><OverviewPage /></RequireOnboarding></RequireAuth>}
+        />
+        <Route
+          path="/profile"
+          element={<RequireAuth><RequireOnboarding><ProfilePage /></RequireOnboarding></RequireAuth>}
+        />
+        <Route
+          path="/posp-training"
+          element={<RequireAuth><RequireOnboarding><TrainingPage /></RequireOnboarding></RequireAuth>}
+        />
+
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
