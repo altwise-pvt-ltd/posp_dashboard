@@ -114,6 +114,18 @@ export default function OnboardingScreen() {
     navigate("/overview");
   };
 
+  // Skip the entire onboarding wizard and jump straight to the dashboard.
+  // No step data is submitted; the user can finish these details later from
+  // their profile. Same destination as handleSubmit, minus the submit.
+  const skipAll = () => {
+    showAlert({
+      variant: "info",
+      title: "Onboarding skipped",
+      message: "You can complete your details anytime from your profile.",
+    });
+    navigate("/overview");
+  };
+
   // The Review step goes full-width (its cards tile into a grid), so the
   // illustration sidebar is dropped there to give them room.
   const isReview = currentStep === STEPS.length - 1;
@@ -151,21 +163,33 @@ export default function OnboardingScreen() {
             <Stepper steps={stepperSteps} activeIndex={currentStep} />
           </div>
 
-          {/* Breadcrumb */}
-          <nav
-            aria-label="Breadcrumb"
-            className="anim-fade-d1 inline-flex items-center gap-1.5 text-sm rounded-xl border border-slate-100 bg-slate-50/60 px-4 py-2.5 mb-4"
-          >
-            <a
-              href="https://www.letsinsurance.com/"
-              className="flex items-center gap-1.5 font-medium text-slate-500 hover:text-orange-500 transition-colors duration-200"
+          {/* Breadcrumb + Skip-all shortcut */}
+          <div className="anim-fade-d1 mb-4 flex flex-wrap items-center justify-between gap-3">
+            <nav
+              aria-label="Breadcrumb"
+              className="inline-flex items-center gap-1.5 text-sm rounded-xl border border-slate-100 bg-slate-50/60 px-4 py-2.5"
             >
-              <Home size={14} strokeWidth={2} />
-              Home
-            </a>
-            <ChevronRight size={14} className="text-slate-300" />
-            <span className="font-semibold text-slate-700">On Boarding</span>
-          </nav>
+              <a
+                href="https://www.letsinsurance.com/"
+                className="flex items-center gap-1.5 font-medium text-slate-500 hover:text-orange-500 transition-colors duration-200"
+              >
+                <Home size={14} strokeWidth={2} />
+                Home
+              </a>
+              <ChevronRight size={14} className="text-slate-300" />
+              <span className="font-semibold text-slate-700">On Boarding</span>
+            </nav>
+
+            {/* Skip the whole wizard — lands on the dashboard without submitting. */}
+            <button
+              type="button"
+              onClick={skipAll}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-500 transition-colors duration-200 hover:border-orange-200 hover:text-orange-600"
+            >
+              Skip for now
+              <ChevronRight size={14} strokeWidth={2} />
+            </button>
+          </div>
 
           {/* Form + Sidebar — single column on mobile, two columns from lg up.
               Form track is fluid (it grows with the viewport); the sidebar track

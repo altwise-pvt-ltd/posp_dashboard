@@ -8,10 +8,12 @@ import iconPolicies from '@/assets/sidebar/Policies.png';
 import iconReports from '@/assets/sidebar/Reports.png';
 import renewal from '@/assets/sidebar/renewal.png';
 import Profile from '@/assets/sidebar/profile.png';
+import iconTraining from '@/assets/sidebar/iconTraining.png';
 
-// `to` is the route path each link navigates to. Only '/overview' and
-// '/profile' have real pages today; the others fall through App.jsx's
-// catch-all redirect until their pages exist.
+// `to` is the route path each link navigates to. 'Home', 'Profile' and
+// 'POSP Training' map to real pages (/overview, /profile, /posp-training);
+// the others fall through App.jsx's catch-all redirect until their pages
+// exist.
 const NAV_ITEMS = [
   { label: 'Home', to: '/overview', icon: iconHome },
   { label: 'Customers', to: '/customers', icon: iconCustomers },
@@ -19,6 +21,7 @@ const NAV_ITEMS = [
   { label: 'Reports', to: '/reports', icon: iconReports },
   { label: 'Renewal', to: '/renewal', icon: renewal },
   { label: 'Profile', to: '/profile', icon: Profile },
+  { label: 'POSP Training', to: '/posp-training', icon: iconTraining },
 ];
 
 function Sidebar({ collapsed = false }) {
@@ -26,9 +29,8 @@ function Sidebar({ collapsed = false }) {
     <div className="flex flex-col h-full">
       {/* Brand Logo Container */}
       <div
-        className={`flex items-center pb-6 pt-3 select-none ${
-          collapsed ? 'justify-center px-0' : 'px-3'
-        }`}
+        className={`flex items-center pb-6 pt-3 select-none ${collapsed ? 'justify-center px-0' : 'px-3'
+          }`}
       >
         {collapsed ? (
           // Compact brand mark — a centered square badge so the wide
@@ -55,18 +57,15 @@ function Sidebar({ collapsed = false }) {
                 end={item.to === '/'}
                 title={collapsed ? item.label : undefined}
                 className={({ isActive }) =>
-                  `relative flex items-center rounded-xl text-sm font-medium transition-all duration-300 group select-none ${
-                    collapsed
-                      ? 'mx-auto h-12 w-12 justify-center'
-                      : 'gap-3.5 px-4 py-3'
-                  } ${
-                    isActive
-                      ? 'text-black font-semibold'
-                      : `text-slate-500 hover:text-slate-900 ${
-                          collapsed
-                            ? 'hover:bg-slate-100/70'
-                            : 'hover:translate-x-1'
-                        }`
+                  `relative flex items-center rounded-xl text-sm font-medium transition-all duration-300 group select-none ${collapsed
+                    ? 'mx-auto h-12 w-12 justify-center'
+                    : 'gap-3.5 px-4 py-3'
+                  } ${isActive
+                    ? 'text-black font-semibold'
+                    : `text-slate-500 hover:text-slate-900 ${collapsed
+                      ? 'hover:bg-slate-100/70'
+                      : 'hover:translate-x-1'
+                    }`
                   }`
                 }
               >
@@ -103,11 +102,10 @@ function Sidebar({ collapsed = false }) {
                       <img
                         src={item.icon}
                         alt=""
-                        className={`w-6 h-6 shrink-0 object-contain transition-all duration-300 relative z-10 ${
-                          isActive
-                            ? 'scale-110 filter brightness-110 drop-shadow-[0_2px_4px_rgba(249,115,22,0.15)]'
-                            : 'group-hover:scale-105 opacity-85 group-hover:opacity-100'
-                        }`}
+                        className={`w-6 h-6 shrink-0 object-contain transition-all duration-300 relative z-10 ${isActive
+                          ? 'scale-110 filter brightness-110 drop-shadow-[0_2px_4px_rgba(249,115,22,0.15)]'
+                          : 'group-hover:scale-105 opacity-85 group-hover:opacity-100'
+                          }`}
                       />
                     )}
 
