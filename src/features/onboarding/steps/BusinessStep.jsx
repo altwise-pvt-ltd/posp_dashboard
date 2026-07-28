@@ -1,7 +1,8 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Building2, ShieldCheck, ArrowRight, SkipForward } from "lucide-react";
+import { Building2, ShieldCheck, ArrowRight, SkipForward, Check, X } from "lucide-react";
 import Input from "@/shared/components/Input";
 import Button from "@/shared/components/Button";
 import { alertOnInvalid } from "@/shared/store/alertStore";
@@ -47,6 +48,19 @@ export default function BusinessStep({ onNext, onSkip, initialValues }) {
     mode: "onTouched",
   });
 
+  // "Do you have a GST number?" — the GSTIN input only appears on Yes.
+  // Default to Yes only when we're editing a record that already has one.
+  const [hasGst, setHasGst] = useState(Boolean(initialValues?.gstIn));
+
+  const chooseHasGst = (value) => {
+    setHasGst(value);
+    if (!value) {
+      // Switching to No: drop any typed GSTIN and clear its error.
+      form.setValue("gstIn", "");
+      form.clearErrors("gstIn");
+    }
+  };
+
   // PIN code → digits only, max 6.
   const pincodeField = form.register("pincode");
   const handlePincodeChange = (e) => {
@@ -72,7 +86,7 @@ export default function BusinessStep({ onNext, onSkip, initialValues }) {
   }, alertOnInvalid);
 
   return (
-    <div className="w-full max-w-[310px] sm:max-w-[360px] lg:max-w-[390px] xl:max-w-[390px] mx-auto lg:mx-0 rounded-2xl border border-slate-100 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04),0_20px_48px_rgba(222,123,61,0.08)] overflow-hidden">
+    <div className="w-full max-w-77.5 sm:max-w-90 lg:max-w-97.5 xl:max-w-97.5 mx-auto lg:mx-0 rounded-2xl border border-slate-100 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04),0_20px_48px_rgba(222,123,61,0.08)] overflow-hidden">
 
       {/* Header — padding and type scale with breakpoints */}
       <div className="px-4 sm:px-5 lg:px-6 pt-5 pb-4 bg-linear-to-br from-orange-50/60 to-white border-b border-orange-100/60">
@@ -167,32 +181,66 @@ export default function BusinessStep({ onNext, onSkip, initialValues }) {
           />
         </div>
 
-        {/* PIN code + GSTIN — paired on larger screens. */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
-          <Input
-            id="pincode"
-            label="PIN Code *"
-            placeholder="6-digit PIN"
-            inputMode="numeric"
-            autoComplete="off"
-            maxLength={6}
-            className="font-mono tracking-wide"
-            error={form.formState.errors.pincode?.message}
-            {...pincodeField}
-            onChange={handlePincodeChange}
-          />
+        <Input
+          id="pincode"
+          label="PIN Code *"
+          placeholder="6-digit PIN"
+          inputMode="numeric"
+          autoComplete="off"
+          maxLength={6}
+          className="font-mono tracking-wide"
+          error={form.formState.errors.pincode?.message}
+          {...pincodeField}
+          onChange={handlePincodeChange}
+        />
 
-          <Input
-            id="gstIn"
-            label="GSTIN"
-            placeholder="15-char GSTIN (optional)"
-            autoComplete="off"
-            maxLength={15}
-            className="font-mono tracking-[0.1em] uppercase"
-            error={form.formState.errors.gstIn?.message}
-            {...gstField}
-            onChange={handleGstChange}
-          />
+        {/* GSTIN gate — ask first, only reveal the input on Yes. */}
+        <div className="flex flex-col gap-2.5">
+          <span className="text-sm font-semibold text-slate-700">
+            Do you have a GST number?
+          </span>
+
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => chooseHasGst(true)}
+              className={`inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-all duration-200 active:scale-[0.98] focus:outline-none focus:ring-4 ${
+                hasGst
+                  ? "border-orange-300 bg-orange-50 text-orange-600 focus:ring-orange-200/50"
+                  : "border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-700 focus:ring-slate-200/50"
+              }`}
+            >
+              <Check size={16} strokeWidth={2.5} />
+              Yes
+            </button>
+
+            <button
+              type="button"
+              onClick={() => chooseHasGst(false)}
+              className={`inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-all duration-200 active:scale-[0.98] focus:outline-none focus:ring-4 ${
+                !hasGst
+                  ? "border-orange-300 bg-orange-50 text-orange-600 focus:ring-orange-200/50"
+                  : "border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-700 focus:ring-slate-200/50"
+              }`}
+            >
+              <X size={16} strokeWidth={2.5} />
+              No
+            </button>
+          </div>
+
+          {hasGst && (
+            <Input
+              id="gstIn"
+              label="GSTIN"
+              placeholder="15-char GSTIN"
+              autoComplete="off"
+              maxLength={15}
+              className="font-mono tracking-widest uppercase"
+              error={form.formState.errors.gstIn?.message}
+              {...gstField}
+              onChange={handleGstChange}
+            />
+          )}
         </div>
 
         <div className="flex gap-3 pt-1">

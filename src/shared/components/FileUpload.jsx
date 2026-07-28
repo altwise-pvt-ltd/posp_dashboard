@@ -118,7 +118,7 @@ export default function FileUpload({
         onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
         onDragLeave={() => setDragging(false)}
         onDrop={handleDrop}
-        className={`relative flex min-h-[110px] items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed transition-all duration-200 ${zoneBorder} ${zoneBg} ${
+        className={`relative flex min-h-27.5 items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed transition-all duration-200 ${zoneBorder} ${zoneBg} ${
           hasFile ? "cursor-default" : "cursor-pointer"
         }`}
       >
@@ -136,7 +136,7 @@ export default function FileUpload({
           /* ── File preview state ── */
           <div className="flex w-full items-center gap-3.5 px-4 py-3.5">
             {/* Thumbnail or file icon */}
-            <div className="flex h-[68px] w-[68px] shrink-0 items-center justify-center overflow-hidden rounded-[10px] border border-slate-200 bg-slate-100">
+            <div className="flex h-17 w-17 shrink-0 items-center justify-center overflow-hidden rounded-[10px] border border-slate-200 bg-slate-100">
               {preview ? (
                 <img src={preview} alt="preview" className="h-full w-full object-cover" />
               ) : (
@@ -149,10 +149,10 @@ export default function FileUpload({
               <div className="truncate text-[0.8125rem] font-semibold text-slate-800">
                 {file.name}
               </div>
-              <div className="mt-[3px] text-[0.75rem] text-slate-500">
+              <div className="mt-0.75 text-[0.75rem] text-slate-500">
                 {(file.size / 1024).toFixed(0)} KB · {file.type || "file"}
               </div>
-              <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-[3px] text-[0.6875rem] font-semibold text-emerald-600">
+              <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-0.75 text-[0.6875rem] font-semibold text-emerald-600">
                 <CheckCircle2 size={11} />
                 Uploaded
               </div>
@@ -162,7 +162,7 @@ export default function FileUpload({
             <button
               type="button"
               onClick={clear}
-              className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-400 transition-all duration-150 hover:border-red-300 hover:bg-red-100 hover:text-red-500"
+              className="flex h-7.5 w-7.5 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-400 transition-all duration-150 hover:border-red-300 hover:bg-red-100 hover:text-red-500"
             >
               <X size={14} />
             </button>
