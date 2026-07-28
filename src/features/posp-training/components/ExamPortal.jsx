@@ -1,56 +1,80 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { examQuestions } from '../data/examQuestions';
 
+const SECTION_SECONDS = 1800; // 30 minutes per section
+
+// Which stage to advance to once the current section ends (time-up or submit).
+const nextStageAfter = (stage) =>
+  stage === 'general' && examQuestions.life?.length > 0 ? 'transition' : 'results';
+
 function ExamPortal({ onRetakeTraining }) {
+  const navigate = useNavigate();
   const [stage, setStage] = useState('instructions'); // 'instructions', 'general', 'transition', 'life', 'results'
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState({ general: {}, life: {} });
-  const [timeLeft, setTimeLeft] = useState(1800); // 30 mins
+  const [timeLeft, setTimeLeft] = useState(SECTION_SECONDS);
   const [timerActive, setTimerActive] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [toast, setToast] = useState(null); // non-blocking { message } banner (replaces alert())
+  const cancelBtnRef = useRef(null);
+  const timeLeftRef = useRef(SECTION_SECONDS); // drives the countdown without re-arming the interval
+  const stageRef = useRef(stage);
 
+  // Keep stageRef current so the interval callback can read the live stage
+  // without being torn down and recreated every time the stage changes.
   useEffect(() => {
-    let interval;
-    if (timerActive && timeLeft > 0) {
-      interval = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev === 301) {
-            alert("Only 5 minutes left in this section!");
-          }
-          if (prev === 61) {
-            alert("Only 60 seconds left! Please wrap up.");
-          }
-          if (prev <= 1) {
-            handleTimeUp();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [timerActive, timeLeft, stage]);
+    stageRef.current = stage;
+  }, [stage]);
 
-  const handleTimeUp = () => {
-    setTimerActive(false);
-    if (stage === 'general') {
-      alert("Time is up for the General Insurance section!");
-      if (examQuestions.life && examQuestions.life.length > 0) {
-        setStage('transition');
-      } else {
-        setStage('results');
+  // Section countdown. All work happens inside the interval callback (an
+  // event-like context) rather than the effect body or a state updater, so the
+  // interval arms once per section and each threshold fires exactly once.
+  useEffect(() => {
+    if (!timerActive) return undefined;
+    const interval = setInterval(() => {
+      const prev = timeLeftRef.current;
+      if (prev <= 0) return; // section already ended; cleanup is pending
+      const next = prev - 1;
+      timeLeftRef.current = next;
+      setTimeLeft(next);
+      if (next === 300) {
+        setToast({ message: 'Only 5 minutes left in this section!' });
+      } else if (next === 60) {
+        setToast({ message: 'Only 60 seconds left! Please wrap up.' });
+      } else if (next === 0) {
+        setTimerActive(false);
+        setStage(nextStageAfter(stageRef.current));
       }
-    } else if (stage === 'life') {
-      alert("Time is up for the Life Insurance section!");
-      setStage('results');
-    }
-  };
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [timerActive]);
+
+  // Auto-dismiss the toast so it never lingers over the exam.
+  useEffect(() => {
+    if (!toast) return undefined;
+    const t = setTimeout(() => setToast(null), 4000);
+    return () => clearTimeout(t);
+  }, [toast]);
+
+  // Confirm-modal focus + keyboard handling: move focus into the dialog on
+  // open and let Escape dismiss it.
+  useEffect(() => {
+    if (!showConfirmModal) return undefined;
+    cancelBtnRef.current?.focus();
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') setShowConfirmModal(false);
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [showConfirmModal]);
 
   const startSection = (section) => {
     setStage(section);
     setCurrentQuestionIndex(0);
-    setTimeLeft(1800);
+    timeLeftRef.current = SECTION_SECONDS;
+    setTimeLeft(SECTION_SECONDS);
     setTimerActive(true);
   };
 
@@ -61,15 +85,7 @@ function ExamPortal({ onRetakeTraining }) {
   const confirmEndTest = () => {
     setShowConfirmModal(false);
     setTimerActive(false);
-    if (stage === 'general') {
-      if (examQuestions.life && examQuestions.life.length > 0) {
-        setStage('transition');
-      } else {
-        setStage('results');
-      }
-    } else {
-      setStage('results');
-    }
+    setStage(nextStageAfter(stage));
   };
 
   const cancelEndTest = () => {
@@ -192,6 +208,7 @@ function ExamPortal({ onRetakeTraining }) {
             className="flex justify-center"
           >
             <motion.button
+              type="button"
               whileHover={{ scale: 1.03, y: -2 }}
               whileTap={{ scale: 0.97 }}
               onClick={() => startSection('general')}
@@ -215,7 +232,7 @@ function ExamPortal({ onRetakeTraining }) {
 
   if (stage === 'transition') {
     return (
-      <div className="w-full min-h-[calc(100vh-4rem)] lg:h-[calc(100vh-4rem)] bg-slate-50 rounded-3xl relative shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-slate-200 flex flex-col items-center justify-center p-6 md:p-8 overflow-y-auto overflow-hidden">
+      <div className="w-full min-h-[calc(100vh-4rem)] lg:h-[calc(100vh-4rem)] bg-slate-50 rounded-3xl relative shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-slate-200 flex flex-col items-center justify-center p-6 md:p-8 overflow-y-auto">
         {/* Subtle background decoration */}
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-green-500/5 blur-[100px] rounded-full"></div>
@@ -250,10 +267,11 @@ function ExamPortal({ onRetakeTraining }) {
           </div>
 
           <motion.button
+            type="button"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => startSection('life')}
-            className="group relative w-full py-4 md:py-5 bg-slate-800 text-white font-bold rounded-2xl shadow-[0_8px_25px_rgba(30,41,59,0.3)] hover:bg-slate-900 transition-all text-lg flex items-center justify-center gap-3 overflow-hidden"
+            className="group relative w-full py-4 md:py-5 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold rounded-2xl shadow-[0_8px_25px_rgba(249,115,22,0.3)] hover:from-orange-600 hover:to-amber-600 transition-all text-lg flex items-center justify-center gap-3 overflow-hidden"
           >
             <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-[-20deg]"></div>
             <span className="relative z-10 flex items-center gap-2">
@@ -276,7 +294,7 @@ function ExamPortal({ onRetakeTraining }) {
       <div className="w-full h-full min-h-screen bg-white flex flex-col items-center overflow-x-hidden">
         
         {overallPassed ? (
-          <div className="relative w-full h-32 md:h-40 bg-gradient-to-r from-indigo-500 via-purple-500 to-fuchsia-500 overflow-hidden shrink-0">
+          <div className="relative w-full h-32 md:h-40 bg-gradient-to-r from-amber-400 via-orange-500 to-orange-600 overflow-hidden shrink-0">
             <svg viewBox="0 0 100 20" className="absolute bottom-0 w-full h-8 md:h-12 z-10" preserveAspectRatio="none">
               <path fill="#ffffff" d="M0,20 L0,0 Q50,20 100,0 L100,20 Z"></path>
             </svg>
@@ -286,8 +304,8 @@ function ExamPortal({ onRetakeTraining }) {
               <svg className="absolute top-8 right-20 text-pink-300 w-5 h-5 animate-pulse" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2v4m0 12v4M2 12h4m12 0h4m-16-7l3 3m10 10l3 3m-3-13l3-3M5 19l3-3"></path></svg>
               <svg className="absolute top-20 left-1/4 text-white opacity-70 w-4 h-4" fill="currentColor"><circle cx="12" cy="12" r="10"></circle></svg>
               <svg className="absolute top-12 right-1/3 text-yellow-400 w-5 h-5 animate-bounce" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-              <div className="absolute top-10 left-1/3 w-2 h-2 bg-pink-400 rounded-full animate-bounce"></div>
-              <div className="absolute top-12 right-1/4 w-3 h-3 bg-indigo-200 transform rotate-45"></div>
+              <div className="absolute top-10 left-1/3 w-2 h-2 bg-orange-300 rounded-full animate-bounce"></div>
+              <div className="absolute top-12 right-1/4 w-3 h-3 bg-amber-200 transform rotate-45"></div>
               <div className="absolute top-24 left-24 w-2 h-2 bg-yellow-200 transform rotate-12"></div>
             </div>
           </div>
@@ -311,10 +329,10 @@ function ExamPortal({ onRetakeTraining }) {
             {overallPassed ? (
               <>
                 <div className="absolute top-0 flex justify-center w-full z-0">
-                  <div className="w-8 h-16 bg-indigo-600 shadow-md ml-12 origin-top rounded-b-md" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%, 50% 75%, 0 100%)', transform: 'rotate(25deg)' }}></div>
+                  <div className="w-8 h-16 bg-amber-500 shadow-md ml-12 origin-top rounded-b-md" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%, 50% 75%, 0 100%)', transform: 'rotate(25deg)' }}></div>
                 </div>
                 <div className="absolute top-0 flex justify-center w-full z-0">
-                  <div className="w-8 h-16 bg-indigo-600 shadow-md mr-12 origin-top rounded-b-md" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%, 50% 75%, 0 100%)', transform: 'rotate(-25deg)' }}></div>
+                  <div className="w-8 h-16 bg-amber-500 shadow-md mr-12 origin-top rounded-b-md" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%, 50% 75%, 0 100%)', transform: 'rotate(-25deg)' }}></div>
                 </div>
                 <div className="absolute -top-12 md:-top-16 z-10 w-24 h-24 md:w-28 md:h-28 bg-gradient-to-br from-yellow-300 via-amber-400 to-yellow-500 rounded-full shadow-[0_12px_30px_rgba(251,191,36,0.5)] flex items-center justify-center border-[5px] md:border-[6px] border-white">
                    <div className="w-16 h-16 md:w-20 md:h-20 rounded-full border border-amber-200 flex items-center justify-center bg-gradient-to-b from-transparent to-amber-500/20">
@@ -405,13 +423,15 @@ function ExamPortal({ onRetakeTraining }) {
           <div className="text-center w-full pt-2 pb-8 md:pb-10">
             {overallPassed ? (
               <button
-                onClick={() => window.location.reload()}
-                className="px-8 py-3 md:px-10 md:py-4 bg-slate-800 text-white font-bold rounded-xl hover:bg-slate-900 transition-all shadow-[0_8px_20px_rgba(30,41,59,0.2)] hover:shadow-[0_8px_25px_rgba(30,41,59,0.4)] hover:-translate-y-0.5 text-base md:text-lg"
+                type="button"
+                onClick={() => navigate('/overview')}
+                className="px-8 py-3 md:px-10 md:py-4 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold rounded-xl hover:from-orange-600 hover:to-amber-600 transition-all shadow-[0_8px_20px_rgba(249,115,22,0.3)] hover:shadow-[0_8px_25px_rgba(249,115,22,0.4)] hover:-translate-y-0.5 text-base md:text-lg"
               >
                 Welcome to Dashboard
               </button>
             ) : (
               <button
+                type="button"
                 onClick={onRetakeTraining}
                 className="px-8 py-3 md:px-10 md:py-4 bg-orange-500 text-white font-bold rounded-xl hover:bg-orange-600 transition-all shadow-[0_8px_20px_rgba(249,115,22,0.3)] hover:shadow-[0_8px_25px_rgba(249,115,22,0.4)] hover:-translate-y-0.5 text-base md:text-lg"
               >
@@ -469,7 +489,28 @@ function ExamPortal({ onRetakeTraining }) {
   };
 
   return (
-    <div className="w-full min-h-[calc(100vh-4rem)] lg:h-[calc(100vh-4rem)] bg-slate-50 rounded-3xl relative shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-slate-200 flex flex-col lg:flex-row lg:overflow-hidden overflow-hidden">
+    <div className="w-full min-h-[calc(100vh-4rem)] lg:h-[calc(100vh-4rem)] bg-slate-50 rounded-3xl relative shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-slate-200 flex flex-col lg:flex-row overflow-hidden">
+      {/* Non-blocking time-warning toast (announced to assistive tech) */}
+      <div aria-live="assertive" className="pointer-events-none fixed top-4 left-1/2 -translate-x-1/2 z-60 w-full max-w-sm px-4">
+        <AnimatePresence>
+          {toast && (
+            <motion.div
+              initial={{ opacity: 0, y: -16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -16 }}
+              transition={{ duration: 0.2 }}
+              role="status"
+              className="flex items-center gap-3 rounded-xl bg-white border border-orange-200 shadow-[0_12px_30px_rgba(249,115,22,0.18)] px-4 py-3"
+            >
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-100 text-orange-600">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+              </span>
+              <span className="text-sm font-semibold text-slate-800">{toast.message}</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
       {/* Left Area: Main Question Container */}
       <div className="flex-1 flex flex-col lg:h-full lg:overflow-y-auto relative z-10">
         {/* Header */}
@@ -487,6 +528,7 @@ function ExamPortal({ onRetakeTraining }) {
               {formatTime(timeLeft)}
             </div>
             <button
+              type="button"
               onClick={handleEndTest}
               className="text-slate-500 hover:text-red-600 font-bold text-xs md:text-sm transition-colors uppercase tracking-wider hover:bg-red-50 px-3 py-1.5 rounded-lg"
             >
@@ -508,25 +550,27 @@ function ExamPortal({ onRetakeTraining }) {
             >
               <div className="flex justify-between items-center mb-3 px-1">
                 <div className="font-bold text-slate-800 text-base md:text-lg">Q: {currentQuestionIndex + 1}</div>
-                <div className="text-slate-400 text-base">Report</div>
               </div>
               <div className="bg-white border border-slate-200 rounded-lg p-5 md:p-6 mb-8 text-base md:text-lg text-slate-800 leading-relaxed shadow-sm">
                 {currentQuestion?.question}
               </div>
 
-              <div className="flex flex-col gap-3 md:gap-4">
+              <div className="flex flex-col gap-3 md:gap-4" role="radiogroup" aria-label={currentQuestion?.question}>
                 {currentQuestion?.options.map((option, index) => {
                   const isSelected = currentAnswers[currentQuestion.id] === index;
                   return (
                     <button
                       key={index}
+                      type="button"
+                      role="radio"
+                      aria-checked={isSelected}
                       onClick={() => handleOptionSelect(index)}
                       className={`text-left p-4 md:p-5 rounded-lg border transition-all duration-200 flex items-center gap-4 ${isSelected
-                        ? 'bg-[#e2e8f0] border-slate-800 text-slate-900 font-medium'
-                        : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'
+                        ? 'bg-orange-50 border-orange-500 text-orange-900 font-medium shadow-[0_2px_10px_rgba(249,115,22,0.08)]'
+                        : 'bg-white border-slate-200 text-slate-700 hover:border-orange-300 hover:bg-orange-50/40'
                         }`}
                     >
-                      <div className="font-bold text-base md:text-lg text-slate-800 shrink-0">
+                      <div className={`font-bold text-base md:text-lg shrink-0 ${isSelected ? 'text-orange-600' : 'text-slate-800'}`}>
                         {String.fromCharCode(97 + index)})
                       </div>
                       <span className="text-base md:text-lg leading-snug">{option}</span>
@@ -541,6 +585,7 @@ function ExamPortal({ onRetakeTraining }) {
           <div className="mt-8 flex flex-wrap sm:flex-nowrap items-center justify-between gap-4 pt-4 border-t border-slate-200">
             <div className="flex items-center">
               <button
+                type="button"
                 onClick={handleBack}
                 disabled={currentQuestionIndex === 0}
                 className={`flex items-center gap-2 font-medium text-sm transition-colors ${currentQuestionIndex === 0 ? 'text-slate-300 cursor-not-allowed' : 'text-slate-500 hover:text-slate-700'}`}
@@ -553,6 +598,7 @@ function ExamPortal({ onRetakeTraining }) {
             <div className="flex items-center gap-3">
               {currentAnswers[currentQuestion?.id] !== undefined && (
                 <button
+                  type="button"
                   onClick={handleClearOption}
                   className="px-4 py-2 rounded-md font-medium transition-colors flex items-center gap-2 text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 text-sm shadow-sm"
                 >
@@ -562,11 +608,12 @@ function ExamPortal({ onRetakeTraining }) {
               )}
 
               <button
+                type="button"
                 onClick={handleNext}
                 disabled={currentQuestionIndex === totalQuestions - 1}
                 className={`px-5 py-2.5 font-medium rounded-md transition-colors flex items-center gap-2 text-sm ${currentQuestionIndex === totalQuestions - 1
                   ? 'bg-slate-200 text-slate-400 cursor-not-allowed border border-transparent'
-                  : 'bg-[#0B1B3D] text-white hover:bg-slate-800 shadow-sm'
+                  : 'bg-orange-500 text-white hover:bg-orange-600 shadow-sm'
                   }`}
               >
                 Save and Next
@@ -588,7 +635,7 @@ function ExamPortal({ onRetakeTraining }) {
             </div>
             <div className="flex-1 bg-white border border-slate-200 rounded-xl p-2.5 text-center">
               <div className="text-xl font-black text-slate-500">{notAttemptedCount}</div>
-              <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">Not Visited</div>
+              <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">Not Answered</div>
             </div>
           </div>
         </div>
@@ -603,7 +650,10 @@ function ExamPortal({ onRetakeTraining }) {
               return (
                 <button
                   key={q.id}
+                  type="button"
                   onClick={() => jumpToQuestion(index)}
+                  aria-current={isCurrent ? 'true' : undefined}
+                  aria-label={`Question ${index + 1}${isAttempted ? ', answered' : ', not answered'}${isCurrent ? ', current' : ''}`}
                   className={`w-full aspect-square rounded-lg font-bold text-sm flex items-center justify-center transition-all duration-200 ${isCurrent
                     ? 'ring-2 ring-orange-500 ring-offset-2 ring-offset-slate-50 z-10'
                     : ''
@@ -621,6 +671,7 @@ function ExamPortal({ onRetakeTraining }) {
 
         <div className="p-4 border-t border-slate-200 bg-white sticky bottom-0 z-10 shrink-0">
           <button
+            type="button"
             onClick={handleEndTest}
             className="w-full py-3.5 bg-orange-500 text-white font-bold rounded-xl hover:bg-orange-600 transition-all flex items-center justify-center gap-2"
           >
@@ -635,12 +686,19 @@ function ExamPortal({ onRetakeTraining }) {
       {/* End Test Confirmation Modal */}
       <AnimatePresence>
         {showConfirmModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm"
+            onClick={cancelEndTest}
+          >
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
               transition={{ duration: 0.2 }}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="end-test-title"
+              onClick={(e) => e.stopPropagation()}
               className="bg-white rounded-3xl p-6 md:p-8 w-full max-w-md shadow-2xl relative overflow-hidden"
             >
               <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-orange-400 to-amber-500"></div>
@@ -649,19 +707,22 @@ function ExamPortal({ onRetakeTraining }) {
                 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
               </div>
 
-              <h3 className="text-2xl font-black text-slate-800 text-center mb-3">Submit Section?</h3>
+              <h3 id="end-test-title" className="text-2xl font-black text-slate-800 text-center mb-3">Submit Section?</h3>
               <p className="text-slate-500 text-center mb-8">
                 Are you sure you want to submit and end this section early? <strong className="text-slate-700">You cannot return to it once submitted.</strong>
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <button
+                  type="button"
+                  ref={cancelBtnRef}
                   onClick={cancelEndTest}
                   className="flex-1 py-3 px-4 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
+                  type="button"
                   onClick={confirmEndTest}
                   className="flex-1 py-3 px-4 bg-orange-500 text-white font-bold rounded-xl hover:bg-orange-600 shadow-[0_4px_10px_rgba(249,115,22,0.3)] hover:shadow-[0_6px_15px_rgba(249,115,22,0.4)] transition-all"
                 >

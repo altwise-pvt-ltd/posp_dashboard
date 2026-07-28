@@ -1,26 +1,34 @@
+// POSP certification exam question bank.
+//
+// Answer-key convention: for every question the factually-correct answer is
+// placed at index 1, i.e. option "b" (the exam renders options a, b, c, d in
+// order). `correctOption` therefore is always 1 and must stay in sync with the
+// option order — if you reorder options, keep the correct answer at index 1.
+// `correctOption` is the 0-based index compared against the taker's selection
+// in ExamPortal's calculateResults().
 export const examQuestions = {
   general: [
     {
       id: 1,
       question: "What does 'POSP' stand for?",
       options: [
-        "Point of Sale Person",
         "Point of Service Provider",
+        "Point of Sale Person",
         "Primary Options for Sales Plan",
         "Personal Officer for Sales Process"
       ],
-      correctOption: 0
+      correctOption: 1
     },
     {
       id: 2,
       question: "Which regulatory body governs the insurance sector in India?",
       options: [
         "RBI",
-        "SEBI",
         "IRDAI",
+        "SEBI",
         "PFRDA"
       ],
-      correctOption: 0
+      correctOption: 1
     },
     {
       id: 3,
@@ -31,18 +39,18 @@ export const examQuestions = {
         "The claim amount",
         "The bonus declared by the insurer"
       ],
-      correctOption: 0
+      correctOption: 1
     },
     {
       id: 4,
       question: "Which of the following is NOT covered under a standard Motor Third Party Insurance policy?",
       options: [
         "Death of a third party",
+        "Damage to the insured's own vehicle",
         "Injury to a third party",
-        "Damage to third party property",
-        "Damage to the insured's own vehicle"
+        "Damage to third party property"
       ],
-      correctOption: 0
+      correctOption: 1
     },
     {
       id: 5,
@@ -53,7 +61,7 @@ export const examQuestions = {
         "Paying a fixed amount regardless of the loss",
         "Transferring rights to the insurer"
       ],
-      correctOption: 0
+      correctOption: 1
     },
     {
       id: 6,
@@ -64,7 +72,7 @@ export const examQuestions = {
         "The time taken to settle a claim",
         "The grace period for paying the premium"
       ],
-      correctOption: 0
+      correctOption: 1
     },
     {
       id: 7,
@@ -75,40 +83,40 @@ export const examQuestions = {
         "The commission paid to the agent",
         "The discount given on the premium"
       ],
-      correctOption: 0
+      correctOption: 1
     },
     {
       id: 8,
       question: "If an insured fails to disclose a material fact while applying for insurance, it is a breach of which principle?",
       options: [
         "Insurable Interest",
-        "Indemnity",
         "Utmost Good Faith",
+        "Indemnity",
         "Contribution"
       ],
-      correctOption: 0
+      correctOption: 1
     },
     {
       id: 9,
       question: "A 'Floater' health insurance policy covers:",
       options: [
         "Only the main earner",
-        "Only critical illnesses",
         "The entire family under a single Sum Insured",
+        "Only critical illnesses",
         "Accidental injuries only"
       ],
-      correctOption: 0
+      correctOption: 1
     },
     {
       id: 10,
       question: "Which of the following is NOT a type of General Insurance?",
       options: [
         "Motor Insurance",
+        "Whole Life Insurance",
         "Health Insurance",
-        "Fire Insurance",
-        "Whole Life Insurance"
+        "Fire Insurance"
       ],
-      correctOption: 0
+      correctOption: 1
     }
   ],
   life: [
@@ -121,7 +129,7 @@ export const examQuestions = {
         "To pay for medical expenses",
         "To cover property damage"
       ],
-      correctOption: 0
+      correctOption: 1
     },
     {
       id: 12,
@@ -132,7 +140,7 @@ export const examQuestions = {
         "Indemnity",
         "Subrogation"
       ],
-      correctOption: 0
+      correctOption: 1
     },
     {
       id: 13,
@@ -143,18 +151,18 @@ export const examQuestions = {
         "Health Insurance",
         "Personal Accident Insurance"
       ],
-      correctOption: 0
+      correctOption: 1
     },
     {
       id: 14,
       question: "Which of these is a benefit of Term Life Insurance?",
       options: [
         "High investment returns",
-        "Maturity benefit",
         "High coverage at a low premium",
+        "Maturity benefit",
         "Surrender value"
       ],
-      correctOption: 0
+      correctOption: 1
     },
     {
       id: 15,
@@ -165,18 +173,18 @@ export const examQuestions = {
         "The claim amount requested",
         "The bonus accumulated"
       ],
-      correctOption: 0
+      correctOption: 1
     },
     {
       id: 16,
       question: "Which document contains the detailed terms and conditions of the insurance contract?",
       options: [
         "Proposal Form",
-        "Cover Note",
         "Policy Document",
+        "Cover Note",
         "Claim Form"
       ],
-      correctOption: 0
+      correctOption: 1
     },
     {
       id: 17,
@@ -187,29 +195,29 @@ export const examQuestions = {
         "To take a loan against the policy",
         "To assign the policy to a bank"
       ],
-      correctOption: 0
+      correctOption: 1
     },
     {
       id: 18,
       question: "What is a 'Grace Period'?",
       options: [
-        "Extra time given to pay the premium after the due date",
         "Time taken to issue the policy",
+        "Extra time given to pay the premium after the due date",
         "Time during which pre-existing diseases are not covered",
         "Time allowed to cancel the policy"
       ],
-      correctOption: 0
+      correctOption: 1
     },
     {
       id: 19,
       question: "What is the 'Free Look Period' in an insurance policy?",
       options: [
-        "Period to review the policy terms and cancel if unsatisfied",
         "Period when no premium is required",
+        "Period to review the policy terms and cancel if unsatisfied",
         "Period to increase the Sum Assured for free",
         "Period to claim a free health checkup"
       ],
-      correctOption: 0
+      correctOption: 1
     },
     {
       id: 20,
@@ -220,7 +228,7 @@ export const examQuestions = {
         "The agent selling the policy",
         "The surveyor assessing the claim"
       ],
-      correctOption: 0
+      correctOption: 1
     }
   ]
 };
