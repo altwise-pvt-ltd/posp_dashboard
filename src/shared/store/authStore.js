@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { resetOnboarding } from './onboardingStore';
 
 /**
  * Tracks whether the POSP has signed in (mobile + OTP). The session is
@@ -47,7 +48,9 @@ export const useAuthStore = create((set) => ({
     set({ authenticated: true, mobile });
   },
 
-  // Clears the session — sends the user back to /login.
+  // Clears the session — sends the user back to /login. Deliberately leaves the
+  // onboarding flag alone: a real sign-out shouldn't make a fully-onboarded POSP
+  // redo the wizard next time they log in.
   signOut: () => {
     writeSession(null);
     set({ authenticated: false, mobile: null });
@@ -64,15 +67,22 @@ export const signIn = (mobile) => useAuthStore.getState().signIn(mobile);
 export const signOut = () => useAuthStore.getState().signOut();
 
 /**
- * Dev/testing helper — clears the sign-in session from the browser console so
- * you can run the login flow again without digging through localStorage:
+ * Dev/testing helper — resets the browser back to a brand-new user so you can
+ * replay the *whole* funnel (login → onboarding → dashboard) from the console:
  *   > Denied()
+ * It clears both flags on purpose: dropping the session alone would leave
+ * `onboardingComplete` set, and the next login would skip the wizard and land
+ * straight on the dashboard.
+ *
  * Because RequireAuth subscribes to the store, any protected page you're on
  * redirects to /login immediately — no reload needed.
  */
 if (typeof window !== 'undefined') {
   window.Denied = () => {
     useAuthStore.getState().signOut();
-    console.log('[auth] Denied() — session cleared. You are now signed out.');
+    resetOnboarding();
+    console.log(
+      '[auth] Denied() — session + onboarding cleared. Next login goes through the full flow: login → onboarding → dashboard.'
+    );
   };
 }

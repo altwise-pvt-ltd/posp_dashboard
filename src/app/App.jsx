@@ -10,6 +10,7 @@ import RequireOnboarding from '@/app/RequireOnboarding';
 import { isAuthenticated } from '@/shared/store/authStore';
 import { isOnboardingComplete } from '@/shared/store/onboardingStore';
 
+
 // Entry funnel: sign in first, then finish onboarding, then the dashboard.
 const landingPath = () => {
   if (!isAuthenticated()) return '/login';
