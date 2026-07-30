@@ -4,6 +4,7 @@ import { showAlert } from "@/shared/store/alertStore";
 import { signIn } from "@/shared/store/authStore";
 import { isOnboardingComplete } from "@/shared/store/onboardingStore";
 import OnboardingFooter from "@/features/onboarding/components/OnboardingFooter";
+import ReviewCards from "@/features/auth/components/utils/ReviewCards";
 import LoginForm from "../components/LoginForm";
 
 /**
@@ -24,14 +25,14 @@ export default function LoginPage() {
       title: "Signed in",
       message: "You're verified — welcome back!",
     });
-    navigate(isOnboardingComplete() ? "/overview" : "/onboarding", { replace: true });
+    navigate(isOnboardingComplete() ? "/overview" : "/onboarding", {
+      replace: true,
+    });
   };
 
   return (
     <div className="min-h-screen flex flex-col bg-linear-to-b from-orange-50/50 via-[#fafafa] to-[#fafafa] font-sans">
-
       <main className="flex-1 flex flex-col items-center justify-center px-4 py-10">
-
         {/* Brand */}
         <div className="anim-fade mb-6 flex flex-col items-center text-center">
           <img src={logo} alt="POSP" className="h-11 w-auto mb-3" />
@@ -43,11 +44,14 @@ export default function LoginPage() {
         <div className="anim-fade-d1 w-full flex justify-center">
           <LoginForm onVerified={handleVerified} />
         </div>
-
       </main>
-
+      <div className="anim-fade-d1  flex  justify-items-center px-4 py-10">
+        <ReviewCards
+          profile="https://randomuser.me/api/portraits/men/85.jpg"
+          name="ganapat Rande"
+        />
+      </div>
       <OnboardingFooter />
-
     </div>
   );
 }

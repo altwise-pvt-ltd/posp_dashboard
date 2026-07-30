@@ -2,7 +2,13 @@ import { useState, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Smartphone, ShieldCheck, ArrowRight, CheckCircle2, RotateCcw } from "lucide-react";
+import {
+  Smartphone,
+  ShieldCheck,
+  ArrowRight,
+  CheckCircle2,
+  RotateCcw,
+} from "lucide-react";
 import Input from "@/shared/components/Input";
 import Button from "@/shared/components/Button";
 import { showAlert, alertOnInvalid } from "@/shared/store/alertStore";
@@ -17,7 +23,11 @@ const mobileSchema = z.object({
 });
 
 const otpSchema = z.object({
-  otp: z.string().trim().length(6, "Enter the 6-digit code.").regex(/^\d{6}$/, "Code must be 6 digits."),
+  otp: z
+    .string()
+    .trim()
+    .length(6, "Enter the 6-digit code.")
+    .regex(/^\d{6}$/, "Code must be 6 digits."),
 });
 
 const RESEND_SECONDS = 30;
@@ -58,7 +68,10 @@ export default function LoginForm({ onVerified }) {
     clearInterval(timerRef.current);
     timerRef.current = setInterval(() => {
       setCooldown((s) => {
-        if (s <= 1) { clearInterval(timerRef.current); return 0; }
+        if (s <= 1) {
+          clearInterval(timerRef.current);
+          return 0;
+        }
         return s - 1;
       });
     }, 1000);
@@ -108,7 +121,6 @@ export default function LoginForm({ onVerified }) {
 
   return (
     <div className="w-full max-w-[340px] sm:max-w-[400px] mx-auto rounded-2xl border border-slate-100 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04),0_20px_48px_rgba(222,123,61,0.08)] overflow-hidden">
-
       {/* Header — padding and type scale with breakpoints */}
       <div className="px-5 sm:px-6 pt-6 pb-5 bg-linear-to-br from-orange-50/60 to-white border-b border-orange-100/60">
         <span className="inline-flex items-center gap-1.5 text-[10px] sm:text-xs font-bold tracking-widest uppercase text-orange-500 mb-3">
@@ -125,7 +137,6 @@ export default function LoginForm({ onVerified }) {
       </div>
 
       <div className="px-5 sm:px-6 py-5 flex flex-col gap-4 sm:gap-5">
-
         {/* ── Mobile entry ── */}
         <form onSubmit={sendCode} className="flex flex-col gap-4 sm:gap-5">
           <Input
@@ -143,7 +154,10 @@ export default function LoginForm({ onVerified }) {
 
           {!codeSent && (
             <div className="flex gap-3 pt-1">
-              <Button type="submit" className="flex-1 flex items-center justify-center gap-2">
+              <Button
+                type="submit"
+                className="flex-1 flex items-center justify-center gap-2"
+              >
                 Send OTP <ArrowRight size={16} strokeWidth={2.5} />
               </Button>
             </div>
@@ -152,9 +166,13 @@ export default function LoginForm({ onVerified }) {
 
         {/* ── OTP entry (fades in once the code is sent) ── */}
         {codeSent && (
-          <form onSubmit={verify} className="anim-fade flex flex-col gap-4 sm:gap-5 pt-1 border-t border-slate-100">
+          <form
+            onSubmit={verify}
+            className="anim-fade flex flex-col gap-4 sm:gap-5 pt-1 border-t border-slate-100"
+          >
             <p className="text-sm text-slate-500 pt-4 -mb-1">
-              Enter the 6-digit code we sent to <strong className="text-slate-700">+91 {sentTo}</strong>.
+              Enter the 6-digit code we sent to{" "}
+              <strong className="text-slate-700">+91 {sentTo}</strong>.
             </p>
 
             <Input
@@ -183,15 +201,17 @@ export default function LoginForm({ onVerified }) {
             </div>
 
             <div className="flex gap-3 pt-1">
-              <Button type="submit" className="flex-1 flex items-center justify-center gap-2">
-                <CheckCircle2 size={16} strokeWidth={2.5} /> Verify &amp; Sign In
+              <Button
+                type="submit"
+                className="flex-1 flex items-center justify-center gap-2"
+              >
+                <CheckCircle2 size={16} strokeWidth={2.5} /> Verify &amp; Sign
+                In
               </Button>
             </div>
           </form>
         )}
-
       </div>
-
     </div>
   );
 }
