@@ -1,4 +1,4 @@
-import logo from "@/assets/logo.png";
+import logo from "@/assets/onboarding/LetsLogoFooterSvg.svg";
 import { Building2, MapPin, ShieldCheck } from "lucide-react";
 
 /* Link columns. No marketing pages exist behind these yet, so every item is
@@ -126,13 +126,11 @@ export default function OnboardingFooter() {
   return (
     <footer className="bg-[#0A1C36] font-sans">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10 2xl:max-w-384 2xl:px-12">
-
         {/* ── Band 1: brand + link columns ───────────────────────────── */}
         <div className="grid grid-cols-1 gap-10 py-10 sm:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr_1fr] lg:gap-0 lg:py-12">
-
           {/* Brand Logo*/}
           <div className="lg:pr-16">
-            <img  
+            <img
               src={logo}
               alt="Lets Insurance — protecting you and yours"
               className="h-16 w-auto "
@@ -171,7 +169,10 @@ export default function OnboardingFooter() {
           {/* Link columns — the vertical rule only exists once they sit side by
               side, hence the lg: prefix. */}
           {LINK_COLUMNS.map(({ heading, links }) => (
-            <div key={heading} className="lg:border-l lg:border-white/10 lg:px-8">
+            <div
+              key={heading}
+              className="lg:border-l lg:border-white/10 lg:px-8"
+            >
               <ColumnHeading>{heading}</ColumnHeading>
               <LinkList links={links} />
             </div>
@@ -180,7 +181,6 @@ export default function OnboardingFooter() {
 
         {/* ── Band 2: regulatory identity ────────────────────────────── */}
         <div className="grid grid-cols-1 gap-8 border-t border-white/10 py-8 sm:grid-cols-2 lg:grid-cols-3">
-
           <div className="flex gap-3.5">
             <InfoIcon icon={Building2} />
             <div className="min-w-0">
@@ -188,10 +188,12 @@ export default function OnboardingFooter() {
                 ALTSURE INSURANCE BROKERS PRIVATE LIMITED
               </p>
               <p className="mt-1.5 text-xs text-slate-400">
-                CIN: <span className="text-orange-400">U66220PN2022PTC215072</span>
+                CIN:{" "}
+                <span className="text-orange-400">U66220PN2022PTC215072</span>
               </p>
               <p className="text-xs text-slate-400">
-                IRDAI License Number: <span className="text-orange-400">1163</span>
+                IRDAI License Number:{" "}
+                <span className="text-orange-400">1163</span>
               </p>
             </div>
           </div>
@@ -199,7 +201,9 @@ export default function OnboardingFooter() {
           <div className="flex gap-3.5">
             <InfoIcon icon={MapPin} />
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-white">Registered Address</p>
+              <p className="text-sm font-semibold text-white">
+                Registered Address
+              </p>
               <p className="mt-1.5 text-xs leading-5 text-slate-400">
                 SR.NO.38/4, A/1, F.P.486, BLDG-A FL-1202, KUMAR SURBHI, OPP.
                 SAIBABA MANDIR, Pune, Maharashtra – 411009
@@ -222,13 +226,17 @@ export default function OnboardingFooter() {
         {/* ── Band 3: copyright + legal ──────────────────────────────── */}
         <div className="flex flex-col items-center gap-4 border-t border-white/10 py-5 text-center sm:flex-row sm:justify-between sm:gap-2 sm:text-left">
           <p className="text-xs text-slate-400">
-            © 2026 <span className="text-orange-400">LetsInsurance.com</span>. All
-            Rights Reserved.
+            © 2026 <span className="text-orange-400">LetsInsurance.com</span>.
+            All Rights Reserved.
           </p>
           <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
             {LEGAL_LINKS.map((link, i) => (
               <span key={link} className="flex items-center gap-x-4">
-                {i > 0 && <span aria-hidden="true" className="text-white/20">|</span>}
+                {i > 0 && (
+                  <span aria-hidden="true" className="text-white/20">
+                    |
+                  </span>
+                )}
                 <span
                   aria-disabled="true"
                   className="cursor-default text-xs text-slate-300 transition-colors duration-150 hover:text-orange-400"
@@ -239,7 +247,6 @@ export default function OnboardingFooter() {
             ))}
           </nav>
         </div>
-
       </div>
     </footer>
   );

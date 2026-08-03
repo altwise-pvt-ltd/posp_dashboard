@@ -36,10 +36,10 @@ const PERSONAS = [
 
 function PersonaCard({ icon, title, desc }) {
   return (
-    <div className="flex items-center gap-4 rounded-xl bg-gradient-to-br from-white to-orange-50/50 shadow-md border-b-4 border-[#f47c3c] p-5">
+    <div className="flex items-center gap-4 rounded-xl bg-linear-to-br from-white to-orange-50/50 shadow-md border-b-4 border-[#f47c3c] p-5">
       {/* Icon circle */}
-      <div className="flex h-[72px] w-[72px] shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-white to-orange-200/60">
-        <img src={icon} alt="" className="h-9 w-9 object-contain" />
+      <div className="flex h-18 w-18 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-white to-orange-200/60">
+        <img src={icon} alt="" className="h-14 w-14 object-contain " />
       </div>
 
       {/* Text */}
@@ -63,15 +63,17 @@ export default function WhoCanBecomeSection() {
           <div>
             <h2 className="text-3xl lg:text-[40px] lg:leading-[48px] font-bold text-gray-900 mb-3">
               Who Can Become a{" "}
-              <span className="text-[#f47c3c] font-semibold">LetsInsurance</span>{" "}
+              <span className="text-[#f47c3c] font-semibold">
+                LetsInsurance
+              </span>{" "}
               POSP Advisor?
             </h2>
             <span className="block h-1 w-16 rounded-full bg-[#f47c3c] mb-6" />
 
             <p className="text-sm text-gray-500 leading-relaxed mb-10 max-w-lg">
-              Anyone above 18 years of age with a minimum 10th pass qualification
-              can become a POSP advisor. No prior experience in insurance is
-              required — we provide everything you need to succeed.
+              Anyone above 18 years of age with a minimum 10th pass
+              qualification can become a POSP advisor. No prior experience in
+              insurance is required — we provide everything you need to succeed.
             </p>
 
             {/* Illustration */}
@@ -80,7 +82,7 @@ export default function WhoCanBecomeSection() {
               <img
                 src={whoPospAdvisor}
                 alt="POSP Advisor illustration"
-                className="relative z-10 h-[260px] w-auto object-contain"
+                className="relative z-10 h-120  w-auto object-contain"
               />
             </div>
           </div>

@@ -1,10 +1,5 @@
 import { ShieldCheck, Check, ArrowRightCircle } from "lucide-react";
-import heroAgent from "@/assets/landing/hero-agent.png";
-import heroMobile from "@/assets/landing/hero-mobile.png";
-import heroIcon1 from "@/assets/landing/hero-icon1.png";
-import heroIcon2 from "@/assets/landing/hero-icon2.png";
-import heroIcon3 from "@/assets/landing/hero-icon3.png";
-import heroIcon4 from "@/assets/landing/hero-icon4.png";
+import heroAgent from "@/assets/landing/agent.png";
 
 const CHECKLIST = [
   "Unlimited Earnings",
@@ -13,14 +8,6 @@ const CHECKLIST = [
   "Fast & Timely Payouts",
   "Work Anytime, Anywhere",
   "Dedicated Support Always",
-];
-
-// Floating badges hug the left arc of the dashed circle, top to bottom.
-const FLOATING = [
-  { src: heroIcon1, className: "top-2 left-16" },
-  { src: heroIcon2, className: "top-[28%] left-0" },
-  { src: heroIcon3, className: "top-[54%] left-1" },
-  { src: heroIcon4, className: "bottom-6 left-12" },
 ];
 
 export default function HeroSection({ loginForm }) {
@@ -77,33 +64,12 @@ export default function HeroSection({ loginForm }) {
             </button>
           </div>
 
-          {/* ── Center: illustration ── */}
-          <div className="hidden lg:block relative h-[420px] w-[400px]">
-            {/* Dashed circle */}
-            <div className="absolute left-1/2 top-1/2 h-[300px] w-[300px] -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-dashed border-[#f47c3c]/25" />
-
-            {/* Agent */}
+          {/* ── Center: illustration (agent, badges and app screen are one image) ── */}
+          <div className="hidden lg:block">
             <img
               src={heroAgent}
-              alt="POSP Advisor"
-              className="absolute bottom-0 left-1/2 z-10 h-[400px] w-auto -translate-x-[58%] object-contain"
-            />
-
-            {/* Floating icons */}
-            {FLOATING.map((icon) => (
-              <img
-                key={icon.className}
-                src={icon.src}
-                alt=""
-                className={`absolute z-20 h-12 w-12 object-contain ${icon.className}`}
-              />
-            ))}
-
-            {/* Mobile phone overlay */}
-            <img
-              src={heroMobile}
-              alt="Advisor app dashboard"
-              className="absolute bottom-4 right-0 z-20 w-[150px] object-contain drop-shadow-xl"
+              alt="POSP Advisor with the Letsinsurance advisor app"
+              className="h-[420px] w-auto object-contain"
             />
           </div>
 

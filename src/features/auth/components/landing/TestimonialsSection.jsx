@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { Star } from "lucide-react";
-import quoteIcon from "@/assets/landing/quote-icon.png";
+import quoteIcon from "@/assets/landing/quote-icon.svg";
 
 const TESTIMONIALS = [
   {
     name: "Priya Sharma",
     location: "Housewife, Mumbai",
-    photo: "https://randomuser.me/api/portraits/women/44.jpg",
+    photo: "https://randomuser.me/api/portraits/women/42.jpg",
     quote:
       "LetsInsurance changed my life. As a homemaker, I never thought I could earn on my own. Now I earn over 40K every month from home!",
     earnings: "42,000/month",
@@ -14,7 +14,7 @@ const TESTIMONIALS = [
   {
     name: "Rahul Verma",
     location: "Student, Delhi",
-    photo: "https://randomuser.me/api/portraits/men/32.jpg",
+    photo: "https://randomuser.me/api/portraits/men/22.jpg",
     quote:
       "I started selling insurance during college and now I have a steady side income. The app makes everything so easy — even my parents are impressed.",
     earnings: "28,000/month",
@@ -22,9 +22,9 @@ const TESTIMONIALS = [
   {
     name: "Anita Desai",
     location: "Retired Teacher, Pune",
-    photo: "https://randomuser.me/api/portraits/women/68.jpg",
+    photo: "https://randomuser.me/api/portraits/women/54.jpg",
     quote:
-      "After retirement, I was looking for something meaningful. LetsInsurance gave me purpose and a great income. The training was excellent.",
+      "After Retirement, I was looking for something meaningful. LetsInsurance gave me purpose and a great income. The training was excellent.",
     earnings: "35,000/month",
   },
 ];
@@ -66,7 +66,7 @@ export default function TestimonialsSection() {
               <img
                 src={quoteIcon}
                 alt=""
-                className="absolute top-5 right-5 h-8 w-8 opacity-20"
+                className="absolute top-5 right-5 h-10 w-10 "
               />
 
               {/* Profile */}
