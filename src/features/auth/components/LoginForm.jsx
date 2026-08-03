@@ -2,16 +2,10 @@ import { useState, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import {
-  Smartphone,
-  ShieldCheck,
-  ArrowRight,
-  CheckCircle2,
-  RotateCcw,
-} from "lucide-react";
-import Input from "@/shared/components/Input";
-import Button from "@/shared/components/Button";
+import { ChevronDown, Lock, Download, RotateCcw, CheckCircle2 } from "lucide-react";
 import { showAlert, alertOnInvalid } from "@/shared/store/alertStore";
+import googlePlay from "@/assets/landing/google-play.png";
+import appStore from "@/assets/landing/app-store.png";
 
 /* ── Schemas ── */
 // Indian mobile: 10 digits, starts 6-9. (POSP flow already collects PAN/Aadhaar.)
@@ -32,11 +26,17 @@ const otpSchema = z.object({
 
 const RESEND_SECONDS = 30;
 
+/* Field styling shared by the mobile and OTP inputs — flat white boxes with a
+   soft orange focus ring, matching the landing card rather than the slate-50
+   fields used inside the onboarding wizard. */
+const FIELD =
+  "w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#f47c3c] focus:ring-4 focus:ring-[#f47c3c]/15 transition-all";
+
 /**
- * LoginForm — mobile-number + OTP sign-in, modelled on the onboarding
- * EmailStep: enter mobile → Send OTP → enter the 6-digit code → Verify.
- * The OTP is mocked for now (any 6 digits pass); `onVerified(mobile)` fires
- * on success and the page handles signIn + navigation.
+ * LoginForm — the "Login or Register" card that sits in the hero. Enter a
+ * mobile number → Start Earning Now sends a code → enter the 6-digit OTP →
+ * Verify. The OTP is mocked for now (any 6 digits pass); `onVerified(mobile)`
+ * fires on success and the page handles signIn + navigation.
  */
 export default function LoginForm({ onVerified }) {
   const [sentTo, setSentTo] = useState(null); // mobile the code was sent to
@@ -57,7 +57,7 @@ export default function LoginForm({ onVerified }) {
   });
 
   // Code is "live" only while the field still holds the number we sent to.
-  // Editing the mobile naturally collapses the OTP section and re-arms Send OTP.
+  // Editing the mobile naturally collapses the OTP section and re-arms sending.
   const mobileValue = mobileForm.watch("mobile");
   const codeSent = sentTo && mobileValue.trim() === sentTo;
 
@@ -120,97 +120,144 @@ export default function LoginForm({ onVerified }) {
   }, alertOnInvalid);
 
   return (
-    <div className="w-full max-w-[340px] sm:max-w-[400px] mx-auto rounded-2xl border border-slate-100 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04),0_20px_48px_rgba(222,123,61,0.08)] overflow-hidden">
-      {/* Header — padding and type scale with breakpoints */}
-      <div className="px-5 sm:px-6 pt-6 pb-5 bg-linear-to-br from-orange-50/60 to-white border-b border-orange-100/60">
-        <span className="inline-flex items-center gap-1.5 text-[10px] sm:text-xs font-bold tracking-widest uppercase text-orange-500 mb-3">
-          <Smartphone size={13} strokeWidth={2.5} />
-          Secure Sign In
-        </span>
-        <h2 className="text-xl sm:text-2xl font-extrabold text-slate-800 tracking-tight">
-          Sign in to continue
-        </h2>
-        <p className="flex items-center gap-1.5 text-xs sm:text-sm text-slate-500 mt-1 sm:mt-2">
-          <ShieldCheck size={14} className="text-emerald-500 shrink-0" />
-          We'll send a one-time code to your mobile number.
-        </p>
-      </div>
+    <div className="w-full max-w-[400px] rounded-2xl border border-slate-100 bg-white px-6 sm:px-8 py-8 shadow-[0_4px_24px_rgba(15,23,42,0.06),0_24px_56px_rgba(244,124,60,0.08)]">
+      {/* ── Card heading ── */}
+      <h2 className="text-center text-2xl font-bold tracking-tight text-slate-900">
+        Login or <span className="text-[#f47c3c]">Register</span>
+      </h2>
+      <p className="mt-1.5 text-center text-sm text-slate-500">
+        Enter your mobile number to get started
+      </p>
+      <span className="mx-auto mt-3 block h-[3px] w-10 rounded-full bg-[#f47c3c]" />
 
-      <div className="px-5 sm:px-6 py-5 flex flex-col gap-4 sm:gap-5">
-        {/* ── Mobile entry ── */}
-        <form onSubmit={sendCode} className="flex flex-col gap-4 sm:gap-5">
-          <Input
+      {/* ── Mobile entry ── */}
+      <form onSubmit={sendCode} className="mt-7">
+        <label
+          htmlFor="mobile"
+          className="mb-2 block text-sm font-medium text-slate-600"
+        >
+          Mobile Number
+        </label>
+
+        <div className="flex items-stretch gap-2">
+          {/* Country code — India only for now, so it renders as a static prefix */}
+          <div className="flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700">
+            <span className="text-base leading-none">🇮🇳</span>
+            +91
+            <ChevronDown size={14} className="text-slate-400" />
+          </div>
+
+          <input
             id="mobile"
             type="tel"
-            label="Mobile Number (+91) *"
-            placeholder="10-digit mobile number"
+            placeholder="Enter Mobile Number"
             inputMode="numeric"
             autoComplete="tel-national"
             maxLength={10}
-            error={mobileForm.formState.errors.mobile?.message}
+            className={FIELD}
             {...mobileField}
             onChange={handleMobileChange}
           />
+        </div>
 
-          {!codeSent && (
-            <div className="flex gap-3 pt-1">
-              <Button
-                type="submit"
-                className="flex-1 flex items-center justify-center gap-2"
-              >
-                Send OTP <ArrowRight size={16} strokeWidth={2.5} />
-              </Button>
-            </div>
-          )}
-        </form>
-
-        {/* ── OTP entry (fades in once the code is sent) ── */}
-        {codeSent && (
-          <form
-            onSubmit={verify}
-            className="anim-fade flex flex-col gap-4 sm:gap-5 pt-1 border-t border-slate-100"
-          >
-            <p className="text-sm text-slate-500 pt-4 -mb-1">
-              Enter the 6-digit code we sent to{" "}
-              <strong className="text-slate-700">+91 {sentTo}</strong>.
-            </p>
-
-            <Input
-              id="otp"
-              label="One-Time Password *"
-              placeholder="000000"
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              maxLength={6}
-              error={otpForm.formState.errors.otp?.message}
-              className="font-mono tracking-[0.4em] text-center text-sm sm:text-base"
-              {...otpField}
-              onChange={handleOtpChange}
-            />
-
-            <div className="flex items-center justify-end -mt-1 text-sm">
-              <button
-                type="button"
-                onClick={resend}
-                disabled={cooldown > 0}
-                className="inline-flex items-center gap-1.5 font-semibold text-orange-500 hover:text-orange-600 disabled:text-slate-400 disabled:cursor-not-allowed transition-colors"
-              >
-                <RotateCcw size={13} strokeWidth={2.5} />
-                {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend code"}
-              </button>
-            </div>
-
-            <div className="flex gap-3 pt-1">
-              <Button
-                type="submit"
-                className="flex-1 flex items-center justify-center gap-2"
-              >
-                <CheckCircle2 size={16} strokeWidth={2.5} /> Verify &amp; Sign
-                In
-              </Button>
-            </div>
-          </form>
+        {mobileForm.formState.errors.mobile && (
+          <p className="mt-1.5 text-xs font-medium text-red-500" role="alert">
+            {mobileForm.formState.errors.mobile.message}
+          </p>
         )}
+
+        {!codeSent && (
+          <button
+            type="submit"
+            className="mt-5 w-full rounded-lg bg-[#f47c3c] py-3.5 text-base font-semibold text-white shadow-md transition-colors hover:bg-[#e06a2e] focus:outline-none focus:ring-4 focus:ring-[#f47c3c]/30"
+          >
+            Start Earning Now
+          </button>
+        )}
+      </form>
+
+      {/* ── OTP entry (fades in once the code is sent) ── */}
+      {codeSent && (
+        <form onSubmit={verify} className="anim-fade mt-5">
+          <label
+            htmlFor="otp"
+            className="mb-2 block text-sm font-medium text-slate-600"
+          >
+            Enter the 6-digit code sent to{" "}
+            <strong className="font-semibold text-slate-800">
+              +91 {sentTo}
+            </strong>
+          </label>
+
+          <input
+            id="otp"
+            placeholder="000000"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            maxLength={6}
+            className={`${FIELD} text-center font-mono tracking-[0.4em]`}
+            {...otpField}
+            onChange={handleOtpChange}
+          />
+
+          {otpForm.formState.errors.otp && (
+            <p className="mt-1.5 text-xs font-medium text-red-500" role="alert">
+              {otpForm.formState.errors.otp.message}
+            </p>
+          )}
+
+          <div className="mt-2 flex justify-end">
+            <button
+              type="button"
+              onClick={resend}
+              disabled={cooldown > 0}
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#f47c3c] transition-colors hover:text-[#e06a2e] disabled:cursor-not-allowed disabled:text-slate-400"
+            >
+              <RotateCcw size={13} strokeWidth={2.5} />
+              {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend code"}
+            </button>
+          </div>
+
+          <button
+            type="submit"
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-[#f47c3c] py-3.5 text-base font-semibold text-white shadow-md transition-colors hover:bg-[#e06a2e] focus:outline-none focus:ring-4 focus:ring-[#f47c3c]/30"
+          >
+            <CheckCircle2 size={18} strokeWidth={2.5} />
+            Verify &amp; Continue
+          </button>
+        </form>
+      )}
+
+      {/* ── Trust line ── */}
+      <p className="mt-4 flex items-center justify-center gap-1.5 text-xs text-slate-500">
+        <Lock size={13} className="text-slate-400" />
+        100% Secure &amp; Trusted
+      </p>
+
+      {/* ── App download ── */}
+      <div className="mt-6">
+        <p className="flex items-center justify-center gap-1.5 text-sm font-semibold text-slate-700">
+          Download App
+          <Download size={15} />
+        </p>
+        <hr className="mt-3 border-slate-100" />
+
+        <div className="mt-4 flex items-center gap-3">
+          <a href="#" className="flex-1 transition-opacity hover:opacity-80">
+            <img
+              src={googlePlay}
+              alt="Get it on Google Play"
+              className="h-[52px] w-full rounded-lg object-cover"
+            />
+          </a>
+          <a href="#" className="flex-1 transition-opacity hover:opacity-80">
+            <img
+              src={appStore}
+              alt="Download on the App Store"
+              className="h-[52px] w-full rounded-lg object-cover"
+            />
+          </a>
+        </div>
       </div>
     </div>
   );

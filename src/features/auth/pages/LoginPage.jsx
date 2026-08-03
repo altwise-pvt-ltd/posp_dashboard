@@ -1,19 +1,22 @@
 import { useNavigate } from "react-router-dom";
-import logo from "@/assets/logo.png";
 import { showAlert } from "@/shared/store/alertStore";
 import { signIn } from "@/shared/store/authStore";
 import { isOnboardingComplete } from "@/shared/store/onboardingStore";
-import OnboardingFooter from "@/features/onboarding/components/OnboardingFooter";
-import ReviewCards from "@/features/auth/components/utils/ReviewCards";
 import LoginForm from "../components/LoginForm";
+import Header from "../components/landing/Header";
+import HeroSection from "../components/landing/HeroSection";
+import PartnersSection from "../components/landing/PartnersSection";
+import WhyBecomeSection from "../components/landing/WhyBecomeSection";
+import WhoCanBecomeSection from "../components/landing/WhoCanBecomeSection";
+import StepsSection from "../components/landing/StepsSection";
+import OneAppSection from "../components/landing/OneAppSection";
+import TestimonialsSection from "../components/landing/TestimonialsSection";
+import OnboardingFooter from "@/features/onboarding/components/OnboardingFooter";
 
 /**
- * LoginPage — the app's front door. A centered sign-in card on a soft warm
- * background, reusing the brand logo and the locked-in login theme.
- *
- * On a verified OTP we flip the auth flag, then hand the user off down the
- * funnel: anyone who hasn't finished onboarding goes to the wizard, everyone
- * else lands on the dashboard. The `/` redirect uses the same rule.
+ * LoginPage — full landing page with hero, partners, benefits, steps,
+ * app promo, testimonials, and footer. The LoginForm is embedded in the
+ * hero section and still handles OTP sign-in via the onVerified callback.
  */
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -31,26 +34,19 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-linear-to-b from-orange-50/50 via-[#fafafa] to-[#fafafa] font-sans">
-      <main className="flex-1 flex flex-col items-center justify-center px-4 py-10">
-        {/* Brand */}
-        <div className="anim-fade mb-6 flex flex-col items-center text-center">
-          <img src={logo} alt="POSP" className="h-11 w-auto mb-3" />
-          <p className="text-sm text-slate-500 max-w-xs">
-            Welcome to your POSP partner portal
-          </p>
-        </div>
+    <div className="min-h-screen flex flex-col bg-white font-sans">
+      <Header />
 
-        <div className="anim-fade-d1 w-full flex justify-center">
-          <LoginForm onVerified={handleVerified} />
-        </div>
+      <main className="flex-1">
+        <HeroSection loginForm={<LoginForm onVerified={handleVerified} />} />
+        <PartnersSection />
+        <WhyBecomeSection />
+        <WhoCanBecomeSection />
+        <StepsSection />
+        <OneAppSection />
+        <TestimonialsSection />
       </main>
-      <div className="anim-fade-d1  flex  justify-items-center px-4 py-10">
-        <ReviewCards
-          profile="https://randomuser.me/api/portraits/men/85.jpg"
-          name="ganapat Rande"
-        />
-      </div>
+
       <OnboardingFooter />
     </div>
   );
