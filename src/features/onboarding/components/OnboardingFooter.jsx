@@ -151,11 +151,22 @@ function LinkColumn({ heading, links }) {
   );
 }
 
-/** Outlined orange icon tile used by the three entity/address/commitment blocks. */
-function InfoIcon({ icon: Icon }) {
+/**
+ * Outlined orange icon tile used by the three entity/address/commitment blocks.
+ * `compact` is the mobile fine-print size — a third smaller, and back to the
+ * standard tile from sm up where the three blocks are equal columns again.
+ */
+function InfoIcon({ icon: Icon, compact = false }) {
   return (
-    <span className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-orange-500/45 text-orange-500">
-      <Icon size={18} strokeWidth={1.75} />
+    <span
+      className={`flex shrink-0 items-center justify-center rounded-xl border border-orange-500/45 text-orange-500 ${
+        compact ? "size-6 sm:size-9" : "size-9"
+      }`}
+    >
+      <Icon
+        className={compact ? "size-3 sm:size-4.5" : "size-4.5"}
+        strokeWidth={1.75}
+      />
     </span>
   );
 }
@@ -241,54 +252,48 @@ export default function OnboardingFooter() {
         </div>
 
         {/* ── Band 2: regulatory identity ────────────────────────────── */}
-        {/* Horizontal on mobile: three swipeable cards on one row rather than
-            three stacked blocks. Squeezing them into three visible columns was
-            the other way to read "horizontal", but the registered address runs
-            to ~15 lines at a third of a phone's width — so each card keeps a
-            legible 80% instead and the row scrolls. -mx-4 lets it bleed into
-            the shell's gutters so a card can sit flush with the screen edge.
-            From sm up it's the plain grid the design already had. */}
-        <div
-          role="group"
-          aria-label="Regulatory information"
-          tabIndex={0}
-          className="no-scrollbar -mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto border-t border-white/10 px-4 py-8 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40 sm:mx-0 sm:grid sm:snap-none sm:grid-cols-2 sm:gap-8 sm:overflow-visible sm:px-0 lg:grid-cols-3"
-        >
-          <div className="flex w-4/5 shrink-0 snap-start gap-3.5 sm:w-auto">
-            <InfoIcon icon={Building2} />
+        {/* A plain vertical list on mobile, all three blocks at the ~70%
+            fine-print size with the address leading. The sm:order-* values put
+            the columns back in the original left-to-right sequence from sm up,
+            so promoting the address is a mobile change only. */}
+        <div className="flex flex-col gap-5 border-t border-white/10 py-8 sm:grid sm:grid-cols-2 sm:gap-8 lg:grid-cols-3">
+          <div className="flex gap-2.5 sm:order-2 sm:gap-3.5">
+            <InfoIcon icon={MapPin} compact />
             <div className="min-w-0">
-              <p className="text-sm font-semibold leading-5 text-white">
-                ALTSURE INSURANCE BROKERS PRIVATE LIMITED
-              </p>
-              <p className="mt-1.5 text-xs text-slate-400">
-                CIN:{" "}
-                <span className="text-orange-400">U66220PN2022PTC215072</span>
-              </p>
-              <p className="text-xs text-slate-400">
-                IRDAI License Number:{" "}
-                <span className="text-orange-400">1163</span>
-              </p>
-            </div>
-          </div>
-
-          <div className="flex w-4/5 shrink-0 snap-start gap-3.5 sm:w-auto">
-            <InfoIcon icon={MapPin} />
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-white">
+              <p className="text-[11px] font-semibold text-white sm:text-sm">
                 Registered Address
               </p>
-              <p className="mt-1.5 text-xs leading-5 text-slate-400">
+              <p className="mt-1 text-[10px] leading-[14px] text-slate-400 sm:mt-1.5 sm:text-xs sm:leading-5">
                 SR.NO.38/4, A/1, F.P.486, BLDG-A FL-1202, KUMAR SURBHI, OPP.
                 SAIBABA MANDIR, Pune, Maharashtra – 411009
               </p>
             </div>
           </div>
 
-          <div className="flex w-4/5 shrink-0 snap-start gap-3.5 sm:w-auto">
-            <InfoIcon icon={ShieldCheck} />
+          <div className="flex gap-2.5 sm:order-1 sm:gap-3.5">
+            <InfoIcon icon={Building2} compact />
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-white">Our Commitment</p>
-              <p className="mt-1.5 text-xs leading-5 text-slate-400">
+              <p className="text-[11px] font-semibold leading-4 text-white sm:text-sm sm:leading-5">
+                ALTSURE INSURANCE BROKERS PRIVATE LIMITED
+              </p>
+              <p className="mt-1 text-[10px] text-slate-400 sm:mt-1.5 sm:text-xs">
+                CIN:{" "}
+                <span className="text-orange-400">U66220PN2022PTC215072</span>
+              </p>
+              <p className="text-[10px] text-slate-400 sm:text-xs">
+                IRDAI License Number:{" "}
+                <span className="text-orange-400">1163</span>
+              </p>
+            </div>
+          </div>
+
+          <div className="flex gap-2.5 sm:order-3 sm:gap-3.5">
+            <InfoIcon icon={ShieldCheck} compact />
+            <div className="min-w-0">
+              <p className="text-[11px] font-semibold text-white sm:text-sm">
+                Our Commitment
+              </p>
+              <p className="mt-1 text-[10px] leading-[14px] text-slate-400 sm:mt-1.5 sm:text-xs sm:leading-5">
                 Your trust is our priority. We are here to protect what matters
                 most to you.
               </p>
