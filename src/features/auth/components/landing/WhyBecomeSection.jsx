@@ -4,6 +4,10 @@ import benefitTraining from "@/assets/landing/benefit-training.png";
 import benefitSupport from "@/assets/landing/benefit-support.png";
 import benefitPolicies from "@/assets/landing/benefit-policies.png";
 import benefitDashboard from "@/assets/landing/benefit-dashboard.png";
+import Section from "./ui/Section";
+import SectionHeading from "./ui/SectionHeading";
+import Highlight from "./ui/Highlight";
+import FeatureCard from "./ui/FeatureCard";
 
 const BENEFITS = [
   {
@@ -38,43 +42,18 @@ const BENEFITS = [
   },
 ];
 
-function BenefitCard({ icon, title, desc }) {
-  return (
-    <div className="flex items-stretch rounded-xl bg-gradient-to-br from-white to-orange-50/50 shadow-md border-b-4 border-[#f47c3c] overflow-hidden">
-      {/* Icon circle */}
-      <div className="flex items-center justify-center px-5 py-6">
-        <div className="flex h-[84px] w-[84px] shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-white to-orange-200/60">
-          <img src={icon} alt="" className="h-10 w-10 object-contain" />
-        </div>
-      </div>
-
-      {/* Divider + text */}
-      <div className="flex flex-col justify-center border-l border-gray-200 px-5 py-6">
-        <h3 className="text-lg font-medium text-gray-900">{title}</h3>
-        <p className="mt-1.5 text-sm leading-relaxed text-gray-500">{desc}</p>
-      </div>
-    </div>
-  );
-}
-
 export default function WhyBecomeSection() {
   return (
-    <section className="bg-white py-16 lg:py-20">
-      <div className="mx-auto max-w-[1280px] px-4 sm:px-8">
-        {/* Heading */}
-        <h2 className="text-center text-3xl lg:text-[40px] lg:leading-[48px] font-bold text-gray-900 mb-12">
-          Why Become a{" "}
-          <span className="text-[#f47c3c] font-semibold">LetsInsurance</span>{" "}
-          POSP Advisor?
-        </h2>
+    <Section>
+      <SectionHeading center className="mb-12">
+        Why Become a <Highlight>LetsInsurance</Highlight> POSP Advisor?
+      </SectionHeading>
 
-        {/* Cards grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {BENEFITS.map((b) => (
-            <BenefitCard key={b.title} {...b} />
-          ))}
-        </div>
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {BENEFITS.map((benefit) => (
+          <FeatureCard key={benefit.title} {...benefit} variant="divided" />
+        ))}
       </div>
-    </section>
+    </Section>
   );
 }

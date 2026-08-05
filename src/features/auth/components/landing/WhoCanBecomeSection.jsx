@@ -1,10 +1,13 @@
-import { ArrowRightCircle } from "lucide-react";
 import whoPospAdvisor from "@/assets/landing/who-posp-advisor.png";
 import whoBusiness from "@/assets/landing/who-business.png";
 import whoStudent from "@/assets/landing/who-student.png";
 import whoRetired from "@/assets/landing/who-retired.png";
 import whoHomemaker from "@/assets/landing/who-homemaker.png";
 import whoProfessional from "@/assets/landing/who-professional.png";
+import Section from "./ui/Section";
+import SectionHeading from "./ui/SectionHeading";
+import Highlight from "./ui/Highlight";
+import FeatureCard from "./ui/FeatureCard";
 
 const PERSONAS = [
   {
@@ -34,67 +37,42 @@ const PERSONAS = [
   },
 ];
 
-function PersonaCard({ icon, title, desc }) {
-  return (
-    <div className="flex items-center gap-4 rounded-xl bg-linear-to-br from-white to-orange-50/50 shadow-md border-b-4 border-[#f47c3c] p-5">
-      {/* Icon circle */}
-      <div className="flex h-18 w-18 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-white to-orange-200/60">
-        <img src={icon} alt="" className="h-14 w-14 object-contain " />
-      </div>
-
-      {/* Text */}
-      <div className="flex-1 min-w-0">
-        <h3 className="text-base font-medium text-gray-900">{title}</h3>
-        <p className="mt-1 text-sm text-gray-500 leading-relaxed">{desc}</p>
-      </div>
-
-      {/* Arrow */}
-      <ArrowRightCircle size={22} className="text-[#f47c3c] shrink-0" />
-    </div>
-  );
-}
-
 export default function WhoCanBecomeSection() {
   return (
-    <section className="bg-[#fff4ef] py-16 lg:py-20">
-      <div className="mx-auto max-w-[1280px] px-4 sm:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          {/* ── Left ── */}
-          <div>
-            <h2 className="text-3xl lg:text-[40px] lg:leading-[48px] font-bold text-gray-900 mb-3">
-              Who Can Become a{" "}
-              <span className="text-[#f47c3c] font-semibold">
-                LetsInsurance
-              </span>{" "}
-              POSP Advisor?
-            </h2>
-            <span className="block h-1 w-16 rounded-full bg-[#f47c3c] mb-6" />
+    <Section tone="tint">
+      <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2">
+        {/* ── Left ── */}
+        <div>
+          <SectionHeading className="mb-3">
+            Who Can Become a <Highlight>LetsInsurance</Highlight> POSP Advisor?
+          </SectionHeading>
+          <span className="mb-6 block h-1 w-16 rounded-full bg-brand" />
 
-            <p className="text-sm text-gray-500 leading-relaxed mb-10 max-w-lg">
-              Anyone above 18 years of age with a minimum 10th pass
-              qualification can become a POSP advisor. No prior experience in
-              insurance is required — we provide everything you need to succeed.
-            </p>
+          <p className="mb-10 max-w-lg text-sm leading-relaxed text-gray-500">
+            Anyone above 18 years of age with a minimum 10th pass qualification can
+            become a POSP advisor. No prior experience in insurance is required — we
+            provide everything you need to succeed.
+          </p>
 
-            {/* Illustration */}
-            <div className="relative flex justify-center">
-              <div className="absolute inset-0 m-auto h-[240px] w-[240px] rounded-full border-2 border-dashed border-[#f47c3c]/30" />
-              <img
-                src={whoPospAdvisor}
-                alt="POSP Advisor illustration"
-                className="relative z-10 h-120  w-auto object-contain"
-              />
-            </div>
-          </div>
-
-          {/* ── Right: persona cards ── */}
-          <div className="flex flex-col gap-4">
-            {PERSONAS.map((p) => (
-              <PersonaCard key={p.title} {...p} />
-            ))}
+          {/* Illustration, haloed by a dashed ring sized to sit just outside it */}
+          <div className="relative flex justify-center">
+            <div className="absolute inset-0 m-auto h-90 w-90 rounded-full border-2 border-dashed border-brand/30" />
+            <img
+              src={whoPospAdvisor}
+              alt="POSP Advisor illustration"
+              loading="lazy"
+              className="relative z-10 h-120 w-auto object-contain"
+            />
           </div>
         </div>
+
+        {/* ── Right: persona cards ── */}
+        <div className="flex flex-col gap-4">
+          {PERSONAS.map((persona) => (
+            <FeatureCard key={persona.title} {...persona} />
+          ))}
+        </div>
       </div>
-    </section>
+    </Section>
   );
 }

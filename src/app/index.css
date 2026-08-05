@@ -109,6 +109,20 @@
 
   --color-outline: #d9b39c;
   --color-outline-variant: #f1d2c0;
+
+  /* Landing / marketing brand orange. Deliberately separate from
+     --color-primary (the Material You dashboard ramp) — the public site runs a
+     brighter orange than the signed-in app. Enables bg-brand, text-brand,
+     border-brand, ring-brand/30, etc. */
+  --color-brand: #f47c3c;
+  --color-brand-hover: #e06a2e;
+  --color-brand-tint: #fff4ef;
+
+  /* Warm orange-cast elevation used by the landing page. Keeping these here
+     rather than as arbitrary shadow-[...] values keeps the brand rgba out of
+     the JSX. */
+  --shadow-brand-soft: 0 4px 24px rgba(244, 124, 60, 0.1);
+  --shadow-brand-card: 0 4px 24px rgba(15, 23, 42, 0.06), 0 24px 56px rgba(244, 124, 60, 0.08);
 }
 
 /* Custom animations + utilities ported from the HTML mockup */
@@ -310,17 +324,17 @@
 
     /* Make header compact */
     header.sticky {
-      height: 3rem !important;
+      height: 4.5rem !important;
     }
 
     header.sticky>div {
-      height: 3rem !important;
+      height: 4.5rem !important;
       padding-top: 0 !important;
       padding-bottom: 0 !important;
     }
 
     header.sticky img {
-      height: 2rem !important;
+      height: 2.75rem !important;
     }
 
     /* Compact breadcrumbs */
@@ -374,7 +388,7 @@
       &>form {
         padding-top: 0.875rem !important;
         padding-bottom: 0.875rem !important;
-        padding-left: 1rem !important;
+        padding-left: rem !important;
         padding-right: 1rem !important;
         gap: 0.75rem !important;
       }

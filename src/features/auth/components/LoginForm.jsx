@@ -2,10 +2,17 @@ import { useState, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ChevronDown, Lock, Download, RotateCcw, CheckCircle2 } from "lucide-react";
+import {
+  ChevronDown,
+  Lock,
+  Download,
+  RotateCcw,
+  CheckCircle2,
+} from "lucide-react";
 import { showAlert, alertOnInvalid } from "@/shared/store/alertStore";
-import googlePlay from "@/assets/landing/google-play.png";
-import appStore from "@/assets/landing/app-store.png";
+import BrandButton from "./landing/ui/BrandButton";
+import StoreBadges from "./landing/ui/StoreBadges";
+import Highlight from "./landing/ui/Highlight";
 
 /* ── Schemas ── */
 // Indian mobile: 10 digits, starts 6-9. (POSP flow already collects PAN/Aadhaar.)
@@ -30,7 +37,25 @@ const RESEND_SECONDS = 30;
    soft orange focus ring, matching the landing card rather than the slate-50
    fields used inside the onboarding wizard. */
 const FIELD =
-  "w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#f47c3c] focus:ring-4 focus:ring-[#f47c3c]/15 transition-all";
+  "w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder-slate-400 transition-all focus:border-brand focus:outline-none focus:ring-4 focus:ring-brand/15";
+
+const LABEL = "mb-2 block text-sm font-medium text-slate-600";
+
+function FieldError({ error }) {
+  if (!error) return null;
+  return (
+    <p className="mt-1.5 text-xs font-medium text-red-500" role="alert">
+      {error.message}
+    </p>
+  );
+}
+
+/* Strips non-digits and caps length as the user types, so the field can never
+   hold a value the schema would reject on shape alone. */
+const digitsOnly = (field, max) => (e) => {
+  e.target.value = e.target.value.replace(/\D/g, "").slice(0, max);
+  field.onChange(e);
+};
 
 /**
  * LoginForm — the "Login or Register" card that sits in the hero. Enter a
@@ -42,14 +67,12 @@ export default function LoginForm({ onVerified }) {
   const [sentTo, setSentTo] = useState(null); // mobile the code was sent to
   const [cooldown, setCooldown] = useState(0);
 
-  /* ── Mobile entry ── */
   const mobileForm = useForm({
     resolver: zodResolver(mobileSchema),
     defaultValues: { mobile: "" },
     mode: "onTouched",
   });
 
-  /* ── OTP entry ── */
   const otpForm = useForm({
     resolver: zodResolver(otpSchema),
     defaultValues: { otp: "" },
@@ -59,7 +82,7 @@ export default function LoginForm({ onVerified }) {
   // Code is "live" only while the field still holds the number we sent to.
   // Editing the mobile naturally collapses the OTP section and re-arms sending.
   const mobileValue = mobileForm.watch("mobile");
-  const codeSent = sentTo && mobileValue.trim() === sentTo;
+  const codeSent = Boolean(sentTo) && mobileValue.trim() === sentTo;
 
   /* ── Resend cooldown ticker ── */
   const timerRef = useRef(null);
@@ -78,12 +101,8 @@ export default function LoginForm({ onVerified }) {
   };
   useEffect(() => () => clearInterval(timerRef.current), []);
 
-  // Keep the mobile field numeric and capped at 10 digits as the user types.
   const mobileField = mobileForm.register("mobile");
-  const handleMobileChange = (e) => {
-    e.target.value = e.target.value.replace(/\D/g, "").slice(0, 10);
-    mobileField.onChange(e);
-  };
+  const otpField = otpForm.register("otp");
 
   const sendCode = mobileForm.handleSubmit((data) => {
     // TODO: call API to dispatch the OTP via SMS
@@ -108,34 +127,25 @@ export default function LoginForm({ onVerified }) {
     });
   };
 
-  const otpField = otpForm.register("otp");
-  const handleOtpChange = (e) => {
-    e.target.value = e.target.value.replace(/\D/g, "").slice(0, 6);
-    otpField.onChange(e);
-  };
-
   const verify = otpForm.handleSubmit(() => {
     // TODO: verify the OTP with the API. For now any 6-digit code is accepted.
     onVerified?.(sentTo);
   }, alertOnInvalid);
 
   return (
-    <div className="w-full max-w-[400px] rounded-2xl border border-slate-100 bg-white px-6 sm:px-8 py-8 shadow-[0_4px_24px_rgba(15,23,42,0.06),0_24px_56px_rgba(244,124,60,0.08)]">
+    <div className="w-full max-w-90 rounded-2xl border border-slate-100 bg-white px-6 py-8 shadow-brand-card sm:px-8">
       {/* ── Card heading ── */}
       <h2 className="text-center text-2xl font-bold tracking-tight text-slate-900">
-        Login or <span className="text-[#f47c3c]">Register</span>
+        Login or <Highlight>Register</Highlight>
       </h2>
       <p className="mt-1.5 text-center text-sm text-slate-500">
         Enter your mobile number to get started
       </p>
-      <span className="mx-auto mt-3 block h-[3px] w-10 rounded-full bg-[#f47c3c]" />
+      <span className="mx-auto mt-3 block h-0.75 w-10 rounded-full bg-brand" />
 
       {/* ── Mobile entry ── */}
       <form onSubmit={sendCode} className="mt-7">
-        <label
-          htmlFor="mobile"
-          className="mb-2 block text-sm font-medium text-slate-600"
-        >
+        <label htmlFor="mobile" className={LABEL}>
           Mobile Number
         </label>
 
@@ -156,33 +166,23 @@ export default function LoginForm({ onVerified }) {
             maxLength={10}
             className={FIELD}
             {...mobileField}
-            onChange={handleMobileChange}
+            onChange={digitsOnly(mobileField, 10)}
           />
         </div>
 
-        {mobileForm.formState.errors.mobile && (
-          <p className="mt-1.5 text-xs font-medium text-red-500" role="alert">
-            {mobileForm.formState.errors.mobile.message}
-          </p>
-        )}
+        <FieldError error={mobileForm.formState.errors.mobile} />
 
         {!codeSent && (
-          <button
-            type="submit"
-            className="mt-5 w-full rounded-lg bg-[#f47c3c] py-3.5 text-base font-semibold text-white shadow-md transition-colors hover:bg-[#e06a2e] focus:outline-none focus:ring-4 focus:ring-[#f47c3c]/30"
-          >
+          <BrandButton type="submit" size="field" className="mt-5 w-full">
             Start Earning Now
-          </button>
+          </BrandButton>
         )}
       </form>
 
       {/* ── OTP entry (fades in once the code is sent) ── */}
       {codeSent && (
         <form onSubmit={verify} className="anim-fade mt-5">
-          <label
-            htmlFor="otp"
-            className="mb-2 block text-sm font-medium text-slate-600"
-          >
+          <label htmlFor="otp" className={LABEL}>
             Enter the 6-digit code sent to{" "}
             <strong className="font-semibold text-slate-800">
               +91 {sentTo}
@@ -197,34 +197,27 @@ export default function LoginForm({ onVerified }) {
             maxLength={6}
             className={`${FIELD} text-center font-mono tracking-[0.4em]`}
             {...otpField}
-            onChange={handleOtpChange}
+            onChange={digitsOnly(otpField, 6)}
           />
 
-          {otpForm.formState.errors.otp && (
-            <p className="mt-1.5 text-xs font-medium text-red-500" role="alert">
-              {otpForm.formState.errors.otp.message}
-            </p>
-          )}
+          <FieldError error={otpForm.formState.errors.otp} />
 
           <div className="mt-2 flex justify-end">
             <button
               type="button"
               onClick={resend}
               disabled={cooldown > 0}
-              className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#f47c3c] transition-colors hover:text-[#e06a2e] disabled:cursor-not-allowed disabled:text-slate-400"
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand transition-colors hover:text-brand-hover disabled:cursor-not-allowed disabled:text-slate-400"
             >
               <RotateCcw size={13} strokeWidth={2.5} />
               {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend code"}
             </button>
           </div>
 
-          <button
-            type="submit"
-            className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-[#f47c3c] py-3.5 text-base font-semibold text-white shadow-md transition-colors hover:bg-[#e06a2e] focus:outline-none focus:ring-4 focus:ring-[#f47c3c]/30"
-          >
+          <BrandButton type="submit" size="field" className="mt-4 w-full">
             <CheckCircle2 size={18} strokeWidth={2.5} />
             Verify &amp; Continue
-          </button>
+          </BrandButton>
         </form>
       )}
 
@@ -241,23 +234,7 @@ export default function LoginForm({ onVerified }) {
           <Download size={15} />
         </p>
         <hr className="mt-3 border-slate-100" />
-
-        <div className="mt-4 flex items-center gap-3">
-          <a href="#" className="flex-1 transition-opacity hover:opacity-80">
-            <img
-              src={googlePlay}
-              alt="Get it on Google Play"
-              className="h-[52px] w-full rounded-lg object-cover"
-            />
-          </a>
-          <a href="#" className="flex-1 transition-opacity hover:opacity-80">
-            <img
-              src={appStore}
-              alt="Download on the App Store"
-              className="h-[52px] w-full rounded-lg object-cover"
-            />
-          </a>
-        </div>
+        <StoreBadges stretch className="mt-4" />
       </div>
     </div>
   );

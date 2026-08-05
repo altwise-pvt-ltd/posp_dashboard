@@ -6,7 +6,8 @@
       "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\('react', p.dependencies.react\\); console.log\\('rhf', p.dependencies['react-hook-form']\\); console.log\\('zod', p.dependencies.zod\\); console.log\\('resolvers', p.dependencies['@hookform/resolvers']\\);\")",
       "PowerShell(npm run build)",
       "PowerShell(npm run build 2>&1)",
-      "Bash(node -e \"const p=require\\('./package.json'\\);console.log\\(JSON.stringify\\(p.scripts\\)\\)\")"
+      "Bash(node -e \"const p=require\\('./package.json'\\);console.log\\(JSON.stringify\\(p.scripts\\)\\)\")",
+      "Bash(node \"C:/Users/Admin/AppData/Local/Temp/claude/c--Office-Office-Projects-Posp-login/3a336ed1-03b0-4bbb-9bd3-68cadd941964/scratchpad/checkclasses.mjs\")"
     ]
   }
 }

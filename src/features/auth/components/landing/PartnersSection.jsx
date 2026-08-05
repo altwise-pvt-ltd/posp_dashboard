@@ -1,43 +1,45 @@
-/* Partner logos — dynamically imported via Vite's import.meta.glob */
+import Section from "./ui/Section";
+import SectionHeading from "./ui/SectionHeading";
+import Highlight from "./ui/Highlight";
+
+/* Partner logos — every partner-*.png in the landing assets folder, ordered by
+   filename. Dropping a new file in adds it to the grid.
+   The logos are decorative (alt=""): the heading already says what they are,
+   and the filenames aren't dependable brand names. Swap in an explicit
+   name map here if these ever need to be announced individually. */
 const partnerModules = import.meta.glob("/src/assets/landing/partner-*.png", {
   eager: true,
   import: "default",
 });
 
-const PARTNERS = Object.entries(partnerModules).map(([path, src]) => {
-  const num = path.match(/partner-(\d+)/)?.[1] ?? "0";
-  return { id: Number(num), src, alt: `Insurance Partner ${num}` };
-}).sort((a, b) => a.id - b.id);
+const PARTNERS = Object.entries(partnerModules)
+  .sort(([a], [b]) => a.localeCompare(b))
+  .map(([path, src]) => ({ path, src }));
 
 export default function PartnersSection() {
   if (PARTNERS.length === 0) return null;
 
   return (
-    <section className="bg-white py-16 lg:py-20">
-      <div className="mx-auto max-w-[1280px] px-4 sm:px-8">
-        {/* Heading */}
-        <h2 className="text-center text-3xl lg:text-[40px] lg:leading-[48px] font-bold text-gray-900 mb-12">
-          Our Top Insurance{" "}
-          <span className="text-[#f47c3c]">Partners</span>
-        </h2>
+    <Section>
+      <SectionHeading center className="mb-12">
+        Our Top Insurance <Highlight>Partners</Highlight>
+      </SectionHeading>
 
-        {/* Logo grid — 3 cols mobile, 4 cols sm, 6 cols lg */}
-        <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-4">
-          {PARTNERS.map((partner) => (
-            <div
-              key={partner.id}
-              className="flex items-center justify-center rounded-2xl border border-stone-200 bg-white p-4 h-20"
-            >
-              <img
-                src={partner.src}
-                alt={partner.alt}
-                className="max-h-10 max-w-full object-contain"
-                loading="lazy"
-              />
-            </div>
-          ))}
-        </div>
+      <div className="grid grid-cols-3 gap-4 sm:grid-cols-4 lg:grid-cols-6">
+        {PARTNERS.map((partner) => (
+          <div
+            key={partner.path}
+            className="flex h-20 items-center justify-center rounded-2xl border border-stone-200 bg-white p-4"
+          >
+            <img
+              src={partner.src}
+              alt=""
+              loading="lazy"
+              className="max-h-10 max-w-full object-contain"
+            />
+          </div>
+        ))}
       </div>
-    </section>
+    </Section>
   );
 }
