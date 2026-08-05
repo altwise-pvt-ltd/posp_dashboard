@@ -28,8 +28,8 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-50 bg-white shadow-sm">
-      <div className={`flex h-30 items-center justify-between ${CONTAINER}`}>
-        <img src={logo} alt="LetsInsurance" className="h-16 w-auto" />
+      <div className={`flex h-24 items-center justify-between ${CONTAINER}`}>
+        <img src={logo} alt="LetsInsurance" className="h-10 w-auto lg:h-16" />
 
         {/* Desktop nav */}
         <nav className="hidden items-center gap-8 lg:flex">
@@ -45,17 +45,24 @@ export default function Header() {
           <BrandButton size="sm">Login</BrandButton>
         </div> */}
 
-        {/* Mobile hamburger */}
-        <button
-          type="button"
-          className="p-2 text-gray-700 lg:hidden"
-          onClick={() => setMobileOpen((open) => !open)}
-          aria-label="Toggle menu"
-          aria-expanded={mobileOpen}
-          aria-controls="mobile-nav"
-        >
-          {mobileOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
+        {/* Mobile: login sits in the bar itself, so it stays reachable without
+            opening the menu — it's the page's primary action. */}
+        <div className="flex items-center gap-1 lg:hidden">
+          <BrandButton size="sm" className="px-5 py-2.5">
+            Login
+          </BrandButton>
+
+          <button
+            type="button"
+            className="p-2 text-gray-700"
+            onClick={() => setMobileOpen((open) => !open)}
+            aria-label="Toggle menu"
+            aria-expanded={mobileOpen}
+            aria-controls="mobile-nav"
+          >
+            {mobileOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile menu */}
@@ -72,9 +79,6 @@ export default function Header() {
             <button type="button" className={`text-left ${LINK}`}>
               Become an Agent
             </button>
-            <BrandButton size="sm" className="w-full">
-              Login
-            </BrandButton>
           </nav>
         </div>
       )}

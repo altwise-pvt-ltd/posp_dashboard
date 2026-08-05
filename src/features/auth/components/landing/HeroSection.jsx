@@ -25,8 +25,11 @@ export default function HeroSection({ loginForm }) {
           right-pinned and can't grow into it. */}
       <div className="grid grid-cols-1 items-start gap-10 lg:grid-cols-[1fr_auto_minmax(0,360px)] lg:gap-6">
         {/* ── Left: content ── */}
-        <div className="flex flex-col gap-5">
-          <span className="inline-flex w-fit items-center gap-2 rounded-full border border-brand/30 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm">
+        {/* Mobile keeps only the headline and the zero-investment line, centred;
+            the badge, checklist and CTA are lg-only so the login card stays near
+            the fold. */}
+        <div className="flex flex-col gap-5 text-center lg:text-left">
+          <span className="hidden w-fit items-center gap-2 rounded-full border border-brand/30 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm lg:inline-flex">
             <ShieldCheck size={16} className="text-brand" />
             India's <Highlight>Trusted</Highlight> Insurance Platform
           </span>
@@ -42,7 +45,7 @@ export default function HeroSection({ loginForm }) {
             <Highlight className="font-semibold">zero investment.</Highlight>
           </p>
 
-          <ul className="grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2">
+          <ul className="hidden grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2 lg:grid">
             {CHECKLIST.map((item) => (
               <li
                 key={item}
@@ -56,18 +59,18 @@ export default function HeroSection({ loginForm }) {
             ))}
           </ul>
 
-          <BrandButton className="mt-2 w-fit">
+          <BrandButton className="mt-2 hidden w-fit lg:inline-flex">
             Become Advisor Now
             <ArrowRightCircle size={20} />
           </BrandButton>
         </div>
 
         {/* ── Centre: illustration (agent, badges and app screen are one image) ── */}
-        <div className="hidden lg:block">
+        <div className="flex justify-center lg:block">
           <img
             src={heroAgent}
             alt="POSP Advisor with the Letsinsurance advisor app"
-            className="h-135 w-auto object-contain"
+            className="h-72 w-auto object-contain sm:h-90 lg:h-135"
           />
         </div>
 
