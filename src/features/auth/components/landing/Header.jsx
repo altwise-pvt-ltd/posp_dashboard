@@ -18,7 +18,7 @@ function NavLink({ label, hasChevron }) {
   return (
     <button type="button" className={`flex items-center gap-1 ${LINK}`}>
       {label}
-      {hasChevron && <ChevronDown size={16} />}
+      {hasChevron && <ChevronDown className="size-4" />}
     </button>
   );
 }
@@ -32,12 +32,13 @@ export default function Header() {
     <header className="sticky top-0 z-50 bg-white shadow-[0_6px_20px_-8px_rgba(244,124,60,0.45)] lg:shadow-sm">
       <div className={`flex h-24 items-center justify-between ${CONTAINER}`}>
         {/* The mark is a wide 172×40 lockup, so width drives the size and height
-            follows the ratio. lg sits at the SVG's native width; mobile is a
-            step down from it rather than a separate height guess. */}
+            follows the ratio. lg sits at the SVG's native width. Mobile reads
+            odd at w-47 because its units are 15% smaller under landing-scale —
+            that lands on 160px, the size the bar is meant to show. */}
         <img
           src={logo}
           alt="LetsInsurance"
-          className="h-auto w-40 lg:w-43"
+          className="h-auto w-47 lg:w-43"
         />
 
         {/* Desktop nav */}
@@ -69,7 +70,9 @@ export default function Header() {
             aria-expanded={mobileOpen}
             aria-controls="mobile-nav"
           >
-            {mobileOpen ? <X size={24} /> : <Menu size={24} />}
+            {/* Sized by class, not lucide's px `size` prop, so the mobile
+                landing-scale variables reach it. */}
+            {mobileOpen ? <X className="size-6" /> : <Menu className="size-6" />}
           </button>
         </div>
       </div>

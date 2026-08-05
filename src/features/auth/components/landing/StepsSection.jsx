@@ -83,7 +83,7 @@ export default function StepsSection() {
 
           <BrandButton size="lg" className="mt-2 w-full">
             Start Earning Now
-            <ArrowRightCircle size={20} />
+            <ArrowRightCircle className="size-5" />
           </BrandButton>
 
           <p className="-mt-2 text-center text-xs text-gray-400">

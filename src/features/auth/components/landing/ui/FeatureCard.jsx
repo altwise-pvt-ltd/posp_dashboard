@@ -42,7 +42,7 @@ export default function FeatureCard({ icon, title, desc, variant = "inline" }) {
       </div>
 
       {variant === "inline" && (
-        <ArrowRightCircle size={22} className="shrink-0 text-brand" />
+        <ArrowRightCircle className="size-5.5 shrink-0 text-brand" />
       )}
     </div>
   );

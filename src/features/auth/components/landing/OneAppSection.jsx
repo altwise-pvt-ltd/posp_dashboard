@@ -34,7 +34,7 @@ export default function OneAppSection() {
           <ul className="mb-8 flex flex-col gap-3">
             {FEATURES.map((feature) => (
               <li key={feature} className="flex items-center gap-2.5 text-sm text-gray-700">
-                <CheckCircle size={18} className="shrink-0 text-brand" />
+                <CheckCircle className="size-4.5 shrink-0 text-brand" />
                 {feature}
               </li>
             ))}

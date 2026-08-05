@@ -34,7 +34,9 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-white font-sans">
+    /* landing-scale renders this page at 85% of the app's base scale — see the
+       variable overrides in index.css. */
+    <div className="landing-scale min-h-screen flex flex-col bg-white font-sans">
       <Header />
 
       <main className="flex-1">

@@ -125,6 +125,53 @@
   --shadow-brand-card: 0 4px 24px rgba(15, 23, 42, 0.06), 0 24px 56px rgba(244, 124, 60, 0.08);
 }
 
+/* ── Landing page mobile display scale ──────────────────────────────────────
+   Below Tailwind's `sm` breakpoint the landing page renders at 85% of the
+   app's base scale; from 640px up it is untouched. Rather than restating ~150
+   shrunk numbers across the landing components, this rescales the theme
+   variables those utilities already resolve at runtime: in Tailwind v4 `p-6`
+   compiles to calc(var(--spacing) * 6) and `text-lg` to var(--text-lg), so
+   redefining the variables on the page wrapper rescales the whole subtree
+   while the components keep their readable token names.
+
+   It follows that anything mobile-visible must be sized with a utility, not a
+   literal, to be reachable here — hence the `size-*` classes on the landing
+   icons in place of lucide's px `size` prop. Values behind an `lg:` prefix are
+   desktop-only and stay as they are. */
+@media (width < 40rem) {
+  .landing-scale {
+    /* 0.25rem × 0.85 — drives every p / m / gap / w / h / inset utility */
+    --spacing: 0.2125rem;
+
+    /* Type scale × 0.85. Line heights are unitless ratios in v4, so they follow
+       the font size on their own. */
+    --text-xs: 0.6375rem;
+    --text-sm: 0.74375rem;
+    --text-base: 0.85rem;
+    --text-lg: 0.95625rem;
+    --text-xl: 1.0625rem;
+    --text-2xl: 1.275rem;
+    --text-3xl: 1.59375rem;
+    --text-4xl: 1.9125rem;
+    --text-5xl: 2.55rem;
+
+    /* Prose measures × 0.85. --container-7xl is left alone: the page is never
+       wide enough for it to bind on a phone, where the px-4 gutters set the
+       width — and those scale with --spacing already. */
+    --container-xs: 17rem;
+    --container-sm: 20.4rem;
+    --container-md: 23.8rem;
+    --container-lg: 27.2rem;
+    --container-xl: 30.6rem;
+    --container-2xl: 35.7rem;
+
+    /* Radii × 0.85 to keep the rounding proportional to the boxes it cuts */
+    --radius-lg: 0.425rem;
+    --radius-xl: 0.6375rem;
+    --radius-2xl: 0.85rem;
+  }
+}
+
 /* Custom animations + utilities ported from the HTML mockup */
 @keyframes fadeUp {
   from {

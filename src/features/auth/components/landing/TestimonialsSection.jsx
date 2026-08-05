@@ -39,7 +39,7 @@ function StarRating() {
   return (
     <div className="flex gap-0.5">
       {Array.from({ length: 5 }, (_, i) => (
-        <Star key={i} size={14} className="fill-amber-400 text-amber-400" />
+        <Star key={i} className="size-3.5 fill-amber-400 text-amber-400" />
       ))}
     </div>
   );
