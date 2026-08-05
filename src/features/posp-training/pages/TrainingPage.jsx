@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { trainingData } from './data';
 import ExamPortal from '../components/ExamPortal';
 import ShapeGrid from '../components/boxgrid';
-import logo from '../../../assets/logo.png';
+import logo from "../../../assets/let'sInsuranceLogo.svg";
 
 const CheckIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">

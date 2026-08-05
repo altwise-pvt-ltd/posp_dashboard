@@ -1,4 +1,4 @@
-import logo from "@/assets/logo.png";
+import logo from "@/assets/let'sInsuranceLogo.svg";
 
 /**
  * Topbar — constant header for the onboarding flow.

@@ -34,13 +34,15 @@ export default function HeroSection({ loginForm }) {
             India's <Highlight>Trusted</Highlight> Insurance Platform
           </span>
 
-          <h1 className="text-4xl font-bold leading-[1.15] tracking-tight lg:text-5xl">
-            <span className="block text-gray-900">Become a</span>
-            <Highlight className="block">Letsinsurance</Highlight>
-            <span className="block text-gray-900">POSP Advisor</span>
+          {/* Mobile lets the headline flow and balances the line lengths so the
+              centred block reads evenly; lg pins the three fixed lines back. */}
+          <h1 className="text-balance text-4xl font-bold leading-[1.15] tracking-tight lg:text-5xl">
+            <span className="text-gray-900 lg:block">Become a</span>{" "}
+            <Highlight className="lg:block">Letsinsurance</Highlight>{" "}
+            <span className="text-gray-900 lg:block">POSP Advisor</span>
           </h1>
 
-          <p className="text-base text-gray-500">
+          <p className="mx-auto max-w-xs text-balance text-base text-gray-500 lg:mx-0 lg:max-w-none">
             Start your insurance business with{" "}
             <Highlight className="font-semibold">zero investment.</Highlight>
           </p>
@@ -59,10 +61,14 @@ export default function HeroSection({ loginForm }) {
             ))}
           </ul>
 
-          <BrandButton className="mt-2 hidden w-fit lg:inline-flex">
-            Become Advisor Now
-            <ArrowRightCircle size={20} />
-          </BrandButton>
+          {/* Wrapper, not `hidden` on the button itself: BrandButton hardcodes
+              inline-flex in its base classes and wins the display conflict. */}
+          <div className="mt-2 hidden lg:block">
+            <BrandButton className="w-fit">
+              Become Advisor Now
+              <ArrowRightCircle size={20} />
+            </BrandButton>
+          </div>
         </div>
 
         {/* ── Centre: illustration (agent, badges and app screen are one image) ── */}
@@ -75,7 +81,13 @@ export default function HeroSection({ loginForm }) {
         </div>
 
         {/* ── Right: login form ── */}
-        <div className="flex justify-center lg:justify-end">{loginForm}</div>
+        {/* The grid's gap-10 is wanted between the headline and the illustration
+            but not between the illustration and the card — the agent art already
+            carries its own bottom whitespace, so on mobile the row gap is pulled
+            back out and only the lg columns keep it. */}
+        <div className="-mt-10 flex justify-center lg:mt-0 lg:justify-end">
+          {loginForm}
+        </div>
       </div>
     </Section>
   );

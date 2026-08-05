@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ChevronDown, Menu, X } from "lucide-react";
-import logo from "@/assets/logo.png";
+import logo from "@/assets/let'sInsuranceLogo.svg";
 import BrandButton from "./ui/BrandButton";
 import { CONTAINER } from "./ui/Section";
 
@@ -27,9 +27,18 @@ export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 bg-white shadow-sm">
+    /* Mobile carries a warm ambient glow under the bar instead of the neutral
+       grey shadow — low alpha and a wide blur so it reads as light, not a line. */
+    <header className="sticky top-0 z-50 bg-white shadow-[0_6px_20px_-8px_rgba(244,124,60,0.45)] lg:shadow-sm">
       <div className={`flex h-24 items-center justify-between ${CONTAINER}`}>
-        <img src={logo} alt="LetsInsurance" className="h-10 w-auto lg:h-16" />
+        {/* The mark is a wide 172×40 lockup, so width drives the size and height
+            follows the ratio. lg sits at the SVG's native width; mobile is a
+            step down from it rather than a separate height guess. */}
+        <img
+          src={logo}
+          alt="LetsInsurance"
+          className="h-auto w-40 lg:w-43"
+        />
 
         {/* Desktop nav */}
         <nav className="hidden items-center gap-8 lg:flex">

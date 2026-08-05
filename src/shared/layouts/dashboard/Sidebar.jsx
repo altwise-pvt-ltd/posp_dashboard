@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { isRoutedPath } from '@/app/routes';
-import logo from '@/assets/logo.png';
+import logo from "@/assets/let'sInsuranceLogo.svg";
 import iconHome from '@/assets/sidebar/OverviewScreen.png';
 import iconCustomers from '@/assets/sidebar/Customer.png';
 import iconPolicies from '@/assets/sidebar/Policies.png';
