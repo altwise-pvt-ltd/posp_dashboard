@@ -1,5 +1,6 @@
+import { useId, useState } from "react";
 import logo from "@/assets/onboarding/LetsLogoFooterSvg.svg";
-import { Building2, MapPin, ShieldCheck } from "lucide-react";
+import { Building2, ChevronDown, MapPin, ShieldCheck } from "lucide-react";
 
 /* Link columns. No marketing pages exist behind these yet, so every item is
    rendered inert (see LinkList) — a real <a href="#"> would jump to top and
@@ -101,6 +102,55 @@ function LinkList({ links }) {
   );
 }
 
+/**
+ * LinkColumn — one group of footer links.
+ *
+ * Below `sm` the group collapses to a single tappable row, so the three groups
+ * read as 3 lines instead of 16 and the footer stops running on for most of a
+ * screen. From `sm` up it's the always-open column the desktop design shows.
+ *
+ * The heading is authored twice rather than one element that changes role at
+ * the breakpoint: the mobile one is a real disclosure button, and reporting
+ * aria-expanded="false" over a permanently visible desktop list would be a lie.
+ * `hidden` is display:none, so the unused one is out of the a11y tree entirely
+ * and nothing is announced twice.
+ */
+function LinkColumn({ heading, links }) {
+  const [open, setOpen] = useState(false);
+  const panelId = useId();
+
+  return (
+    <div className="border-t border-white/10 last:border-b sm:border-0 lg:border-l lg:border-white/10 lg:px-8">
+      <button
+        type="button"
+        onClick={() => setOpen((isOpen) => !isOpen)}
+        aria-expanded={open}
+        aria-controls={panelId}
+        className="flex w-full items-center justify-between gap-2 py-3.5 text-left sm:hidden"
+      >
+        <span className="text-sm font-semibold text-white">{heading}</span>
+        <ChevronDown
+          aria-hidden="true"
+          className={`size-4 shrink-0 transition-transform duration-200 ${
+            open ? "rotate-180 text-orange-400" : "text-slate-400"
+          }`}
+        />
+      </button>
+
+      <div className="hidden sm:block">
+        <ColumnHeading>{heading}</ColumnHeading>
+      </div>
+
+      <div
+        id={panelId}
+        className={`pb-2 sm:block sm:pb-0 ${open ? "" : "hidden"}`}
+      >
+        <LinkList links={links} />
+      </div>
+    </div>
+  );
+}
+
 /** Outlined orange icon tile used by the three entity/address/commitment blocks. */
 function InfoIcon({ icon: Icon }) {
   return (
@@ -127,27 +177,36 @@ export default function OnboardingFooter() {
     <footer className="bg-[#0A1C36] font-sans">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10 2xl:max-w-384 2xl:px-12">
         {/* ── Band 1: brand + link columns ───────────────────────────── */}
-        <div className="grid grid-cols-1 gap-10 py-10 sm:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr_1fr] lg:gap-0 lg:py-12">
+        {/* Mobile runs brand and links as two tracks, so the collapsed groups
+            fill the space beside the brand block instead of queueing below it.
+            The brand track is the wider of the two — it carries the blurb,
+            while a group row only has to fit "Insurance" and a chevron. */}
+        <div className="grid grid-cols-[1.2fr_1fr] gap-x-5 py-8 sm:grid-cols-2 sm:gap-10 sm:py-10 lg:grid-cols-[1.5fr_1fr_1fr_1fr] lg:gap-0 lg:py-12">
           {/* Brand Logo*/}
           <div className="lg:pr-16">
             <img
               src={logo}
               alt="Lets Insurance — protecting you and yours"
-              className="h-16 w-auto "
+              className="h-11 w-auto sm:h-16"
             />
-            <p className="mt-5 max-w-xs text-sm leading-6 text-slate-400">
+            <p className="mt-3 max-w-xs text-xs leading-5 text-slate-400 sm:mt-5 sm:text-sm sm:leading-6">
               Compare, buy and manage insurance policies online with expert
               guidance, best prices and dedicated claim support.
             </p>
 
-            <p className="mt-6 text-sm text-slate-300">Follow us on</p>
-            <div className="mt-3 flex items-center gap-3">
+            <p className="mt-4 text-xs text-slate-300 sm:mt-6 sm:text-sm">
+              Follow us on
+            </p>
+            {/* flex-wrap is the safety net: four 32px targets plus gaps just
+                fit the brand track on a 320px screen, and wrap rather than
+                overflow if the viewport is narrower still. */}
+            <div className="mt-2 flex flex-wrap items-center gap-2 sm:mt-3 sm:gap-3">
               {SOCIALS.map(({ label, icon }) => (
                 <button
                   key={label}
                   type="button"
                   aria-label={label}
-                  className="flex size-10 items-center justify-center rounded-full border border-white/15 text-slate-200 transition-colors duration-150 hover:border-orange-500 hover:bg-orange-500/10 hover:text-orange-400"
+                  className="flex size-8 items-center justify-center rounded-full border border-white/15 text-slate-200 transition-colors duration-150 hover:border-orange-500 hover:bg-orange-500/10 hover:text-orange-400 sm:size-10"
                 >
                   <svg
                     viewBox="0 0 24 24"
@@ -156,7 +215,7 @@ export default function OnboardingFooter() {
                     strokeWidth="1.75"
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    className="size-4.5"
+                    className="size-4 sm:size-4.5"
                     aria-hidden="true"
                   >
                     {icon}
@@ -166,22 +225,36 @@ export default function OnboardingFooter() {
             </div>
           </div>
 
-          {/* Link columns — the vertical rule only exists once they sit side by
-              side, hence the lg: prefix. */}
-          {LINK_COLUMNS.map(({ heading, links }) => (
-            <div
-              key={heading}
-              className="lg:border-l lg:border-white/10 lg:px-8"
-            >
-              <ColumnHeading>{heading}</ColumnHeading>
-              <LinkList links={links} />
-            </div>
-          ))}
+          {/* Link columns — collapsed on phones, open from sm. The vertical
+              rule only exists once they sit side by side, hence the lg: prefix
+              inside LinkColumn.
+
+              The wrapper stacks the three groups into the grid's second track
+              on mobile, then `sm:contents` dissolves it so they go back to
+              being direct grid items and the sm/lg column layouts are the ones
+              the design already had. */}
+          <div className="flex flex-col sm:contents">
+            {LINK_COLUMNS.map(({ heading, links }) => (
+              <LinkColumn key={heading} heading={heading} links={links} />
+            ))}
+          </div>
         </div>
 
         {/* ── Band 2: regulatory identity ────────────────────────────── */}
-        <div className="grid grid-cols-1 gap-8 border-t border-white/10 py-8 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="flex gap-3.5">
+        {/* Horizontal on mobile: three swipeable cards on one row rather than
+            three stacked blocks. Squeezing them into three visible columns was
+            the other way to read "horizontal", but the registered address runs
+            to ~15 lines at a third of a phone's width — so each card keeps a
+            legible 80% instead and the row scrolls. -mx-4 lets it bleed into
+            the shell's gutters so a card can sit flush with the screen edge.
+            From sm up it's the plain grid the design already had. */}
+        <div
+          role="group"
+          aria-label="Regulatory information"
+          tabIndex={0}
+          className="no-scrollbar -mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto border-t border-white/10 px-4 py-8 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40 sm:mx-0 sm:grid sm:snap-none sm:grid-cols-2 sm:gap-8 sm:overflow-visible sm:px-0 lg:grid-cols-3"
+        >
+          <div className="flex w-4/5 shrink-0 snap-start gap-3.5 sm:w-auto">
             <InfoIcon icon={Building2} />
             <div className="min-w-0">
               <p className="text-sm font-semibold leading-5 text-white">
@@ -198,7 +271,7 @@ export default function OnboardingFooter() {
             </div>
           </div>
 
-          <div className="flex gap-3.5">
+          <div className="flex w-4/5 shrink-0 snap-start gap-3.5 sm:w-auto">
             <InfoIcon icon={MapPin} />
             <div className="min-w-0">
               <p className="text-sm font-semibold text-white">
@@ -211,7 +284,7 @@ export default function OnboardingFooter() {
             </div>
           </div>
 
-          <div className="flex gap-3.5">
+          <div className="flex w-4/5 shrink-0 snap-start gap-3.5 sm:w-auto">
             <InfoIcon icon={ShieldCheck} />
             <div className="min-w-0">
               <p className="text-sm font-semibold text-white">Our Commitment</p>

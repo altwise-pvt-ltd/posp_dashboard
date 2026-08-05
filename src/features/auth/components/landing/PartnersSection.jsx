@@ -21,15 +21,15 @@ export default function PartnersSection() {
 
   return (
     <Section>
-      <SectionHeading center className="mb-12">
+      <SectionHeading center className="mb-10">
         Our Top Insurance <Highlight>Partners</Highlight>
       </SectionHeading>
 
-      <div className="grid grid-cols-3 gap-4 sm:grid-cols-4 lg:grid-cols-6">
+      <div className="grid grid-cols-4 gap-4 sm:grid-cols-4 lg:grid-cols-6">
         {PARTNERS.map((partner) => (
           <div
             key={partner.path}
-            className="flex h-20 items-center justify-center rounded-2xl border border-stone-200 bg-white p-4"
+            className="flex h-20 items-center justify-center rounded-2xl border border-stone-400 bg-white p-2"
           >
             <img
               src={partner.src}
