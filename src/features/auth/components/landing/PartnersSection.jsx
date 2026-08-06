@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Briefcase, Car, HeartPulse, House, ShieldCheck } from "lucide-react";
 import Section from "./ui/Section";
 import SectionHeading from "./ui/SectionHeading";
 import Highlight from "./ui/Highlight";
@@ -17,17 +16,6 @@ const partnerModules = import.meta.glob("/src/assets/landing/partner-*.png", {
 const PARTNERS = Object.entries(partnerModules)
   .sort(([a], [b]) => a.localeCompare(b))
   .map(([path, src]) => ({ path, src }));
-
-/* The lines of business those partners are placed across — the second half of
-   what this band says: who we work with, and what we can sell. Kept to the same
-   vocabulary as the footer's Insurance column so the two never disagree. */
-const BUSINESS_LINES = [
-  { label: "Motor", Icon: Car },
-  { label: "Health", Icon: HeartPulse },
-  { label: "Term Life", Icon: ShieldCheck },
-  { label: "Business", Icon: Briefcase },
-  { label: "Home", Icon: House },
-];
 
 /* A pointy-top hexagon: flat vertical edges down the sides, points top and
    bottom. Those flat sides are what let neighbours in a row sit flush, and the
@@ -173,24 +161,6 @@ export default function PartnersSection() {
           </div>
         ))}
       </div>
-
-      {/* Range of business. A quiet chip row under a hairline — it names the
-          categories without competing with the comb above it. */}
-      <ul className="mx-auto mt-14 flex max-w-3xl flex-wrap items-center justify-center gap-2.5 border-t border-gray-200 pt-10">
-        {BUSINESS_LINES.map(({ label, Icon }) => (
-          <li
-            key={label}
-            className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm text-gray-600"
-          >
-            <Icon
-              className="h-4 w-4 text-brand"
-              strokeWidth={1.75}
-              aria-hidden="true"
-            />
-            {label}
-          </li>
-        ))}
-      </ul>
     </Section>
   );
 }

@@ -335,6 +335,32 @@
     }
   }
 
+  /* Warm ambiance for the flat landing tiles. The face stays white; the orange
+     arrives as a wash pooling in the bottom-right corner, a warm hairline and
+     the brand-cast shadow. The wash is anchored at the arrow rather than the
+     icon so it collects behind the one brand-coloured element on the card —
+     anchoring it at the icon instead would swallow the tinted icon disc, which
+     is the same tint.
+
+     Hover deepens all three at once, so the card warms as a whole rather than
+     just changing its outline. */
+  @utility card-warm {
+    background:
+      radial-gradient(130% 130% at 100% 100%,
+        var(--color-brand-tint) 0%,
+        transparent 62%),
+      #fff;
+    border-color: color-mix(in oklab, var(--color-brand) 16%, #fff);
+    box-shadow: var(--shadow-brand-soft);
+    transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+
+    &:hover {
+      border-color: color-mix(in oklab, var(--color-brand) 38%, #fff);
+      box-shadow: var(--shadow-brand-card);
+      transform: translateY(-2px);
+    }
+  }
+
   @utility no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;

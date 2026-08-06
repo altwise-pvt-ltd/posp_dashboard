@@ -39,14 +39,17 @@ const PERSONAS = [
 
 export default function WhoCanBecomeSection() {
   return (
-    <Section tone="tint">
+    /* Off-white band, not the brand tint: the persona cards are flat white now,
+       so the band has to be the darker of the two for them to read as cards at
+       all. Sits between two white sections, so it still separates cleanly. */
+    <Section tone="muted">
       <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2">
         {/* ── Left ── */}
         <div>
           <SectionHeading className="mb-3">
             Who Can Become a <Highlight>LetsInsurance</Highlight> POSP Advisor?
           </SectionHeading>
-          <span className="mb-6 block h-1 w-16 rounded-full bg-brand" />
+          <span className="mb-6 block h-1 w-16 rounded-none bg-brand" />
 
           <p className="mb-10 max-w-lg text-sm leading-relaxed text-gray-500">
             Anyone above 18 years of age with a minimum 10th pass qualification can
@@ -56,20 +59,35 @@ export default function WhoCanBecomeSection() {
 
           {/* Illustration, haloed by a dashed ring sized to sit just outside it */}
           <div className="relative flex justify-center">
-            <div className="absolute inset-0 m-auto h-90 w-90 rounded-full border-2 border-dashed border-brand/30" />
+            <div className="absolute inset-0 m-auto h-70 w-70 rounded-full border-2 border-dashed border-brand/30" />
             <img
               src={whoPospAdvisor}
               alt="POSP Advisor illustration"
               loading="lazy"
-              className="relative z-10 h-120 w-auto object-contain"
+              className="relative z-10 h-100 w-auto object-contain"
             />
           </div>
         </div>
 
-        {/* ── Right: persona cards ── */}
-        <div className="flex flex-col gap-4">
+        {/* ── Right: persona cards ──
+            Arranged in a grid of square-ish cards on all screen sizes: 2 columns
+            on mobile, 3 columns on tablet/medium, and 2 columns on desktop beside
+            the illustration.
+
+            Five personas over two columns (on mobile and desktop) leaves one over. 
+            To keep it visually balanced, the last card spans both columns but is 
+            sized and centered to match the exact width of a single column.
+            
+            - Mobile gap is 0.75rem (gap-3), so half is 0.375rem.
+            - Desktop gap is 1rem (gap-4), so half is 0.5rem. */}
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-2 lg:gap-4">
           {PERSONAS.map((persona) => (
-            <FeatureCard key={persona.title} {...persona} />
+            <FeatureCard
+              key={persona.title}
+              {...persona}
+              variant="square"
+              className="last:col-span-2 last:mx-auto last:w-[calc(50%-0.375rem)] md:last:col-span-1 md:last:mx-0 md:last:w-auto lg:last:col-span-2 lg:last:mx-auto lg:last:w-[calc(50%-0.5rem)]"
+            />
           ))}
         </div>
       </div>

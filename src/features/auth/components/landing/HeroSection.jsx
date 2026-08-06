@@ -23,7 +23,7 @@ export default function HeroSection({ loginForm }) {
       {/* The login track is sized to the card's own max-w-90, not wider: any extra
           width would sit as dead space on the card's left, since the card is
           right-pinned and can't grow into it. */}
-      <div className="grid grid-cols-1 items-start gap-10 lg:grid-cols-[1fr_auto_minmax(0,360px)] lg:gap-6">
+      <div className="grid grid-cols-1 items-start gap-10 lg:grid-cols-[1fr_auto_minmax(0,362px)] lg:gap-6">
         {/* ── Left: content ── */}
         {/* Mobile keeps only the headline and the zero-investment line, centred;
             the badge, checklist and CTA are lg-only so the login card stays near

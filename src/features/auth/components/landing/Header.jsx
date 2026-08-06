@@ -35,7 +35,7 @@ export default function Header() {
             follows the ratio. lg sits at the SVG's native width. Mobile reads
             odd at w-47 because its units are 15% smaller under landing-scale —
             that lands on 160px, the size the bar is meant to show. */}
-        <img src={logo} alt="LetsInsurance" className="h-auto w-47 lg:w-43" />
+        <img src={logo} alt="LetsInsurance" className="h-auto w-50 lg:w-43" />
 
         {/* Desktop nav */}
         <nav className="hidden items-center gap-8 lg:flex">
@@ -54,7 +54,16 @@ export default function Header() {
         {/* Mobile: login sits in the bar itself, so it stays reachable without
             opening the menu — it's the page's primary action. */}
         <div className="flex items-center gap-1 lg:hidden">
-          <BrandButton size="sm" className="px-5 py-2.5">
+          <BrandButton
+            size="sm"
+            className="px-5 py-2.5"
+            onClick={() => {
+              const el = document.getElementById("login-form");
+              if (el) {
+                el.scrollIntoView({ behavior: "smooth", block: "center" });
+              }
+            }}
+          >
             Login
           </BrandButton>
 

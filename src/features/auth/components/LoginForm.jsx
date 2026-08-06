@@ -37,7 +37,7 @@ const RESEND_SECONDS = 30;
    soft orange focus ring, matching the landing card rather than the slate-50
    fields used inside the onboarding wizard. */
 const FIELD =
-  "w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder-slate-400 transition-all focus:border-brand focus:outline-none focus:ring-4 focus:ring-brand/15";
+  "w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 placeholder-slate-400 transition-all focus:border-brand focus:outline-none focus:ring-4 focus:ring-brand/15";
 
 const LABEL = "mb-2 block text-sm font-medium text-slate-600";
 
@@ -133,7 +133,7 @@ export default function LoginForm({ onVerified }) {
   }, alertOnInvalid);
 
   return (
-    <div className="w-full max-w-90 rounded-2xl border border-slate-100 bg-white px-6 py-8 shadow-brand-card sm:px-8">
+    <div id="login-form" className="w-full max-w-[350px] rounded-2xl border border-slate-100 bg-white px-6 py-8 shadow-brand-card sm:px-8">
       {/* ── Card heading ── */}
       <h2 className="text-center text-2xl font-bold tracking-tight text-slate-900">
         Login or <Highlight>Register</Highlight>
@@ -151,7 +151,7 @@ export default function LoginForm({ onVerified }) {
 
         <div className="flex items-stretch gap-2">
           {/* Country code — India only for now, so it renders as a static prefix */}
-          <div className="flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700">
+          <div className="flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700">
             <span className="text-base leading-none">🇮🇳</span>
             +91
             <ChevronDown size={14} className="text-slate-400" />
