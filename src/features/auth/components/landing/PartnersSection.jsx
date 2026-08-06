@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Briefcase, Car, HeartPulse, House, ShieldCheck } from "lucide-react";
 import Section from "./ui/Section";
 import SectionHeading from "./ui/SectionHeading";
 import Highlight from "./ui/Highlight";
@@ -16,6 +17,17 @@ const partnerModules = import.meta.glob("/src/assets/landing/partner-*.png", {
 const PARTNERS = Object.entries(partnerModules)
   .sort(([a], [b]) => a.localeCompare(b))
   .map(([path, src]) => ({ path, src }));
+
+/* The lines of business those partners are placed across — the second half of
+   what this band says: who we work with, and what we can sell. Kept to the same
+   vocabulary as the footer's Insurance column so the two never disagree. */
+const BUSINESS_LINES = [
+  { label: "Motor", Icon: Car },
+  { label: "Health", Icon: HeartPulse },
+  { label: "Term Life", Icon: ShieldCheck },
+  { label: "Business", Icon: Briefcase },
+  { label: "Home", Icon: House },
+];
 
 /* A pointy-top hexagon: flat vertical edges down the sides, points top and
    bottom. Those flat sides are what let neighbours in a row sit flush, and the
@@ -90,16 +102,36 @@ export default function PartnersSection() {
   };
 
   return (
-    <Section>
-      <SectionHeading center className="mb-10">
-        Our Top Insurance <Highlight>Partners</Highlight>
-      </SectionHeading>
+    /* The faint grey band is what makes the comb read as minimal: the hex faces
+       stay pure white, so the cells look like cards resting on the page rather
+       than outlines drawn onto it. */
+    <Section tone="muted">
+      <div className="mx-auto mb-12 max-w-2xl text-center">
+        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-brand">
+          Our Network
+        </p>
+
+        <SectionHeading center className="mb-4">
+          Backed by India's leading <Highlight>insurers</Highlight>
+        </SectionHeading>
+
+        {/* Counted from the asset folder, so the claim can't drift out of date
+            as logos are added. */}
+        <p className="text-sm leading-relaxed text-gray-500">
+          {PARTNERS.length} insurance companies on a single platform — quote,
+          compare and issue across every major line of business without ever
+          leaving the app.
+        </p>
+      </div>
 
       <div style={combStyle}>
         {rows.map((row, rowIndex) => (
+          /* Rows are transformed, so each one is its own stacking context and a
+             hovered hex can't lift over the row below on its own. Raising the
+             whole row on hover is what lets the lift read cleanly. */
           <div
             key={rowIndex}
-            className={`flex justify-center ${
+            className={`relative flex justify-center hover:z-10 ${
               rowIndex === 0 ? "" : "mt-[var(--hex-overlap)]"
             } ${
               rowIndex % 2 === 0
@@ -108,28 +140,31 @@ export default function PartnersSection() {
             }`}
           >
             {row.map((partner) => (
-              /* Three boxes, one job each: the cell owns the size and the
-                 hairline gap, the ring is the hex border, the face is the hex
-                 fill. The border has to be a second clipped layer showing
-                 through — a real CSS border would be clipped away with the
-                 corners it's drawn on. */
+              /* Three boxes, one job each: the cell owns the size, the hairline
+                 gap and the hover lift, the ring is the hex border, the face is
+                 the hex fill. The border has to be a second clipped layer
+                 showing through — a real CSS border would be clipped away with
+                 the corners it's drawn on. drop-shadow (not box-shadow) is what
+                 follows the hex silhouette instead of its bounding box. */
               <div
                 key={partner.path}
-                className="w-[var(--hex-w)] shrink-0 p-[3px] aspect-[0.866]"
+                className="group w-[var(--hex-w)] shrink-0 p-[3px] aspect-[0.866] transition duration-300 ease-out hover:-translate-y-1 hover:drop-shadow-lg"
               >
                 <div
-                  className={`h-full w-full bg-orange-300 shadow-[0_0_0_1px_rgba(255,255,255,0.1)] p-px ${HEX}`}
+                  className={`h-full w-full bg-gray-200 p-px transition-colors duration-300 group-hover:bg-brand/50 ${HEX}`}
                 >
                   <div
-                    className={`flex h-full w-full items-center justify-center bg-white transition-colors hover:bg-orange-50 ${HEX}`}
+                    className={`flex h-full w-full items-center justify-center bg-white transition-colors duration-300 group-hover:bg-brand-tint ${HEX}`}
                   >
                     <img
                       src={partner.src}
                       alt=""
                       loading="lazy"
-                      /* The hex is only full width across its middle band, so
-                         the logo has to stay inside that inscribed rectangle. */
-                      className="max-h-[45%] max-w-[80%] object-contain"
+                      /* Held back at rest so the wall reads as one calm block
+                         and no single brand shouts; full colour on hover.
+                         Add `grayscale group-hover:grayscale-0` here for the
+                         fully desaturated treatment. */
+                      className="max-h-[45%] max-w-[80%] object-contain opacity-70 transition-opacity duration-300 group-hover:opacity-100"
                     />
                   </div>
                 </div>
@@ -138,6 +173,24 @@ export default function PartnersSection() {
           </div>
         ))}
       </div>
+
+      {/* Range of business. A quiet chip row under a hairline — it names the
+          categories without competing with the comb above it. */}
+      <ul className="mx-auto mt-14 flex max-w-3xl flex-wrap items-center justify-center gap-2.5 border-t border-gray-200 pt-10">
+        {BUSINESS_LINES.map(({ label, Icon }) => (
+          <li
+            key={label}
+            className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm text-gray-600"
+          >
+            <Icon
+              className="h-4 w-4 text-brand"
+              strokeWidth={1.75}
+              aria-hidden="true"
+            />
+            {label}
+          </li>
+        ))}
+      </ul>
     </Section>
   );
 }
