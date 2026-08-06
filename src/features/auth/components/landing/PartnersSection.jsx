@@ -129,7 +129,7 @@ export default function PartnersSection() {
                       loading="lazy"
                       /* The hex is only full width across its middle band, so
                          the logo has to stay inside that inscribed rectangle. */
-                      className="max-h-[38%] max-w-[70%] object-contain"
+                      className="max-h-[45%] max-w-[80%] object-contain"
                     />
                   </div>
                 </div>
