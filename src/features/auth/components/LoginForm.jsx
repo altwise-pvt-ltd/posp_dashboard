@@ -37,7 +37,7 @@ const RESEND_SECONDS = 30;
    soft orange focus ring, matching the landing card rather than the slate-50
    fields used inside the onboarding wizard. */
 const FIELD =
-  "w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 placeholder-slate-400 transition-all focus:border-brand focus:outline-none focus:ring-4 focus:ring-brand/15";
+  "w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-lg font-bold text-slate-900 placeholder-slate-500 transition-all focus:border-brand focus:outline-none focus:ring-4 focus:ring-brand/15";
 
 const LABEL = "mb-2 block text-sm font-medium text-slate-600";
 
@@ -133,9 +133,9 @@ export default function LoginForm({ onVerified }) {
   }, alertOnInvalid);
 
   return (
-    <div id="login-form" className="w-full max-w-[350px] rounded-2xl border border-slate-100 bg-white px-6 py-8 shadow-brand-card sm:px-8">
+    <div id="login-form" className="w-full max-w-[380px] rounded-2xl border border-slate-100 bg-white px-6 py-8 shadow-brand-card sm:px-8">
       {/* ── Card heading ── */}
-      <h2 className="text-center text-2xl font-bold tracking-tight text-slate-900">
+      <h2 className="text-center text-[26px] font-bold tracking-tight text-slate-900">
         Login or <Highlight>Register</Highlight>
       </h2>
       <p className="mt-1.5 text-center text-sm text-slate-500">
@@ -151,10 +151,10 @@ export default function LoginForm({ onVerified }) {
 
         <div className="flex items-stretch gap-2">
           {/* Country code — India only for now, so it renders as a static prefix */}
-          <div className="flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700">
-            <span className="text-base leading-none">🇮🇳</span>
+          <div className="flex shrink-0 items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 text-lg font-bold text-slate-800">
+            <span className="text-xl leading-none">🇮🇳</span>
             +91
-            <ChevronDown size={14} className="text-slate-400" />
+            <ChevronDown size={18} className="text-slate-500" />
           </div>
 
           <input
@@ -164,7 +164,7 @@ export default function LoginForm({ onVerified }) {
             inputMode="numeric"
             autoComplete="tel-national"
             maxLength={10}
-            className={FIELD}
+            className={`${FIELD} font-mono tracking-[0.08em] placeholder:font-sans placeholder:tracking-normal`}
             {...mobileField}
             onChange={digitsOnly(mobileField, 10)}
           />

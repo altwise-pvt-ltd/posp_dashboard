@@ -23,7 +23,7 @@ export default function HeroSection({ loginForm }) {
       {/* The login track is sized to the card's own max-w-90, not wider: any extra
           width would sit as dead space on the card's left, since the card is
           right-pinned and can't grow into it. */}
-      <div className="grid grid-cols-1 items-start gap-10 lg:grid-cols-[1fr_auto_minmax(0,362px)] lg:gap-6">
+      <div className="grid grid-cols-1 items-start gap-x-10 gap-y-0 lg:grid-cols-[1fr_auto_minmax(0,362px)] lg:gap-6">
         {/* ── Left: content ── */}
         {/* Mobile keeps only the headline and the zero-investment line, centred;
             the badge, checklist and CTA are lg-only so the login card stays near
@@ -76,7 +76,7 @@ export default function HeroSection({ loginForm }) {
           <img
             src={heroAgent}
             alt="POSP Advisor with the Letsinsurance advisor app"
-            className="h-72 w-auto object-contain sm:h-90 lg:h-135"
+            className="h-90 w-auto object-contain sm:h-90 lg:h-155"
           />
         </div>
 
@@ -85,7 +85,7 @@ export default function HeroSection({ loginForm }) {
             but not between the illustration and the card — the agent art already
             carries its own bottom whitespace, so on mobile the row gap is pulled
             back out and only the lg columns keep it. */}
-        <div className="-mt-10 flex justify-center lg:mt-0 lg:justify-end">
+        <div className="flex justify-center lg:mt-0 lg:justify-end">
           {loginForm}
         </div>
       </div>
