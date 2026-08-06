@@ -30,16 +30,12 @@ export default function Header() {
     /* Mobile carries a warm ambient glow under the bar instead of the neutral
        grey shadow — low alpha and a wide blur so it reads as light, not a line. */
     <header className="sticky top-0 z-50 bg-white shadow-[0_6px_20px_-8px_rgba(244,124,60,0.45)] lg:shadow-sm">
-      <div className={`flex h-24 items-center justify-between ${CONTAINER}`}>
+      <div className={`flex h-18 items-center justify-between ${CONTAINER}`}>
         {/* The mark is a wide 172×40 lockup, so width drives the size and height
             follows the ratio. lg sits at the SVG's native width. Mobile reads
             odd at w-47 because its units are 15% smaller under landing-scale —
             that lands on 160px, the size the bar is meant to show. */}
-        <img
-          src={logo}
-          alt="LetsInsurance"
-          className="h-auto w-47 lg:w-43"
-        />
+        <img src={logo} alt="LetsInsurance" className="h-auto w-47 lg:w-43" />
 
         {/* Desktop nav */}
         <nav className="hidden items-center gap-8 lg:flex">
@@ -72,7 +68,11 @@ export default function Header() {
           >
             {/* Sized by class, not lucide's px `size` prop, so the mobile
                 landing-scale variables reach it. */}
-            {mobileOpen ? <X className="size-6" /> : <Menu className="size-6" />}
+            {mobileOpen ? (
+              <X className="size-6" />
+            ) : (
+              <Menu className="size-6" />
+            )}
           </button>
         </div>
       </div>
