@@ -198,6 +198,8 @@ export default function OnboardingFooter() {
             <img
               src={logo}
               alt="Lets Insurance — protecting you and yours"
+              width={268}
+              height={56}
               className="h-11 w-auto sm:h-10"
             />
             <p className="mt-3 max-w-xs text-xs leading-5 text-slate-400 sm:text-[11px] sm:leading-4.5">

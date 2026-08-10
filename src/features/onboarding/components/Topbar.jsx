@@ -16,7 +16,7 @@ export default function Topbar() {
       <div className="flex h-16 items-center justify-start px-4 sm:px-6 lg:px-10 2xl:px-12 max-w-7xl 2xl:max-w-384 mx-auto">
 
         {/* Brand logo */}
-        <img src={logo} alt="POSP" className="h-10 w-auto" />
+        <img src={logo} alt="POSP" width={172} height={40} className="h-10 w-auto" />
 
       </div>
     </header>

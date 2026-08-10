@@ -1,52 +1,45 @@
 /** One row of the score breakdown — label on the left, figures on the right. */
-function ScoreRow({ label, value, divided = true }) {
+function ScoreRow({ label, value }) {
   return (
-    <div
-      className={`flex items-center justify-between ${
-        divided ? 'mb-3 border-b border-slate-100 pb-3 md:mb-4 md:pb-4' : ''
-      }`}
-    >
-      <span className="text-xs font-medium text-slate-500 md:text-sm">{label}</span>
-      <span className="text-sm font-bold text-slate-800 md:text-base">{value}</span>
+    <div className="flex items-center justify-between border-b border-slate-100 py-2.5">
+      <span className="text-sm text-slate-500">{label}</span>
+      <span className="font-mono text-sm font-semibold text-slate-800 tabular-nums">{value}</span>
     </div>
   );
 }
 
 /**
  * How one section went: the verdict in the header, then what it was built from.
- * The percentage is the figure the learner is looking for, so it gets the size.
+ * The percentage is the figure the learner is looking for, so it gets the size —
+ * but in weight and colour only, not in the confetti the screen used to wear.
  */
 function SectionScoreCard({ title, score }) {
   const { passed, attempted, correct, total, percentage } = score;
 
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
-      <div
-        className={`flex items-center justify-between border-b p-3 md:p-4 ${
-          passed ? 'border-green-50 bg-[#f4fcf6]' : 'border-red-50 bg-red-50'
-        }`}
-      >
-        <h3 className={`text-base font-bold md:text-lg ${passed ? 'text-emerald-800' : 'text-red-800'}`}>
-          {title}
-        </h3>
+    <div className="border border-slate-200 bg-white">
+      <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3">
+        <h3 className="truncate text-sm font-semibold text-slate-900">{title}</h3>
         <span
-          className={`rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase md:px-3 md:py-1 md:text-xs ${
-            passed ? 'bg-green-200/50 text-green-700' : 'bg-red-200/50 text-red-700'
+          className={`shrink-0 border px-2 py-0.5 text-[10px] font-semibold tracking-widest uppercase ${
+            passed
+              ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+              : 'border-error/30 bg-error/5 text-error'
           }`}
         >
           {passed ? 'Pass' : 'Fail'}
         </span>
       </div>
 
-      <div className="p-4 md:p-5">
-        <ScoreRow label="Questions Attempted" value={`${attempted} / ${total}`} />
-        <ScoreRow label="Correct Answers" value={`${correct} / ${total}`} />
+      <div className="px-4 pb-4">
+        <ScoreRow label="Questions attempted" value={`${attempted} / ${total}`} />
+        <ScoreRow label="Correct answers" value={`${correct} / ${total}`} />
 
-        <div className="mt-1 flex items-end justify-between md:mt-2">
-          <span className="text-xs font-medium text-slate-500 md:text-sm">Score</span>
+        <div className="flex items-end justify-between pt-4">
+          <span className="text-sm text-slate-500">Score</span>
           <span
-            className={`text-4xl font-bold tracking-tight md:text-5xl ${
-              passed ? 'text-[#10b981]' : 'text-red-500'
+            className={`font-mono text-3xl leading-none font-semibold tracking-tight tabular-nums ${
+              passed ? 'text-emerald-600' : 'text-error'
             }`}
           >
             {percentage.toFixed(0)}%

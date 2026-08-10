@@ -96,7 +96,17 @@ function StepCard({ num, icon, title, desc, className = "" }) {
         <div className="absolute -left-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-brand text-xs font-bold text-white shadow-sm md:hidden">
           {num}
         </div>
-        <img src={icon} alt="" loading="lazy" className="h-8 w-8 object-contain" />
+        {/* The class pins both axes, so these attributes reserve the box rather
+            than declare a ratio — they carry the rendered size, not the icon's
+            intrinsic one, which varies per step. */}
+        <img
+          src={icon}
+          alt=""
+          loading="lazy"
+          width={32}
+          height={32}
+          className="h-8 w-8 object-contain"
+        />
       </div>
 
       <div className="min-w-0 flex-1">
@@ -261,6 +271,8 @@ export default function StepsSection() {
             src={stepsIllustration}
             alt="Steps illustration"
             loading="lazy"
+            width={1509}
+            height={1042}
             className="mx-auto h-50 sm:h-70 w-auto object-contain lg:mx-0"
           />
 

@@ -27,7 +27,13 @@ function BrandTopbar() {
             follows the ratio. These are the pixel sizes the landing bar renders
             at — its w-50 resolves to 160px under landing-scale, which this page
             doesn't run, so the mobile width is written out at face value. */}
-        <img src={logo} alt="LetsInsurance" className="h-auto w-40 lg:w-43" />
+        <img
+          src={logo}
+          alt="LetsInsurance"
+          width={172}
+          height={40}
+          className="h-auto w-40 lg:w-43"
+        />
 
         <UserMenu isOpen={menuOpen} onToggle={() => setMenuOpen((open) => !open)} />
       </div>

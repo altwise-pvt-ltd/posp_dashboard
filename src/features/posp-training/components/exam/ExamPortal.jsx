@@ -4,6 +4,7 @@ import { examQuestions } from '../../data/examQuestions';
 import { SECTIONS } from '../../data/sections';
 import { useCountdown } from '../../hooks/useCountdown';
 import { PASS_PERCENTAGE, scoreSection } from '../../lib/examScoring';
+import CertificateScreen from '../certificate/CertificateScreen';
 import { SECTION_SECONDS, TIME_WARNINGS } from './examTiming';
 import ExamInstructions from './ExamInstructions';
 import ExamResults from './ExamResults';
@@ -16,6 +17,7 @@ const STAGE = {
   SECTION: 'section',
   TRANSITION: 'transition',
   RESULTS: 'results',
+  CERTIFICATE: 'certificate',
 };
 
 /**
@@ -120,8 +122,19 @@ function ExamPortal({ onRetakeTraining }) {
           section: examSection,
           score: scoreSection(examQuestions[examSection.id], answers[examSection.id]),
         }))}
-        onGoToDashboard={() => navigate('/overview')}
+        onViewCertificate={() => setStage(STAGE.CERTIFICATE)}
         onRetakeTraining={onRetakeTraining}
+      />
+    );
+  }
+
+  // Only ever reached from a pass — the results screen offers no way here
+  // otherwise, so the certificate cannot be opened on a failed attempt.
+  if (stage === STAGE.CERTIFICATE) {
+    return (
+      <CertificateScreen
+        sections={EXAM_SECTIONS}
+        onGoToDashboard={() => navigate('/overview')}
       />
     );
   }

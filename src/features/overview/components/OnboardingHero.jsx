@@ -11,6 +11,7 @@ const PRODUCTS = [
     title: 'Health',
     subtitle: '12 plans · individual & family',
     img: healthImg,
+    imgSize: [372, 276],
     bg: 'bg-amber-50',
     hoverBorder: 'hover:border-amber-300',
     to: '/onboarding/health',
@@ -20,6 +21,7 @@ const PRODUCTS = [
     title: 'Motor',
     subtitle: '8 plans · car, bike, EV',
     img: motorImg,
+    imgSize: [478, 484],
     bg: 'bg-sky-50',
     hoverBorder: 'hover:border-sky-300',
     to: '/onboarding/motor',
@@ -29,6 +31,7 @@ const PRODUCTS = [
     title: 'Term & Life',
     subtitle: '10 plans · term + life cover',
     img: termLifeImg,
+    imgSize: [431, 579],
     bg: 'bg-emerald-50',
     hoverBorder: 'hover:border-emerald-300',
     to: '/onboarding/term-life',
@@ -38,6 +41,7 @@ const PRODUCTS = [
     title: 'Business',
     subtitle: '7 plans · SME packages',
     img: businessImg,
+    imgSize: [376, 240],
     bg: 'bg-violet-50',
     hoverBorder: 'hover:border-violet-300',
     to: '/onboarding/business',
@@ -47,6 +51,7 @@ const PRODUCTS = [
     title: 'Commercial',
     subtitle: '5 plans · property & liability',
     img: commercialImg,
+    imgSize: [382, 388],
     bg: 'bg-rose-50',
     hoverBorder: 'hover:border-rose-300',
     to: '/onboarding/commercial',
@@ -102,6 +107,8 @@ function OnboardingHero() {
               <img
                 src={p.img}
                 alt={`${p.title} insurance`}
+                width={p.imgSize[0]}
+                height={p.imgSize[1]}
                 className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-105"
               />
             </div>

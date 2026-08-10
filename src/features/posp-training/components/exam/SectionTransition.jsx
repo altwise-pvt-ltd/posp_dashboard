@@ -1,70 +1,60 @@
 import { motion } from 'framer-motion';
-import { ArrowRight, CircleCheckBig, FileText } from 'lucide-react';
+import { ArrowRight, Check, FileText } from 'lucide-react';
 import { EXAM_SHELL } from './examShell';
 
 /**
  * The breather between two sections: one is banked, the next is named, and
  * nothing is timed until the learner says go.
+ *
+ * Held to the same square, flat language as the live exam — the learner
+ * crosses straight from one to the other, and a celebration screen in a
+ * different visual key reads as a different product. Green appears once, on
+ * the completion mark, because that is the one thing here carrying a status
+ * rather than an accent.
  */
 function SectionTransition({ completedSection, nextSection, onStartNext }) {
   return (
     <div
-      className={`${EXAM_SHELL} flex flex-col items-center justify-center overflow-y-auto border border-slate-200 bg-slate-50 p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] md:p-8`}
+      className={`${EXAM_SHELL} flex flex-col items-center justify-center overflow-y-auto border border-slate-200 bg-slate-50 p-6 md:p-8`}
     >
-      <div className="pointer-events-none absolute top-0 left-0 z-0 h-full w-full overflow-hidden">
-        <div className="absolute top-1/2 left-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-green-500/5 blur-[100px]" />
-      </div>
-
       <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: 'easeOut' }}
-        className="relative z-10 w-full max-w-xl rounded-[2.5rem] border border-slate-100 bg-white p-10 text-center shadow-xl md:p-12"
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, ease: 'easeOut' }}
+        className="w-full max-w-lg border border-slate-200 bg-white p-8 shadow-[0_8px_30px_rgba(15,23,42,0.05)] md:p-10"
       >
-        <div className="relative mx-auto mb-8 h-28 w-28">
-          <div className="absolute inset-0 animate-pulse rounded-full bg-green-400 opacity-30 blur-xl" />
-          <div className="relative flex h-full w-full items-center justify-center rounded-full border-4 border-white bg-linear-to-tr from-green-400 to-emerald-500 text-white shadow-lg">
-            <CircleCheckBig size={54} strokeWidth={3} aria-hidden="true" />
-          </div>
+        <div className="mb-6 flex h-11 w-11 items-center justify-center border border-emerald-200 bg-emerald-50 text-emerald-600">
+          <Check size={22} strokeWidth={2.5} aria-hidden="true" />
         </div>
 
-        <h2 className="mb-4 text-3xl font-black tracking-tight text-slate-800 md:text-4xl">
-          Section Completed!
-        </h2>
-        <p className="mb-10 text-lg leading-relaxed text-slate-500">
-          Awesome job! You have successfully completed the{' '}
-          <strong className="text-slate-700">{completedSection.title}</strong> section. Take a deep
-          breath before moving on.
+        <h2 className="text-2xl font-semibold tracking-tight text-slate-900">Section completed</h2>
+        <p className="mt-2 text-sm leading-relaxed text-slate-500">
+          <span className="font-medium text-slate-700">{completedSection.title}</span> is banked.
+          Take a breath — the next section is not timed until you start it.
         </p>
 
-        <div className="mb-10 flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 p-5 text-left shadow-sm">
-          <div>
-            <div className="mb-1 text-xs font-bold tracking-wider text-slate-400 uppercase">Up Next</div>
-            <div className="text-xl font-bold text-slate-800">{nextSection.title}</div>
+        <div className="mt-8 flex items-center justify-between gap-4 border border-slate-200 bg-slate-50 p-4">
+          <div className="min-w-0">
+            <div className="text-[10px] font-semibold tracking-[0.14em] text-slate-400 uppercase">
+              Up Next
+            </div>
+            <div className="mt-1 truncate text-base font-semibold text-slate-900">
+              {nextSection.title}
+            </div>
           </div>
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-slate-100 bg-white text-orange-500 shadow-sm">
-            <FileText size={24} strokeWidth={2.5} aria-hidden="true" />
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center border border-primary/25 bg-primary/8 text-primary">
+            <FileText size={18} strokeWidth={2} aria-hidden="true" />
           </div>
         </div>
 
-        <motion.button
+        <button
           type="button"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
           onClick={onStartNext}
-          className="group relative flex w-full items-center justify-center gap-3 overflow-hidden rounded-2xl bg-linear-to-r from-orange-500 to-amber-500 py-4 text-lg font-bold text-white shadow-[0_8px_25px_rgba(249,115,22,0.3)] transition-all hover:from-orange-600 hover:to-amber-600 md:py-5"
+          className="mt-6 flex w-full items-center justify-center gap-2 bg-primary py-3 text-sm font-semibold text-white transition-colors hover:bg-on-primary-fixed-variant focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
         >
-          <div className="absolute inset-0 -translate-x-full skew-x-[-20deg] bg-linear-to-r from-transparent via-white/10 to-transparent group-hover:animate-[shimmer_2s_infinite]" />
-          <span className="relative z-10 flex items-center gap-2">
-            Start Next Section
-            <ArrowRight
-              size={22}
-              strokeWidth={2.5}
-              aria-hidden="true"
-              className="transition-transform group-hover:translate-x-1"
-            />
-          </span>
-        </motion.button>
+          Start Next Section
+          <ArrowRight size={16} strokeWidth={2} aria-hidden="true" />
+        </button>
       </motion.div>
     </div>
   );

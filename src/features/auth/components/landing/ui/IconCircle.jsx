@@ -34,7 +34,17 @@ export default function IconCircle({ src, size = "md", shape = "circle" }) {
     <div
       className={`flex shrink-0 items-center justify-center bg-linear-to-br from-white to-orange-200/60 ring-1 ring-brand/10 ${SHAPES[shape]} ${box}`}
     >
-      <img src={src} alt="" loading="lazy" className={`object-contain ${image}`} />
+      {/* Every `image` class pins both axes, so these attributes only reserve the
+          icon's box — they can't be the intrinsic size, which differs per icon
+          and per breakpoint. object-contain keeps each icon's own ratio. */}
+      <img
+        src={src}
+        alt=""
+        loading="lazy"
+        width={64}
+        height={64}
+        className={`object-contain ${image}`}
+      />
     </div>
   );
 }

@@ -35,7 +35,13 @@ export default function Header() {
             follows the ratio. lg sits at the SVG's native width. Mobile reads
             odd at w-47 because its units are 15% smaller under landing-scale —
             that lands on 160px, the size the bar is meant to show. */}
-        <img src={logo} alt="LetsInsurance" className="h-auto w-50 lg:w-43" />
+        <img
+          src={logo}
+          alt="LetsInsurance"
+          width={172}
+          height={40}
+          className="h-auto w-50 lg:w-43"
+        />
 
         {/* Desktop nav */}
         <nav className="hidden items-center gap-8 lg:flex">

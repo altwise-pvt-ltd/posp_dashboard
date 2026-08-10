@@ -119,14 +119,20 @@ function TestimonialCard({
         src={quoteIcon}
         alt=""
         loading="lazy"
+        width={32}
+        height={32}
         className="absolute right-5 top-5 size-10"
       />
 
       <div className="mb-5 flex items-center gap-4">
+        {/* size-20 pins both axes and object-cover does the cropping, so these
+            reserve the avatar's box — the source photos aren't square. */}
         <img
           src={photo}
           alt={name}
           loading="lazy"
+          width={80}
+          height={80}
           className="size-20 rounded-full object-cover ring-2 ring-brand/30 ring-offset-2 ring-offset-white"
         />
         <div>

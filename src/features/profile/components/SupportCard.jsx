@@ -56,6 +56,8 @@ const SupportCard = () => {
           <img
             src={manager.imageUrl}
             alt={manager.name}
+            width={48}
+            height={48}
             className="w-12 h-12 rounded-full object-cover bg-slate-100 shrink-0"
           />
           <div className="min-w-0">

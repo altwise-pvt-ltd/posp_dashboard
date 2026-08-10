@@ -79,6 +79,8 @@ export default function HeroSection({ loginForm }) {
           <img
             src={heroAgent}
             alt="POSP Advisor with the Letsinsurance advisor app"
+            width={571}
+            height={545}
             className="h-90 w-auto object-contain sm:h-90 lg:h-155"
           />
         </div>

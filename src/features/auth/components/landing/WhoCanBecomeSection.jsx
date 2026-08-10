@@ -64,6 +64,8 @@ export default function WhoCanBecomeSection() {
               src={whoPospAdvisor}
               alt="POSP Advisor illustration"
               loading="lazy"
+              width={676}
+              height={647}
               className="relative z-10 h-100 w-auto object-contain"
             />
           </div>

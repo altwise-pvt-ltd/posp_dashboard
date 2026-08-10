@@ -64,6 +64,8 @@ function Sidebar({ collapsed = false }) {
         <img
           src={item.icon}
           alt=""
+          width={24}
+          height={24}
           className={`w-6 h-6 shrink-0 object-contain transition-all duration-300 relative z-10 ${isActive
             ? 'scale-110 filter brightness-110 drop-shadow-[0_2px_4px_rgba(249,115,22,0.15)]'
             : 'group-hover:scale-105 opacity-85 group-hover:opacity-100'
@@ -97,6 +99,8 @@ function Sidebar({ collapsed = false }) {
           <img
             src={logo}
             alt="LetsInsure"
+            width={172}
+            height={40}
             className="h-10 w-auto object-contain transition-all duration-300 hover:scale-[1.03] active:scale-[0.98] drop-shadow-sm"
           />
         )}

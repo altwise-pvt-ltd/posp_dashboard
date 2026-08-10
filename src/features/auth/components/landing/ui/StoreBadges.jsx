@@ -1,9 +1,12 @@
 import googlePlay from "@/assets/landing/google-play.png";
 import appStore from "@/assets/landing/app-store.png";
 
+/* `width`/`height` are the badges' intrinsic pixel sizes. The default variant
+   sizes by height alone, so the browser needs the ratio to reserve the row's
+   width before the images land. */
 const STORES = [
-  { src: googlePlay, alt: "Get it on Google Play", href: "#" },
-  { src: appStore, alt: "Download on the App Store", href: "#" },
+  { src: googlePlay, alt: "Get it on Google Play", href: "#", w: 201, h: 60 },
+  { src: appStore, alt: "Download on the App Store", href: "#", w: 202, h: 60 },
 ];
 
 /**
@@ -26,6 +29,8 @@ export default function StoreBadges({ stretch = false, className = "" }) {
             src={store.src}
             alt={store.alt}
             loading="lazy"
+            width={store.w}
+            height={store.h}
             className={`object-contain ${stretch ? "h-13 w-full" : "h-12 w-auto"}`}
           />
         </a>

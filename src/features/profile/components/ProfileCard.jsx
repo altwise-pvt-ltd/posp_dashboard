@@ -16,6 +16,8 @@ const ProfileCard = () => {
         <img
           src={employee.imageUrl}
           alt={employee.name}
+          width={400}
+          height={400}
           className="w-full h-full object-cover"
         />
         {/* subtle fade so the image bleeds into the white content below */}

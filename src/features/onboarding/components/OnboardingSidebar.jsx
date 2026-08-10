@@ -15,6 +15,8 @@ export default function OnboardingSidebar() {
       <img
         src={onboardingIllustration}
         alt="Onboarding Illustration"
+        width={720}
+        height={510}
         className="h-auto w-full lg:max-w-165 2xl:max-w-180"
       />
 

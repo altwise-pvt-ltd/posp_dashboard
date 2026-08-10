@@ -49,6 +49,8 @@ export default function OneAppSection() {
             src={appMockup}
             alt="LetsInsurance app"
             loading="lazy"
+            width={1086}
+            height={1448}
             className="h-90 w-auto object-contain lg:h-120"
           />
         </div>
