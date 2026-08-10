@@ -40,37 +40,37 @@ function SubmitSectionDialog({ open, onCancel, onConfirm }) {
             aria-modal="true"
             aria-labelledby="submit-section-title"
             onClick={(event) => event.stopPropagation()}
-            className="relative w-full max-w-md overflow-hidden rounded-3xl bg-white p-6 shadow-2xl md:p-8"
+            className="relative w-full max-w-md border-t-2 border-primary bg-white p-6 shadow-[0_16px_48px_rgba(15,23,42,0.18)] md:p-8"
           >
-            <div className="absolute top-0 left-0 h-2 w-full bg-linear-to-r from-orange-400 to-amber-500" />
-
-            <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-orange-100 text-orange-500">
-              <TriangleAlert size={32} strokeWidth={2.5} aria-hidden="true" />
+            <div className="mb-5 flex h-11 w-11 items-center justify-center border border-primary/25 bg-primary/8 text-primary">
+              <TriangleAlert size={22} strokeWidth={2} aria-hidden="true" />
             </div>
 
-            <h3 id="submit-section-title" className="mb-3 text-center text-2xl font-black text-slate-800">
-              Submit Section?
+            <h3 id="submit-section-title" className="mb-2 text-xl font-semibold text-slate-900">
+              Submit this section?
             </h3>
-            <p className="mb-8 text-center text-slate-500">
-              Are you sure you want to submit and end this section early?{' '}
-              <strong className="text-slate-700">You cannot return to it once submitted.</strong>
+            <p className="mb-8 text-sm leading-relaxed text-slate-500">
+              Submitting ends the section early.{' '}
+              <span className="font-medium text-slate-700">
+                You cannot return to these questions once submitted.
+              </span>
             </p>
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
+            <div className="flex flex-col gap-2.5 sm:flex-row">
               <button
                 type="button"
                 ref={cancelButtonRef}
                 onClick={onCancel}
-                className="flex-1 rounded-xl bg-slate-100 px-4 py-3 font-bold text-slate-600 transition-colors hover:bg-slate-200"
+                className="flex-1 border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:border-slate-300 hover:text-slate-900"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={onConfirm}
-                className="flex-1 rounded-xl bg-orange-500 px-4 py-3 font-bold text-white shadow-[0_4px_10px_rgba(249,115,22,0.3)] transition-all hover:bg-orange-600 hover:shadow-[0_6px_15px_rgba(249,115,22,0.4)]"
+                className="flex-1 bg-primary px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-on-primary-fixed-variant"
               >
-                Yes, Submit
+                Yes, submit
               </button>
             </div>
           </motion.div>

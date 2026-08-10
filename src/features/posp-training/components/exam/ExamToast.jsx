@@ -37,12 +37,12 @@ function ExamToast({ message, onDismiss }) {
             exit={{ opacity: 0, y: -16 }}
             transition={{ duration: 0.2 }}
             role="status"
-            className="flex items-center gap-3 rounded-xl border border-orange-200 bg-white px-4 py-3 shadow-[0_12px_30px_rgba(249,115,22,0.18)]"
+            className="flex items-center gap-3 border border-slate-200 bg-white px-4 py-3 shadow-[0_8px_24px_rgba(15,23,42,0.10)]"
           >
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-100 text-orange-600">
-              <Clock size={18} strokeWidth={2.5} aria-hidden="true" />
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center border border-primary/25 bg-primary/8 text-primary">
+              <Clock size={16} strokeWidth={2} aria-hidden="true" />
             </span>
-            <span className="text-sm font-semibold text-slate-800">{message}</span>
+            <span className="text-sm font-medium text-slate-800">{message}</span>
           </motion.div>
         )}
       </AnimatePresence>

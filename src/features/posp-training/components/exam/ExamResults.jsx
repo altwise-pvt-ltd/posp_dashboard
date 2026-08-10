@@ -1,5 +1,3 @@
-import { examQuestions } from '../../data/examQuestions';
-import { scoreSection } from '../../lib/examScoring';
 import ResultsBanner from './ResultsBanner';
 import ResultsMedal from './ResultsMedal';
 import SectionScoreCard from './SectionScoreCard';
@@ -10,16 +8,16 @@ import SectionScoreCard from './SectionScoreCard';
  * Every section has to be cleared on its own, so the overall result is only as
  * good as the weakest card below it — and the one way forward changes with it:
  * on to the dashboard, or back through the training.
+ *
+ * `results` arrives already scored, one `{ section, score }` per section sat:
+ * the portal holds both the answers and the question bank, so it does the
+ * scoring and this screen stays presentation, like every other exam screen.
  */
-function ExamResults({ sections, answers, onGoToDashboard, onRetakeTraining }) {
-  const results = sections.map((section) => ({
-    section,
-    score: scoreSection(examQuestions[section.id], answers[section.id]),
-  }));
+function ExamResults({ results, onGoToDashboard, onRetakeTraining }) {
   const passed = results.every((result) => result.score.passed);
 
   return (
-    <div className="flex h-full min-h-screen w-full flex-col items-center overflow-x-hidden bg-white">
+    <div className="flex min-h-screen w-full flex-col items-center overflow-x-hidden bg-white">
       <ResultsBanner passed={passed} />
 
       <div className="mx-auto flex w-full max-w-4xl flex-col pb-6 md:pb-8">

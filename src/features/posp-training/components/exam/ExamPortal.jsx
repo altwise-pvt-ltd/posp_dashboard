@@ -3,20 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { examQuestions } from '../../data/examQuestions';
 import { SECTIONS } from '../../data/sections';
 import { useCountdown } from '../../hooks/useCountdown';
-import { PASS_PERCENTAGE } from '../../lib/examScoring';
+import { PASS_PERCENTAGE, scoreSection } from '../../lib/examScoring';
+import { SECTION_SECONDS, TIME_WARNINGS } from './examTiming';
 import ExamInstructions from './ExamInstructions';
 import ExamResults from './ExamResults';
 import ExamRunner from './ExamRunner';
 import SectionTransition from './SectionTransition';
-
-/** Every section runs on its own clock. */
-const SECTION_SECONDS = 30 * 60;
-
-/** One-shot warnings as the section clock runs down, matched on the second. */
-const TIME_WARNINGS = [
-  { at: 5 * 60, message: 'Only 5 minutes left in this section!' },
-  { at: 60, message: 'Only 60 seconds left! Please wrap up.' },
-];
 
 /** The screens the portal moves between, in the order a learner meets them. */
 const STAGE = {
@@ -74,6 +66,9 @@ function ExamPortal({ onRetakeTraining }) {
   const startSection = (index) => {
     setSectionIndex(index);
     setStage(STAGE.SECTION);
+    // A warning raised in the dying seconds of the last section must not ride
+    // along into this one — the toast outlives the runner that displayed it.
+    setToast(null);
     reset(SECTION_SECONDS);
     setIsClockRunning(true);
   };
@@ -121,8 +116,10 @@ function ExamPortal({ onRetakeTraining }) {
   if (stage === STAGE.RESULTS) {
     return (
       <ExamResults
-        sections={EXAM_SECTIONS}
-        answers={answers}
+        results={EXAM_SECTIONS.map((examSection) => ({
+          section: examSection,
+          score: scoreSection(examQuestions[examSection.id], answers[examSection.id]),
+        }))}
         onGoToDashboard={() => navigate('/overview')}
         onRetakeTraining={onRetakeTraining}
       />
