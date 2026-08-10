@@ -1,5 +1,17 @@
 import { useRef, useEffect } from 'react';
 
+/**
+ * ShapeGrid — a decorative canvas backdrop: a tiled grid of squares, circles,
+ * hexagons or triangles that drifts in one direction and lights up under the
+ * pointer, optionally leaving a fading trail.
+ *
+ * It fills its parent, so give that parent a size. Everything animating lives
+ * in refs and one requestAnimationFrame loop; nothing here re-renders React.
+ *
+ * Nothing imports it yet — it lived in the training module, which never used
+ * it, and is parked here because it is generic decoration rather than anything
+ * to do with POSP training.
+ */
 const ShapeGrid = ({
     direction = 'right',
     speed = 1,

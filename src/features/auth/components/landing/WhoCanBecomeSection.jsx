@@ -70,9 +70,10 @@ export default function WhoCanBecomeSection() {
         </div>
 
         {/* ── Right: persona cards ──
-            Arranged in a grid of square-ish cards on all screen sizes: 2 columns
-            on mobile, 3 columns on tablet/medium, and 2 columns on desktop beside
-            the illustration.
+            Arranged in a grid of tiles on all screen sizes: 2 columns on mobile,
+            3 columns on tablet/medium, and 2 columns on desktop beside the
+            illustration. The tiles size to their copy and stretch to their row,
+            so a row is as tall as its longest description and no taller.
 
             Five personas over two columns (on mobile and desktop) leaves one over. 
             To keep it visually balanced, the last card spans both columns but is 

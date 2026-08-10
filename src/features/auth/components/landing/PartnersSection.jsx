@@ -152,7 +152,7 @@ export default function PartnersSection() {
                          and no single brand shouts; full colour on hover.
                          Add `grayscale group-hover:grayscale-0` here for the
                          fully desaturated treatment. */
-                      className="max-h-[45%] max-w-[80%] object-contain opacity-70 transition-opacity duration-300 group-hover:opacity-100"
+                      className="max-h-[45%] max-w-[80%] object-contain  transition-opacity duration-300 group-hover:opacity-100"
                     />
                   </div>
                 </div>

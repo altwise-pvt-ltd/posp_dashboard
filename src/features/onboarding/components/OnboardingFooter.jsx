@@ -78,8 +78,8 @@ const SOCIALS = [
 function ColumnHeading({ children }) {
   return (
     <>
-      <h3 className="text-base font-semibold text-white">{children}</h3>
-      <span className="mt-2 mb-4 block h-0.75 w-8 rounded-full bg-orange-500" />
+      <h3 className="text-[12.5px] font-semibold text-white">{children}</h3>
+      <span className="mt-1 mb-1.5 block h-0.5 w-7 rounded-full bg-orange-500" />
     </>
   );
 }
@@ -92,7 +92,7 @@ function LinkList({ links }) {
         <li key={link} className="border-b border-white/10 last:border-b-0">
           <span
             aria-disabled="true"
-            className="block cursor-default py-3 text-sm text-slate-300 transition-colors duration-150 hover:text-orange-400"
+            className="block cursor-default py-3 text-sm text-slate-300 transition-colors duration-150 hover:text-orange-400 sm:py-1 sm:text-[12.5px]"
           >
             {link}
           </span>
@@ -120,7 +120,7 @@ function LinkColumn({ heading, links }) {
   const panelId = useId();
 
   return (
-    <div className="border-t border-white/10 last:border-b sm:border-0 lg:border-l lg:border-white/10 lg:px-8">
+    <div className="border-t border-white/10 last:border-b sm:border-0 lg:border-l lg:border-white/10 lg:px-6">
       <button
         type="button"
         onClick={() => setOpen((isOpen) => !isOpen)}
@@ -153,18 +153,18 @@ function LinkColumn({ heading, links }) {
 
 /**
  * Outlined orange icon tile used by the three entity/address/commitment blocks.
- * `compact` is the mobile fine-print size — a third smaller, and back to the
- * standard tile from sm up where the three blocks are equal columns again.
+ * `compact` is the mobile fine-print size — a notch smaller than the tile used
+ * from sm up, where the three blocks are equal columns again.
  */
 function InfoIcon({ icon: Icon, compact = false }) {
   return (
     <span
       className={`flex shrink-0 items-center justify-center rounded-xl border border-orange-500/45 text-orange-500 ${
-        compact ? "size-6 sm:size-9" : "size-9"
+        compact ? "size-6 sm:size-7" : "size-7"
       }`}
     >
       <Icon
-        className={compact ? "size-3 sm:size-4.5" : "size-4.5"}
+        className={compact ? "size-3 sm:size-3.5" : "size-3.5"}
         strokeWidth={1.75}
       />
     </span>
@@ -192,32 +192,32 @@ export default function OnboardingFooter() {
             fill the space beside the brand block instead of queueing below it.
             The brand track is the wider of the two — it carries the blurb,
             while a group row only has to fit "Insurance" and a chevron. */}
-        <div className="grid grid-cols-[1.2fr_1fr] gap-x-5 py-8 sm:grid-cols-2 sm:gap-10 sm:py-10 lg:grid-cols-[1.5fr_1fr_1fr_1fr] lg:gap-0 lg:py-12">
+        <div className="grid grid-cols-[1.2fr_1fr] gap-x-5 py-8 sm:grid-cols-2 sm:gap-6 sm:py-5 lg:grid-cols-[1.5fr_1fr_1fr_1fr] lg:gap-0 lg:py-5">
           {/* Brand Logo*/}
-          <div className="lg:pr-16">
+          <div className="lg:pr-12">
             <img
               src={logo}
               alt="Lets Insurance — protecting you and yours"
-              className="h-11 w-auto sm:h-16"
+              className="h-11 w-auto sm:h-10"
             />
-            <p className="mt-3 max-w-xs text-xs leading-5 text-slate-400 sm:mt-5 sm:text-sm sm:leading-6">
+            <p className="mt-3 max-w-xs text-xs leading-5 text-slate-400 sm:text-[11px] sm:leading-4.5">
               Compare, buy and manage insurance policies online with expert
               guidance, best prices and dedicated claim support.
             </p>
 
-            <p className="mt-4 text-xs text-slate-300 sm:mt-6 sm:text-sm">
+            <p className="mt-4 text-xs text-slate-300 sm:mt-3.5 sm:text-[11px]">
               Follow us on
             </p>
             {/* flex-wrap is the safety net: four 32px targets plus gaps just
                 fit the brand track on a 320px screen, and wrap rather than
                 overflow if the viewport is narrower still. */}
-            <div className="mt-2 flex flex-wrap items-center gap-2 sm:mt-3 sm:gap-3">
+            <div className="mt-2 flex flex-wrap items-center gap-2 sm:gap-2.5">
               {SOCIALS.map(({ label, icon }) => (
                 <button
                   key={label}
                   type="button"
                   aria-label={label}
-                  className="flex size-8 items-center justify-center rounded-full border border-white/15 text-slate-200 transition-colors duration-150 hover:border-orange-500 hover:bg-orange-500/10 hover:text-orange-400 sm:size-10"
+                  className="flex size-8 items-center justify-center rounded-full border border-white/15 text-slate-200 transition-colors duration-150 hover:border-orange-500 hover:bg-orange-500/10 hover:text-orange-400"
                 >
                   <svg
                     viewBox="0 0 24 24"
@@ -226,7 +226,7 @@ export default function OnboardingFooter() {
                     strokeWidth="1.75"
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    className="size-4 sm:size-4.5"
+                    className="size-4"
                     aria-hidden="true"
                   >
                     {icon}
@@ -256,44 +256,44 @@ export default function OnboardingFooter() {
             fine-print size with the address leading. The sm:order-* values put
             the columns back in the original left-to-right sequence from sm up,
             so promoting the address is a mobile change only. */}
-        <div className="flex flex-col gap-5 border-t border-white/10 py-8 sm:grid sm:grid-cols-2 sm:gap-8 lg:grid-cols-3">
-          <div className="flex gap-2.5 sm:order-2 sm:gap-3.5">
+        <div className="flex flex-col gap-5 border-t border-white/10 py-8 sm:grid sm:grid-cols-2 sm:gap-6 sm:py-4 lg:grid-cols-3">
+          <div className="flex gap-2.5 sm:order-2 sm:gap-3">
             <InfoIcon icon={MapPin} compact />
             <div className="min-w-0">
-              <p className="text-[11px] font-semibold text-white sm:text-sm">
+              <p className="text-[11px] font-semibold text-white">
                 Registered Address
               </p>
-              <p className="mt-1 text-[10px] leading-[14px] text-slate-400 sm:mt-1.5 sm:text-xs sm:leading-5">
+              <p className="mt-1 text-[10px] leading-[14px] text-slate-400">
                 SR.NO.38/4, A/1, F.P.486, BLDG-A FL-1202, KUMAR SURBHI, OPP.
                 SAIBABA MANDIR, Pune, Maharashtra – 411009
               </p>
             </div>
           </div>
 
-          <div className="flex gap-2.5 sm:order-1 sm:gap-3.5">
+          <div className="flex gap-2.5 sm:order-1 sm:gap-3">
             <InfoIcon icon={Building2} compact />
             <div className="min-w-0">
-              <p className="text-[11px] font-semibold leading-4 text-white sm:text-sm sm:leading-5">
+              <p className="text-[11px] font-semibold leading-4 text-white sm:leading-3.5">
                 ALTSURE INSURANCE BROKERS PRIVATE LIMITED
               </p>
-              <p className="mt-1 text-[10px] text-slate-400 sm:mt-1.5 sm:text-xs">
+              <p className="mt-1 text-[10px] text-slate-400">
                 CIN:{" "}
                 <span className="text-orange-400">U66220PN2022PTC215072</span>
               </p>
-              <p className="text-[10px] text-slate-400 sm:text-xs">
+              <p className="text-[10px] text-slate-400">
                 IRDAI License Number:{" "}
                 <span className="text-orange-400">1163</span>
               </p>
             </div>
           </div>
 
-          <div className="flex gap-2.5 sm:order-3 sm:gap-3.5">
+          <div className="flex gap-2.5 sm:order-3 sm:gap-3">
             <InfoIcon icon={ShieldCheck} compact />
             <div className="min-w-0">
-              <p className="text-[11px] font-semibold text-white sm:text-sm">
+              <p className="text-[11px] font-semibold text-white">
                 Our Commitment
               </p>
-              <p className="mt-1 text-[10px] leading-[14px] text-slate-400 sm:mt-1.5 sm:text-xs sm:leading-5">
+              <p className="mt-1 text-[10px] leading-[14px] text-slate-400">
                 Your trust is our priority. We are here to protect what matters
                 most to you.
               </p>
@@ -302,8 +302,8 @@ export default function OnboardingFooter() {
         </div>
 
         {/* ── Band 3: copyright + legal ──────────────────────────────── */}
-        <div className="flex flex-col items-center gap-4 border-t border-white/10 py-5 text-center sm:flex-row sm:justify-between sm:gap-2 sm:text-left">
-          <p className="text-xs text-slate-400">
+        <div className="flex flex-col items-center gap-4 border-t border-white/10 py-5 text-center sm:flex-row sm:justify-between sm:gap-2 sm:py-3 sm:text-left">
+          <p className="text-xs text-slate-400 sm:text-[10px]">
             © 2026 <span className="text-orange-400">LetsInsurance.com</span>.
             All Rights Reserved.
           </p>
@@ -317,7 +317,7 @@ export default function OnboardingFooter() {
                 )}
                 <span
                   aria-disabled="true"
-                  className="cursor-default text-xs text-slate-300 transition-colors duration-150 hover:text-orange-400"
+                  className="cursor-default text-xs text-slate-300 transition-colors duration-150 hover:text-orange-400 sm:text-[10px]"
                 >
                   {link}
                 </span>

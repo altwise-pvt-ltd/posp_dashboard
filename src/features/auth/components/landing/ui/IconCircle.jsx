@@ -1,8 +1,11 @@
 /* `md` shrinks below `lg`, where the persona cards fold from full-width rows
-   into tiles squeezed two or three to a row. */
+   into tiles squeezed two or three to a row. `sm` is `md` at 80%, for the
+   persona tiles — sized off the plate rather than the card so the icon keeps
+   its share of a tile that is itself 20% smaller. */
 const SIZES = {
+  sm: { box: "h-11 w-11 lg:h-14 lg:w-14", image: "h-9 w-9 lg:h-11 lg:w-11" },
   md: { box: "h-14 w-14 lg:h-18 lg:w-18", image: "h-11 w-11 lg:h-14 lg:w-14" },
-  lg: { box: "h-12 w-12 md:h-21 md:w-21", image: "h-6 w-6 md:h-10 md:w-10" },
+  lg: { box: "h-12 w-12 md:h-18 md:w-18", image: "h-6 w-6 md:h-8.5 md:w-8.5" },
 };
 
 /* A disc everywhere except while a card is folded into a tile, where it reads

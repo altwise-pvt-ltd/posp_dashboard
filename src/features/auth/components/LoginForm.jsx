@@ -37,9 +37,9 @@ const RESEND_SECONDS = 30;
    soft orange focus ring, matching the landing card rather than the slate-50
    fields used inside the onboarding wizard. */
 const FIELD =
-  "w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-lg font-bold text-slate-900 placeholder-slate-500 transition-all focus:border-brand focus:outline-none focus:ring-4 focus:ring-brand/15";
+  "w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-[15px] font-medium text-slate-900 placeholder-slate-400 transition-all focus:border-brand focus:outline-none focus:ring-4 focus:ring-brand/15";
 
-const LABEL = "mb-2 block text-sm font-medium text-slate-600";
+const LABEL = "mb-1.5 block text-sm font-medium text-slate-600";
 
 function FieldError({ error }) {
   if (!error) return null;
@@ -151,10 +151,10 @@ export default function LoginForm({ onVerified }) {
 
         <div className="flex items-stretch gap-2">
           {/* Country code — India only for now, so it renders as a static prefix */}
-          <div className="flex shrink-0 items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 text-lg font-bold text-slate-800">
-            <span className="text-xl leading-none">🇮🇳</span>
+          <div className="flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 text-[15px] font-semibold text-slate-800">
+            <span className="text-base leading-none">🇮🇳</span>
             +91
-            <ChevronDown size={18} className="text-slate-500" />
+            <ChevronDown size={16} className="text-slate-500" />
           </div>
 
           <input

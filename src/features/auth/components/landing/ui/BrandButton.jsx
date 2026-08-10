@@ -5,7 +5,7 @@ const SIZES = {
   sm: "rounded-xl px-6 py-3 text-sm",
   md: "rounded-xl px-7 py-3.5 text-base",
   lg: "rounded-xl px-7 py-4 text-base",
-  field: "rounded-lg py-3.5 text-base",
+  field: "rounded-lg py-3 text-[15px]",
 };
 
 /**

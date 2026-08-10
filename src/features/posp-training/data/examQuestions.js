@@ -1,11 +1,12 @@
-// POSP certification exam question bank.
+// POSP certification exam question bank, keyed by section id — see
+// `sections.js`. A section with no entry here is skipped by the exam.
 //
 // Answer-key convention: for every question the factually-correct answer is
 // placed at index 1, i.e. option "b" (the exam renders options a, b, c, d in
 // order). `correctOption` therefore is always 1 and must stay in sync with the
 // option order — if you reorder options, keep the correct answer at index 1.
 // `correctOption` is the 0-based index compared against the taker's selection
-// in ExamPortal's calculateResults().
+// by `scoreSection` in lib/examScoring.js.
 export const examQuestions = {
   general: [
     {

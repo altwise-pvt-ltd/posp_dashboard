@@ -173,6 +173,51 @@
   }
 }
 
+/* ── Training handoff display scale ─────────────────────────────────────────
+   Same mechanism as .landing-scale above, at 75% and pointed the other way:
+   the verification-complete / start-training screen was built at the app's
+   base scale and reads oversized on a laptop, so from `sm` up it renders at
+   three-quarter size. Below 640px it is left alone — 0.75 × text-sm is 10.5px,
+   too small to ship on a phone, and the single-column mobile layout was never
+   the thing overflowing.
+
+   Everything inside must therefore be sized with a utility rather than an
+   arbitrary literal to be reachable here; the CTA column width is written as
+   calc(var(--spacing) * 60) for exactly that reason. */
+@media (width >= 40rem) {
+  .training-scale {
+    /* 0.25rem × 0.75 — drives every p / m / gap / size / leading utility */
+    --spacing: 0.1875rem;
+
+    /* Type scale × 0.75. Line heights are unitless ratios in v4, so they
+       follow the font size on their own. */
+    --text-xs: 0.5625rem;
+    --text-sm: 0.65625rem;
+    --text-base: 0.75rem;
+    --text-lg: 0.84375rem;
+    --text-xl: 0.9375rem;
+    --text-2xl: 1.125rem;
+    --text-3xl: 1.40625rem;
+    --text-4xl: 1.6875rem;
+
+    /* Prose measures × 0.75 — 4xl is the card shell, 2xl/xl the paragraphs */
+    --container-xs: 15rem;
+    --container-sm: 18rem;
+    --container-md: 21rem;
+    --container-lg: 24rem;
+    --container-xl: 27rem;
+    --container-2xl: 31.5rem;
+    --container-3xl: 36rem;
+    --container-4xl: 42rem;
+
+    /* Radii × 0.75 to keep the rounding proportional to the boxes it cuts */
+    --radius-lg: 0.375rem;
+    --radius-xl: 0.5625rem;
+    --radius-2xl: 0.75rem;
+    --radius-3xl: 1.125rem;
+  }
+}
+
 /* Custom animations + utilities ported from the HTML mockup */
 @keyframes fadeUp {
   from {
@@ -554,3 +599,16 @@
       }
     }
   }
+
+/* The landing header runs 4.25rem on desktop, 4px under the 4.5rem shared
+   compact bar above. Restated here because those `header.sticky` rules are
+   !important and would otherwise re-inflate it on 768px-tall laptops — the
+   most common desktop viewport this block targets. Equal specificity, so it
+   has to sit after them to win. Width-gated to lg to leave mobile alone. */
+@media (max-height: 768px) and (width >= 64rem) {
+
+  header.landing-header,
+  header.landing-header>div {
+    height: 4.25rem !important;
+  }
+}

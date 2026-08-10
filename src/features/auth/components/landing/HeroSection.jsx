@@ -36,7 +36,10 @@ export default function HeroSection({ loginForm }) {
 
           {/* Mobile lets the headline flow and balances the line lengths so the
               centred block reads evenly; lg pins the three fixed lines back. */}
-          <h1 className="text-balance text-4xl font-bold leading-[1.15] tracking-tight lg:text-5xl">
+          {/* Sized off the 4xl/5xl variables rather than fixed rems so the
+              headline still follows the mobile .landing-scale rescale; the 0.95
+              is the 5% the headline is pulled back from the step. */}
+          <h1 className="text-balance text-[calc(var(--text-4xl)*0.95)] font-bold leading-[1.15] tracking-tight lg:text-[calc(var(--text-5xl)*0.95)]">
             <span className="text-gray-900 lg:block">Become a</span>{" "}
             <Highlight className="lg:block">Letsinsurance</Highlight>{" "}
             <span className="text-gray-900 lg:block">POSP Advisor</span>

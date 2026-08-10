@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Altsure Insurance POSP Certificate & Appointment Letter</title>
+  <!-- Google Fonts for premium appearance -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Cinzel:wght@500;700;800&family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,700;1,400&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    /* Global Styling & Design System variables */
+    :root {
+      --primary-color: #0b1b3d; /* Deep Navy */
+      --secondary-color: #c5a059; /* Classic Gold */
+      --accent-color: #d4af37; /* Metallic Gold Accent */
+      --bg-light: #e2e8f0; /* Page backdrop background */
+      --text-dark: #1e293b;
+      --text-light: #f8fafc;
+      --border-color: #e2e8f0;
+      
+      /* Print Margins & A4 Dimensions */
+      --a4-width: 210mm;
+      --a4-height: 297mm;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-light);
+      color: var(--text-dark);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      overflow-x: hidden;
+      padding-top: 40px; /* spacing without top bar */
+      padding-bottom: 40px;
+    }
+
+    /* FLOATING PRINT BUTTON */
+    .floating-print-btn {
+      position: fixed;
+      top: 25px;
+      right: 25px;
+      background: linear-gradient(135deg, var(--secondary-color), #af8a44);
+      color: #fff;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 30px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+      transition: all 0.3s;
+      z-index: 10000;
+    }
+
+    .floating-print-btn:hover {
+      background: linear-gradient(135deg, #af8a44, var(--secondary-color));
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(197, 160, 89, 0.35);
+    }
+
+    /* DOCUMENT PAGE CONTAINER */
+    .document-page {
+      width: var(--a4-width);
+      height: var(--a4-height);
+      background-color: #fff;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+      position: relative;
+      overflow: hidden;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      padding: 15mm;
+      margin-bottom: 30px;
+    }
+
+    /* Watermark Background */
+    .document-watermark {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(-45deg); /* tilted diagonally at -45 degrees */
+      width: 70%;
+      max-height: 40%;
+      opacity: 0.035; /* optimized visible watermark that fits behind text without cluttering */
+      pointer-events: none;
+      z-index: 1;
+      user-select: none;
+      object-fit: contain;
+    }
+
+    /* ----------------------------------------------- */
+    /* PAGE 1: CERTIFICATE SPECIFIC STYLING            */
+    /* ----------------------------------------------- */
+    
+    .certificate-page {
+      border: 1px solid rgba(0,0,0,0.05);
+    }
+
+    /* Double border layout with dark-navy and gold */
+    .cert-border-outer {
+      position: absolute;
+      top: 9mm;
+      left: 9mm;
+      right: 9mm;
+      bottom: 9mm;
+      border: 2px solid var(--secondary-color);
+      pointer-events: none;
+    }
+
+    .cert-border-inner {
+      position: absolute;
+      top: 12mm;
+      left: 12mm;
+      right: 12mm;
+      bottom: 12mm;
+      border: 5px double var(--primary-color);
+      pointer-events: none;
+    }
+
+    /* Elegant vector corners in border */
+    .cert-corner {
+      position: absolute;
+      width: 28px;
+      height: 28px;
+      pointer-events: none;
+    }
+    
+    .cert-corner-tl { top: 10.5mm; left: 10.5mm; border-top: 3px solid var(--secondary-color); border-left: 3px solid var(--secondary-color); }
+    .cert-corner-tr { top: 10.5mm; right: 10.5mm; border-top: 3px solid var(--secondary-color); border-right: 3px solid var(--secondary-color); }
+    .cert-corner-bl { bottom: 10.5mm; left: 10.5mm; border-bottom: 3px solid var(--secondary-color); border-left: 3px solid var(--secondary-color); }
+    .cert-corner-br { bottom: 10.5mm; right: 10.5mm; border-bottom: 3px solid var(--secondary-color); border-right: 3px solid var(--secondary-color); }
+
+    .cert-content {
+      position: relative;
+      z-index: 5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 100%;
+      padding: 4mm 8mm 16mm 8mm; /* optimized padding to prevent print page overflow */
+    }
+
+    /* Corporate Logo */
+    .cert-logo {
+      width: 330px; /* explicit width so the SVG scales up from its 172px intrinsic size */
+      height: auto;
+      max-height: 90px;
+      max-width: 330px;
+      object-fit: contain;
+      margin-bottom: 15px; /* balanced middle-ground margin to prevent print page overflow */
+    }
+
+    .cert-header {
+      text-align: center;
+      margin-bottom: 15px; /* balanced middle-ground margin to prevent print page overflow */
+    }
+
+    .cert-header h1 {
+      font-family: 'Cinzel', serif;
+      font-weight: 700;
+      font-size: 1.95rem;
+      color: var(--primary-color);
+      letter-spacing: 1px;
+      margin: 6px 0;
+      line-height: 1.1;
+    }
+    
+    .cert-title-divider {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 80%;
+      margin: 6px auto;
+    }
+
+    .cert-title-divider::before, .cert-title-divider::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(to right, transparent, var(--secondary-color), transparent);
+    }
+
+    .cert-title-divider span {
+      color: var(--secondary-color);
+      font-size: 0.8rem;
+    }
+
+    .cert-header h2 {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--secondary-color);
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+
+    .cert-body {
+      text-align: center;
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem;
+      line-height: 1.5;
+      color: #334155;
+      margin: 15px 0 20px 0; /* balanced middle-ground margin to prevent print page overflow */
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .cert-body .cert-intro {
+      font-style: italic;
+      color: #64748b;
+    }
+
+    .cert-body .posp-name {
+      font-family: 'Cinzel', serif;
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: var(--primary-color);
+      border-bottom: 2px solid var(--secondary-color);
+      padding: 1px 24px;
+      margin: 8px 0;
+      display: inline-block;
+      letter-spacing: 0.5px;
+    }
+
+    .cert-body .cert-description {
+      max-width: 530px;
+      line-height: 1.45;
+      font-size: 0.9rem;
+      font-family: 'Inter', sans-serif;
+      color: #475569;
+      text-align: justify;
+    }
+
+    .cert-body .cert-description strong {
+      color: var(--primary-color);
+      font-weight: 600;
+    }
+
+    /* Photo & Details Table Grid */
+    .cert-details-container {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 1fr 125px;
+      gap: 15px;
+      margin: 12px 0 20px 0; /* balanced middle-ground margin to prevent print page overflow */
+      padding: 12px 18px; /* slightly tighter padding */
+      border: 1px solid #f1f5f9;
+      background-color: transparent; /* transparent background allows the watermark to show through without cuts */
+      border-radius: 6px;
+    }
+
+    .cert-details-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .cert-details-table td {
+      padding: 5px 6px;
+      font-size: 0.84rem;
+      vertical-align: top;
+    }
+
+    .cert-details-table td.label {
+      color: #64748b;
+      font-weight: 500;
+      width: 185px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .cert-details-table td.value {
+      color: var(--primary-color);
+      font-weight: 600;
+    }
+
+    .cert-photo-box {
+      width: 110px;
+      height: 132px;
+      border: 2px solid var(--secondary-color);
+      background-color: #f1f5f9;
+      border-radius: 4px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      align-self: center;
+    }
+
+    .cert-photo-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .cert-photo-box svg {
+      width: 45px;
+      height: 45px;
+      fill: #cbd5e1;
+    }
+
+    /* Disclaimer/Note Section to balance layout and recover empty gap */
+    .cert-disclaimer {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.68rem;
+      color: #64748b;
+      text-align: justify;
+      max-width: 530px;
+      line-height: 1.45;
+      margin: 12px 0 20px 0; /* balanced middle-ground margin to prevent print page overflow */
+      padding-top: 8px;
+      border-top: 1px dashed #cbd5e1;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    /* Bottom Signatures, Stamp & Date Grid */
+    .cert-sign-section {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      align-items: flex-end;
+      margin-top: auto;
+      padding-top: 10px;
+      border-top: 1px solid #f1f5f9;
+    }
+
+    .cert-sign-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .cert-sign-col.left {
+      align-items: flex-start;
+      text-align: left;
+    }
+
+    .cert-sign-col.right {
+      align-items: flex-end;
+      text-align: right;
+    }
+
+    .cert-date-val {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--primary-color);
+      border-bottom: 1px solid #cbd5e1;
+      padding-bottom: 4px;
+      width: 110px;
+      text-align: center;
+      margin-bottom: 4px;
+    }
+
+    .cert-sign-title {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.7rem;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 4px;
+    }
+
+    /* Principal Officer signature container */
+    .signature-container {
+      width: 170px;
+      height: 75px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      margin-bottom: -15px; /* pull down to sit nicely over the line */
+      margin-top: -10px;
+    }
+
+    .signature-container .default-sig {
+      font-family: 'Alex Brush', cursive;
+      font-size: 2.2rem;
+      color: #061c50;
+      transform: rotate(-3deg);
+      user-select: none;
+    }
+
+    .signature-line {
+      width: 170px;
+      border-bottom: 1px solid #cbd5e1;
+      margin-bottom: 4px;
+    }
+
+    /* Round Company Stamp Badge */
+    .stamp-container {
+      position: relative;
+      height: 70px;
+      width: 70px;
+      margin-bottom: -5px;
+    }
+
+    .company-stamp {
+      width: 70px;
+      height: 70px;
+      border: 2px dashed rgba(11, 27, 61, 0.4);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      color: rgba(11, 27, 61, 0.5);
+      font-size: 0.42rem;
+      text-align: center;
+      font-weight: 700;
+      transform: rotate(-10deg);
+      pointer-events: none;
+    }
+
+    .company-stamp::before {
+      content: "";
+      position: absolute;
+      top: 3px; left: 3px; right: 3px; bottom: 3px;
+      border: 1px solid rgba(11, 27, 61, 0.4);
+      border-radius: 50%;
+    }
+
+    .stamp-text {
+      width: 90%;
+      font-family: 'Montserrat', sans-serif;
+      text-transform: uppercase;
+      line-height: 1.2;
+    }
+
+    .stamp-center {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 0.5rem;
+      font-weight: 800;
+      color: rgba(11, 27, 61, 0.6);
+    }
+
+    /* Certificate Statutory Footer */
+    .cert-footer {
+      width: 100%;
+      text-align: center;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.6rem;
+      line-height: 1.6;
+      color: #64748b;
+      margin-top: 12px;
+      margin-bottom: 8px; /* shift footer up from the bottom border */
+      border-top: 1px solid #e2e8f0;
+      padding-top: 12px;
+    }
+
+    .cert-footer strong {
+      color: var(--primary-color);
+    }
+
+    .cert-footer div {
+      margin-bottom: 4px;
+    }
+
+    .cert-footer div:last-child {
+      margin-bottom: 0;
+    }
+
+    .cert-footer .broker-info {
+      font-weight: 600;
+    }
+
+
+    /* ----------------------------------------------- */
+    /* PAGE 2: APPOINTMENT LETTER SPECIFIC STYLING     */
+    /* ----------------------------------------------- */
+
+    .letter-page {
+      padding: 10mm 20mm 8mm 20mm; /* top, right, bottom, left */
+      color: #27272a;
+      line-height: 1.4;
+      font-size: 0.78rem;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* Corporate Letterhead */
+    .letterhead {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 2px solid var(--primary-color);
+      padding-bottom: 6px;
+      margin-bottom: 10px;
+    }
+
+    .letterhead-logo {
+      width: 260px; /* explicit width so the SVG scales up from its 172px intrinsic size */
+      height: auto;
+      max-height: 75px;
+      max-width: 260px;
+      object-fit: contain;
+    }
+
+    .letterhead-details {
+      text-align: right;
+      font-size: 0.62rem;
+      color: #475569;
+      max-width: 320px;
+      line-height: 1.3;
+    }
+
+    .letterhead-details h3 {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 700;
+      color: var(--primary-color);
+      font-size: 0.68rem;
+      margin-bottom: 2px;
+    }
+
+    .letter-meta-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      margin-bottom: 10px;
+      color: #475569;
+    }
+
+    .letter-meta-row strong {
+      color: #1e293b;
+    }
+
+    .recipient-info {
+      font-size: 0.75rem;
+      margin-bottom: 10px;
+      line-height: 1.35;
+      color: #334155;
+    }
+
+    .recipient-info h4 {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--primary-color);
+      margin-bottom: 2px;
+    }
+
+    .letter-subject {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--primary-color);
+      border-bottom: 1px solid #cbd5e1;
+      padding-bottom: 3px;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.1px;
+    }
+
+    .letter-body {
+      font-size: 0.75rem;
+      color: #334155;
+      text-align: justify;
+    }
+
+    .letter-body p {
+      margin-bottom: 8px;
+    }
+
+    .letter-details-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 8px 0;
+    }
+
+    .letter-details-table th, .letter-details-table td {
+      border: 1px solid #cbd5e1;
+      padding: 5px 10px;
+      text-align: left;
+    }
+
+    .letter-details-table th {
+      background-color: #f1f5f9;
+      color: var(--primary-color);
+      font-weight: 600;
+      font-size: 0.75rem;
+      width: 200px;
+    }
+
+    .letter-details-table td {
+      font-size: 0.75rem;
+      color: #000;
+      font-weight: 500;
+    }
+
+    .letter-body ul {
+      margin-left: 18px;
+      margin-bottom: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .letter-body li {
+      font-size: 0.74rem;
+      line-height: 1.3;
+    }
+
+    .letter-signoff {
+      margin-top: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    .letter-signoff-block {
+      font-size: 0.8rem;
+    }
+
+    .letter-signoff-block p {
+      margin-bottom: 2px;
+    }
+
+    /* Clean layout bottom letter footer */
+    .letter-footer {
+      margin-top: 25px; /* pull up right under the signatures instead of auto */
+      margin-bottom: 10px; /* push up from bottom padding */
+      border-top: 1px solid #e2e8f0;
+      padding-top: 12px;
+      text-align: center;
+      font-size: 0.62rem;
+      color: #64748b;
+      line-height: 1.6;
+      width: 100%;
+    }
+
+    .letter-footer strong {
+      color: var(--primary-color);
+    }
+
+    .letter-footer div {
+      margin-bottom: 4px;
+    }
+
+    .letter-footer div:last-child {
+      margin-bottom: 0;
+    }
+
+    /* Print Break Utilities */
+    .page-break {
+      page-break-after: always;
+    }
+
+
+    /* ----------------------------------------------- */
+    /* PRINT STYLES (@media print)                    */
+    /* ----------------------------------------------- */
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 0; /* remove browser default margins to prevent page alignment/splitting issues */
+      }
+
+      body {
+        background-color: #fff;
+        color: #000;
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+      }
+
+      .action-header {
+        display: none !important;
+      }
+
+      .document-page {
+        box-shadow: none !important;
+        margin: 0 !important;
+        padding: 15mm !important; 
+        width: var(--a4-width) !important;
+        height: var(--a4-height) !important;
+        page-break-after: always !important;
+        page-break-inside: avoid !important;
+        position: relative !important;
+        box-sizing: border-box !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        overflow: hidden !important; /* Force content to stay within a single sheet and prevent page breaks */
+      }
+
+      .cert-border-outer {
+        top: 7mm !important;
+        left: 7mm !important;
+        right: 7mm !important;
+        bottom: 7mm !important;
+      }
+
+      .cert-border-inner {
+        top: 10mm !important;
+        left: 10mm !important;
+        right: 10mm !important;
+        bottom: 10mm !important;
+      }
+
+      .cert-corner-tl { top: 8.5mm !important; left: 8.5mm !important; }
+      .cert-corner-tr { top: 8.5mm !important; right: 8.5mm !important; }
+      .cert-corner-bl { bottom: 8.5mm !important; left: 8.5mm !important; }
+      .cert-corner-br { bottom: 8.5mm !important; right: 8.5mm !important; }
+
+      .letter-page {
+        padding: 12mm 18mm 8mm 18mm !important;
+        display: flex !important;
+        flex-direction: column !important;
+      }
+
+      .floating-print-btn {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- FLOATING PRINT BUTTON -->
+  <button class="floating-print-btn" onclick="window.print()" title="Print / Save PDF">
+    <svg style="width:20px;height:20px" viewBox="0 0 24 24"><path fill="currentColor" d="M18,3H6V7H18M19,12A1,1 0 0,1 18,11A1,1 0 0,1 17,10A1,1 0 0,1 18,9A1,1 0 0,1 19,10M16,19H8V14H16M19,8H5A3,3 0 0,0 2,11V17H6V21H18V17H22V11A3,3 0 0,0 19,8Z" /></svg>
+    Print / Save PDF (A4)
+  </button>
+
+  <!-- PAGE 1: CERTIFICATE -->
+  <div class="document-page certificate-page page-break" id="cert-page-container">
+    <!-- Golden Double Border & Corners -->
+    <div class="cert-border-outer"></div>
+    <div class="cert-border-inner"></div>
+    <div class="cert-corner cert-corner-tl"></div>
+    <div class="cert-corner cert-corner-tr"></div>
+    <div class="cert-corner cert-corner-bl"></div>
+    <div class="cert-corner cert-corner-br"></div>
+
+    <!-- Logo Watermark Background -->
+    <img src="../let'sInsuranceLogo.svg" class="document-watermark" alt="Watermark Logo" onerror="this.src='https://placehold.co/300x100/0b1b3d/c5a059?text=ALTSURE'; this.style.opacity='0.035'">
+
+    <div class="cert-content">
+      <!-- Altsure Logo -->
+      <img src="../let'sInsuranceLogo.svg" alt="Altsure Insurance Brokers Logo" class="cert-logo" id="cert-logo-img" onerror="this.src='https://placehold.co/220x55/0b1b3d/c5a059?text=ALTSURE+INSURANCE'">
+      
+      <div class="cert-header">
+        <h1>Certificate of Completion</h1>
+        <div class="cert-title-divider">
+          <span>★ ★ ★</span>
+        </div>
+        <h2>Point of Sales Person (POSP)</h2>
+      </div>
+
+      <div class="cert-body">
+        <p class="cert-intro">This is to certify that</p>
+        <p class="posp-name" id="preview-posp-name">Ram Vinay Yadav</p>
+        
+        <p class="cert-description">
+          Having successfully completed the prescribed training and passed the examination for <strong>Life, Non-Life, and Health Insurance</strong> conducted on <strong><span id="preview-exam-date">21/01/2025</span></strong>, is hereby certified and authorized to act as a <strong>Point of Sales Person (POSP) – Broker</strong> for the solicitation and marketing of authorized insurance products.
+        </p>
+        
+        <p class="cert-description">
+          This certification has been issued under the Guidelines on Point of Sales Person (POSP) for Insurance Companies and Insurance Intermediaries in India.
+        </p>
+      </div>
+
+      <!-- Photo & Registration Details Grid -->
+      <div class="cert-details-container">
+        <table class="cert-details-table">
+          <tr>
+            <td class="label">POSP Reg. Number:</td>
+            <td class="value" id="preview-posp-id">ALT/POSP/2026/0125</td>
+          </tr>
+          <tr>
+            <td class="label">PAN Card Number:</td>
+            <td class="value" id="preview-posp-pan">AIWPY9053H</td>
+          </tr>
+          <tr>
+            <td class="label">Aadhaar Number:</td>
+            <td class="value" id="preview-posp-aadhaar">3390 3781 1193</td>
+          </tr>
+          <tr>
+            <td class="label">Authorizing Broker:</td>
+            <td class="value">Altsure Insurance Brokers Private Limited</td>
+          </tr>
+        </table>
+
+        <!-- Profile Photo Box -->
+        <div class="cert-photo-box" id="photo-box">
+          <svg viewBox="0 0 24 24" id="photo-placeholder-svg" style="display:none;">
+            <path d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z" />
+          </svg>
+          <img id="preview-photo" alt="POSP Photo">
+        </div>
+      </div>
+
+      <!-- Disclaimer/Note Section to balance layout and recover empty gap -->
+      <div class="cert-disclaimer">
+        <strong>Important Notice:</strong> This certificate is electronically generated and verified. The authorization to act as a Point of Sales Person (POSP) is subject to the continuous compliance of the holder with the Code of Conduct and guidelines prescribed under the IRDAI (Insurance Brokers) Regulations, 2018.
+      </div>
+
+      <!-- Bottom Columns: Date, Stamp, Principal Officer Signoff -->
+      <div class="cert-sign-section">
+        <div class="cert-sign-col left">
+          <div class="cert-date-val" id="preview-cert-date">21/01/2025</div>
+          <div class="cert-sign-title">Date of Issue</div>
+        </div>
+        
+        <!-- Digitally Verified Blue Ink Stamp Image -->
+        <div class="cert-sign-col">
+          <div class="stamp-container" style="width: 75px; height: 75px;">
+            <img src="verified_stamp.png" alt="Digitally Verified Stamp" style="width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; transform: rotate(-8deg); opacity: 0.9;">
+          </div>
+        </div>
+        
+        <div class="cert-sign-col right">
+          <div class="signature-container">
+            <div class="default-sig" id="preview-cursive-sig" style="display:none;">Vilas D Gandre</div>
+            <img id="preview-signature-img" src="signature_nikhil.png" alt="Signature" style="max-height: 100%; max-width: 100%; object-fit: contain; mix-blend-mode: multiply;">
+          </div>
+          <div class="signature-line"></div>
+          <div class="cert-sign-title" style="font-weight:600; color:var(--primary-color);" id="preview-officer-name">Vilas D Gandre</div>
+          <div class="cert-sign-title">Principal Officer</div>
+        </div>
+      </div>
+
+      <!-- Registered Corporate Info Footer -->
+      <div class="cert-footer">
+        <div class="broker-info">
+          <strong style="font-size:14px;">Altsure Insurance Brokers Private Limited</strong>
+        </div>
+        <div>
+          Registered Address: SR.NO.38/4, A/1, F.P.486, BLDG-A FL-1202, KUMAR SURBHI, OPP. SAIBABA MANDIR, Pune, Maharashtra – 411009
+        </div>
+        <div>
+          CIN: <strong>U66220PN2022PTC215072</strong> | IRDAI Broker License Number: <strong>1163</strong> (Direct Broker - Life & General)
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE 2: APPOINTMENT LETTER -->
+  <div class="document-page letter-page" id="letter-page-container">
+    
+    <!-- Logo Watermark Background -->
+    <img src="../let'sInsuranceLogo.svg" class="document-watermark" alt="Watermark Logo" onerror="this.src='https://placehold.co/300x100/0b1b3d/c5a059?text=ALTSURE'; this.style.opacity='0.035'">
+
+    <!-- Corporate Letterhead Header -->
+    <div class="letterhead">
+      <img src="../let'sInsuranceLogo.svg" alt="Altsure Insurance Brokers" class="letterhead-logo" onerror="this.src='https://placehold.co/180x48/0b1b3d/c5a059?text=ALTSURE'">
+      <div class="letterhead-details">
+        <h3>Altsure Insurance Brokers Pvt. Ltd.</h3>
+        <div>IRDAI License No: 1163 | CIN: U66220PN2022PTC215072</div>
+        <div>SR.NO.38/4, A/1, F.P.486, BLDG-A FL-1202, KUMAR SURBHI, OPP. SAIBABA MANDIR, Pune, Maharashtra – 411009</div>
+        <div>Email: support@letsinsurance.com</div>
+      </div>
+    </div>
+
+    <div class="letter-meta-row">
+      <div>Ref: <strong id="letter-ref-id">ALT/POSP/AUTH/0125</strong></div>
+      <div>Date: <strong id="letter-issue-date">21/01/2025</strong></div>
+    </div>
+
+    <div class="recipient-info">
+      <div>To,</div>
+      <h4 id="letter-recipient-name">Ram Vinay Yadav</h4>
+      <div id="letter-recipient-address" style="white-space: pre-wrap; max-width: 450px;">S/O CHANDRA BHAN YADAV KH NO 19/25 D BLOCK PART 2 GALI NO 3 HANUMAN CHAUK QUTUB VIHAR PHASE 2 CHHAWLA SOUTH WEST DELHI DELHI 110071</div>
+    </div>
+
+    <div class="letter-subject">
+      Subject: Letter of Authorization to act as Point of Sales Person (POSP) - Broker
+    </div>
+
+    <div class="letter-body">
+      <p>Dear Mr./Ms. <span id="letter-salutation-name">Ram Vinay Yadav</span>,</p>
+      
+      <p>
+        With reference to your application requesting to enroll as a Point of Sales Person (POSP), we are pleased to confirm that you have successfully completed the prescribed training and cleared the Point of Sales examination for <strong>Life, Non Life and Health Insurances</strong> conducted by <strong>Altsure Insurance Brokers Private Limited</strong> under the Guidelines on Point of Sales Person issued by the Insurance Regulatory and Development Authority of India (IRDAI).
+      </p>
+
+      <p>
+        Accordingly, you are hereby authorized to act as a <strong>Point of Sales Person (POSP)</strong> for Altsure Insurance Brokers Private Limited to market, solicit, and service insurance products categorized and identified by IRDAI under the Point of Sales Guidelines.
+      </p>
+
+      <p>Your enrollment registration details are recorded as under:</p>
+
+      <table class="letter-details-table">
+        <tr>
+          <th>POSP Name</th>
+          <td id="letter-table-name">Ram Vinay Yadav</td>
+        </tr>
+        <tr>
+          <th>POSP Identification Number</th>
+          <td id="letter-table-id">ALT/POSP/2026/0125</td>
+        </tr>
+        <tr>
+          <th>Permanent Account Number (PAN)</th>
+          <td id="letter-table-pan">AIWPY9053H</td>
+        </tr>
+        <tr>
+          <th>Aadhaar Number</th>
+          <td id="letter-table-aadhaar">3390 3781 1193</td>
+        </tr>
+        <tr>
+          <th>Effective Date of Authorization</th>
+          <td id="letter-table-date">21/01/2025</td>
+        </tr>
+      </table>
+
+      <p><strong>Key Terms and Conditions of Authorization:</strong></p>
+      <ul>
+        <li>You shall comply strictly with the Code of Conduct prescribed under the IRDAI (Insurance Brokers) Regulations, 2018 and subsequent guidelines on Point of Sales Persons.</li>
+        <li>You are authorized to solicit only specific POSP-compliant products as permitted by the company across Life, Health, and General insurance sectors.</li>
+        <li>In case you wish to terminate your association and work for another insurance broker or insurer, you shall obtain a formal cancellation letter from Altsure Insurance Brokers Private Limited, following which you must be issued a fresh authorization letter by the new entity.</li>
+      </ul>
+
+      <p>We welcome you to Altsure and wish you a successful career as an authorized Point of Sales Person.</p>
+    </div>
+
+    <!-- Signature Sign-off Section -->
+    <div class="letter-signoff">
+      <div class="letter-signoff-block">
+        <p>Yours truly,</p>
+        <p><strong>For Altsure Insurance Brokers Private Limited</strong></p>
+        
+        <div class="signature-container" style="justify-content: flex-start; margin: 10px 0 5px 0; width: 170px; height: 75px; margin-bottom: -15px; margin-top: -10px;">
+          <div class="default-sig" id="letter-cursive-sig" style="display:none;">Vilas D Gandre</div>
+          <img id="letter-signature-img" src="signature_nikhil.png" alt="Signature" style="max-height: 100%; max-width: 100%; object-fit: contain; mix-blend-mode: multiply;">
+        </div>
+        
+        <div class="signature-line" style="margin-left:0; width: 170px;"></div>
+        <p><strong id="letter-officer-name">Vilas D Gandre</strong></p>
+        <p style="color: #64748b; font-size: 0.72rem;">Principal Officer</p>
+      </div>
+
+      <div class="stamp-container" style="margin-right: 20px; width: 75px; height: 75px;">
+        <img src="verified_stamp.png" alt="Digitally Verified Stamp" style="width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; transform: rotate(-8deg); opacity: 0.9;">
+      </div>
+    </div>
+
+    <!-- Corporate Address & Registration Details Footer -->
+    <div class="letter-footer">
+      <div>
+        <strong style="font-size:14px;">Altsure Insurance Brokers Private Limited</strong>
+      </div>
+      <div>
+        Registered Address: SR.NO.38/4, A/1, F.P.486, BLDG-A FL-1202, KUMAR SURBHI, OPP. SAIBABA MANDIR, Pune, Maharashtra – 411009
+      </div>
+      <div>
+        CIN: U66220PN2022PTC215072 | IRDAI License Number: 1163 (Category: Direct Broker - Life & General)
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Profiles database containing standard and input folder records
+    const profiles = {
+      ram: {
+        name: 'Ram Vinay Yadav',
+        pan: 'AIWPY9053H',
+        aadhaar: '3390 3781 1193',
+        address: 'S/O CHANDRA BHAN YADAV KH NO 19/25 D BLOCK PART 2\nGALI NO 3 HANUMAN CHAUK QUTUB VIHAR PHASE 2\nCHHAWLA SOUTH WEST DELHI DELHI 110071',
+        pospId: 'ALT/POSP/2026/0125',
+        examDate: '2025-01-21',
+        issueDate: '2025-01-21',
+        validTill: '2028-11-20',
+        trainingHours: '30',
+        officerName: 'Mr. Nikhil Nimbhorkar',
+        photo: 'posp_agent.png',
+        signature: 'signature_nikhil.png'
+      },
+       
+    };
+
+    // Helper to format dates as DD/MM/YYYY
+    function formatDateString(dateStr) {
+      if (!dateStr) return '';
+      const parts = dateStr.split('-');
+      if (parts.length === 3) {
+        return `${parts[2]}/${parts[1]}/${parts[0]}`;
+      }
+      return dateStr;
+    }
+
+    // Dynamic URL Parameter Parser
+    function loadUrlParams() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const paramProfile = {};
+      
+      if (urlParams.has('name')) paramProfile.name = urlParams.get('name');
+      if (urlParams.has('pan')) paramProfile.pan = urlParams.get('pan');
+      if (urlParams.has('aadhaar')) paramProfile.aadhaar = urlParams.get('aadhaar');
+      if (urlParams.has('address')) paramProfile.address = urlParams.get('address');
+      if (urlParams.has('pospid')) paramProfile.pospId = urlParams.get('pospid');
+      if (urlParams.has('exam_date')) paramProfile.examDate = urlParams.get('exam_date');
+      if (urlParams.has('issue_date')) paramProfile.issueDate = urlParams.get('issue_date');
+      if (urlParams.has('valid_till')) paramProfile.validTill = urlParams.get('valid_till');
+      if (urlParams.has('hours')) paramProfile.trainingHours = urlParams.get('hours');
+      if (urlParams.has('officer')) paramProfile.officerName = urlParams.get('officer');
+      if (urlParams.has('photo')) paramProfile.photo = urlParams.get('photo');
+      
+      if (Object.keys(paramProfile).length > 0) {
+        // Apply URL custom profile
+        applyProfileData({
+          name: paramProfile.name || 'Custom Holder',
+          pan: paramProfile.pan || 'XXXXX0000X',
+          aadhaar: paramProfile.aadhaar || 'XXXX XXXX XXXX',
+          address: paramProfile.address || 'Address details',
+          pospId: paramProfile.pospId || 'ALT/POSP/XXXX/XXXX',
+          examDate: paramProfile.examDate || '2026-07-17',
+          issueDate: paramProfile.issueDate || '2026-07-17',
+          validTill: paramProfile.validTill || '2028-11-20',
+          trainingHours: paramProfile.trainingHours || '30',
+          officerName: paramProfile.officerName || 'Principal Officer',
+          photo: paramProfile.photo || ''
+        });
+        
+        // Disable selector if using custom params
+        const selector = document.getElementById('profile-selector');
+        if (selector) {
+          const opt = document.createElement('option');
+          opt.value = 'custom';
+          opt.text = 'Profile: Custom (URL Params)';
+          opt.selected = true;
+          selector.appendChild(opt);
+        }
+      } else {
+        // Fallback to default
+        loadProfile('ram');
+      }
+    }
+
+    // Load static database profile
+    function loadProfile(key) {
+      const data = profiles[key];
+      if (!data) return;
+      applyProfileData(data);
+    }
+
+    // Bind data values directly to the DOM
+    function applyProfileData(data) {
+      // 1. Text values
+      document.getElementById('preview-posp-name').innerText = data.name;
+      document.getElementById('preview-posp-pan').innerText = data.pan;
+      document.getElementById('preview-posp-aadhaar').innerText = data.aadhaar;
+      document.getElementById('preview-posp-id').innerText = data.pospId;
+      const trainingHoursEl = document.getElementById('preview-training-hours');
+      if (trainingHoursEl) trainingHoursEl.innerText = data.trainingHours;
+      document.getElementById('preview-exam-date').innerText = formatDateString(data.examDate);
+      document.getElementById('preview-cert-date').innerText = formatDateString(data.issueDate);
+      const validTillEl = document.getElementById('preview-valid-till');
+      if (validTillEl) validTillEl.innerText = formatDateString(data.validTill);
+      document.getElementById('preview-officer-name').innerText = data.officerName;
+      document.getElementById('preview-cursive-sig').innerText = data.officerName;
+
+      // 2. Letter details
+      document.getElementById('letter-recipient-name').innerText = data.name;
+      document.getElementById('letter-salutation-name').innerText = data.name;
+      document.getElementById('letter-recipient-address').innerText = data.address;
+      document.getElementById('letter-ref-id').innerText = `ALT/POSP/AUTH/${data.pospId.split('/').pop()}`;
+      document.getElementById('letter-issue-date').innerText = formatDateString(data.issueDate);
+      const letterTrainingHoursEl = document.getElementById('letter-training-hours');
+      if (letterTrainingHoursEl) letterTrainingHoursEl.innerText = data.trainingHours;
+      
+      document.getElementById('letter-table-name').innerText = data.name;
+      document.getElementById('letter-table-id').innerText = data.pospId;
+      document.getElementById('letter-table-pan').innerText = data.pan;
+      document.getElementById('letter-table-aadhaar').innerText = data.aadhaar;
+      document.getElementById('letter-table-date').innerText = formatDateString(data.issueDate);
+      
+      document.getElementById('letter-officer-name').innerText = data.officerName;
+      document.getElementById('letter-cursive-sig').innerText = data.officerName;
+
+      // 3. Photo loading
+      const img = document.getElementById('preview-photo');
+      const placeholder = document.getElementById('photo-placeholder-svg');
+      
+      if (data.photo) {
+        img.src = data.photo;
+        img.style.display = 'block';
+        placeholder.style.display = 'none';
+      } else {
+        img.style.display = 'none';
+        placeholder.style.display = 'block';
+      }
+
+      // 4. Signature loading
+      const certSigImg = document.getElementById('preview-signature-img');
+      const letterSigImg = document.getElementById('letter-signature-img');
+      const certCursiveSig = document.getElementById('preview-cursive-sig');
+      const letterCursiveSig = document.getElementById('letter-cursive-sig');
+      
+      if (data.signature) {
+        certSigImg.src = data.signature;
+        certSigImg.style.display = 'block';
+        letterSigImg.src = data.signature;
+        letterSigImg.style.display = 'block';
+        
+        certCursiveSig.style.display = 'none';
+        letterCursiveSig.style.display = 'none';
+      } else {
+        certSigImg.style.display = 'none';
+        letterSigImg.style.display = 'none';
+        
+        certCursiveSig.style.display = 'block';
+        letterCursiveSig.style.display = 'block';
+      }
+    }
+
+    // Initialize Page
+    window.onload = function() {
+      loadUrlParams();
+    };
+  </script>
+</body>
+</html>
