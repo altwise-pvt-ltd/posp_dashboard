@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, MotionConfig, motion, useReducedMotion } from "framer-motion";
 import { ArrowRightCircle } from "lucide-react";
-import stepsIllustration from "@/assets/landing/steps-illustration.png";
-import step1Icon from "@/assets/landing/step1-icon.png";
-import step2Icon from "@/assets/landing/step2-icon.png";
-import step3Icon from "@/assets/landing/step3-icon.png";
+import stepsIllustration from "@/assets/landing/steps-illustration.webp";
+import step1Icon from "@/assets/landing/step1-icon.webp";
+import step2Icon from "@/assets/landing/step2-icon.webp";
+import step3Icon from "@/assets/landing/step3-icon.webp";
 import Section from "./ui/Section";
 import SectionHeading from "./ui/SectionHeading";
 import Highlight from "./ui/Highlight";

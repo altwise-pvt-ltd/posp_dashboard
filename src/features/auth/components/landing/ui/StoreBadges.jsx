@@ -1,5 +1,5 @@
-import googlePlay from "@/assets/landing/google-play.png";
-import appStore from "@/assets/landing/app-store.png";
+import googlePlay from "@/assets/landing/google-play.webp";
+import appStore from "@/assets/landing/app-store.webp";
 
 /* `width`/`height` are the badges' intrinsic pixel sizes. The default variant
    sizes by height alone, so the browser needs the ratio to reserve the row's

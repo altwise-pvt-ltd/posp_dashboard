@@ -8,7 +8,7 @@ import Highlight from "./ui/Highlight";
    The logos are decorative (alt=""): the heading already says what they are,
    and the filenames aren't dependable brand names. Swap in an explicit
    name map here if these ever need to be announced individually. */
-const partnerModules = import.meta.glob("/src/assets/landing/partner-*.png", {
+const partnerModules = import.meta.glob("/src/assets/landing/partner-*.webp", {
   eager: true,
   import: "default",
 });

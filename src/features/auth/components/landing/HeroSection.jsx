@@ -1,5 +1,5 @@
 import { ShieldCheck, Check, ArrowRightCircle } from "lucide-react";
-import heroAgent from "@/assets/landing/agent.png";
+import heroAgent from "@/assets/landing/agent.webp";
 import Section from "./ui/Section";
 import Highlight from "./ui/Highlight";
 import BrandButton from "./ui/BrandButton";

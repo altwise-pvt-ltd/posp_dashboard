@@ -1,5 +1,5 @@
 import { CheckCircle } from "lucide-react";
-import appMockup from "@/assets/landing/app-mockup.png";
+import appMockup from "@/assets/landing/app-mockup.webp";
 import Section from "./ui/Section";
 import SectionHeading from "./ui/SectionHeading";
 import Highlight from "./ui/Highlight";

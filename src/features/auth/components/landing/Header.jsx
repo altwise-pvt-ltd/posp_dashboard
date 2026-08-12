@@ -30,7 +30,7 @@ export default function Header() {
     /* Mobile carries a warm ambient glow under the bar instead of the neutral
        grey shadow — low alpha and a wide blur so it reads as light, not a line. */
     <header className="landing-header sticky top-0 z-50 bg-white shadow-[0_6px_20px_-8px_rgba(244,124,60,0.45)] lg:shadow-sm">
-      <div className={`flex h-18 items-center justify-between lg:h-17 ${CONTAINER}`}>
+      <div className={`flex h-14 items-center justify-between lg:h-17 ${CONTAINER}`}>
         {/* The mark is a wide 172×40 lockup, so width drives the size and height
             follows the ratio. lg sits at the SVG's native width. Mobile reads
             odd at w-47 because its units are 15% smaller under landing-scale —

@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { Star } from "lucide-react";
 import quoteIcon from "@/assets/landing/quote-icon.svg";
-import priyaPhoto from "@/assets/landing/testimonial1.png";
-import rahulPhoto from "@/assets/landing/testimonial2.png";
-import anitaPhoto from "@/assets/landing/testimonial3.png";
+import priyaPhoto from "@/assets/landing/testimonial1.webp";
+import rahulPhoto from "@/assets/landing/testimonial2.webp";
+import anitaPhoto from "@/assets/landing/testimonial3.webp";
 import Section from "./ui/Section";
 import SectionHeading from "./ui/SectionHeading";
 import Highlight from "./ui/Highlight";
