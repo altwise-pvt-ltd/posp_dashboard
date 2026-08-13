@@ -1,11 +1,13 @@
 import { create } from 'zustand';
 import { resetOnboarding } from './onboardingStore';
+import { resetVerification } from './verificationStore';
+import { resetTraining } from './trainingStore';
 
 /**
  * Tracks whether the POSP has signed in (mobile + OTP). The session is
  * persisted in localStorage so a signed-in user stays authenticated across
  * reloads — this is the single source of truth the route guard
- * (`RequireAuth`) and the `/` entry redirect read.
+ * (`RequireFunnel`) and the `/` entry redirect read.
  *
  * Sibling of `onboardingStore`: auth answers "who are you?", onboarding answers
  * "have you finished setup?". A user must pass auth first, then onboarding.
@@ -68,21 +70,27 @@ export const signOut = () => useAuthStore.getState().signOut();
 
 /**
  * Dev/testing helper — resets the browser back to a brand-new user so you can
- * replay the *whole* funnel (login → onboarding → dashboard) from the console:
+ * replay the *whole* funnel (login → onboarding → verification → training →
+ * dashboard) from the console:
  *   > Denied()
- * It clears both flags on purpose: dropping the session alone would leave
- * `onboardingComplete` set, and the next login would skip the wizard and land
- * straight on the dashboard.
+ * It clears every stage flag on purpose: dropping the session alone would leave
+ * `onboardingComplete`, `profileVerification` and `trainingCertified` set, and
+ * the next login would skip all three and land straight on the dashboard.
  *
- * Because RequireAuth subscribes to the store, any protected page you're on
+ * Its counterpart is `Approve()` in verificationStore, which stands in for the
+ * back office signing off a profile.
+ *
+ * Because RequireFunnel subscribes to the store, any protected page you're on
  * redirects to /login immediately — no reload needed.
  */
 if (typeof window !== 'undefined') {
   window.Denied = () => {
     useAuthStore.getState().signOut();
     resetOnboarding();
+    resetVerification();
+    resetTraining();
     console.log(
-      '[auth] Denied() — session + onboarding cleared. Next login goes through the full flow: login → onboarding → dashboard.'
+      '[auth] Denied() — session + onboarding + verification + training cleared. Next login goes through the full flow: login → onboarding → verification → training → dashboard.'
     );
   };
 }

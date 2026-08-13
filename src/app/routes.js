@@ -11,6 +11,7 @@
 export const ROUTES = [
   '/login',
   '/onboarding',
+  '/verification',
   '/overview',
   '/profile',
   '/posp-training',

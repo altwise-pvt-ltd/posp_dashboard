@@ -3,10 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { ChevronRight, Home } from "lucide-react";
 import { showAlert } from "@/shared/store/alertStore";
 import { completeOnboarding } from "@/shared/store/onboardingStore";
-import Topbar from "../components/Topbar";
+import { submitForReview } from "@/shared/store/verificationStore";
+import FunnelLayout, { FUNNEL_SHELL } from "@/shared/layouts/FunnelLayout";
 import Stepper from "../components/Stepper";
 import OnboardingSidebar from "../components/OnboardingSidebar";
-import OnboardingFooter from "../components/OnboardingFooter";
 import StepPlaceholder from "../components/StepPlaceholder";
 import PanStep from "../steps/PanStep";
 import EmailStep from "../steps/EmailStep";
@@ -101,24 +101,32 @@ export default function OnboardingScreen() {
     // TODO: send `formData` (including File objects) to the onboarding API.
     console.log("Submitting onboarding application:", formData);
     // Mark onboarding done — this flips the localStorage flag the route guard
-    // reads, which is what unlocks the dashboard from here on.
+    // reads, which is what unlocks everything downstream from here on.
     completeOnboarding();
+    // Put the profile in the review queue. Matters most on a *re*submission:
+    // a POSP the team sent back arrives here still flagged as rejected, and
+    // without this they'd fix their PAN and land on the rejection screen again,
+    // still being told about the old verdict.
+    submitForReview();
     // The AlertContainer lives above <Routes>, so this success toast survives
-    // the navigation and greets the user on the Overview page.
+    // the navigation and greets the user on the verification page.
     showAlert({
       variant: "success",
       title: "Application submitted",
-      message: "Your onboarding details are in. We'll verify them shortly.",
+      message: "Your details are with our team — we'll verify them shortly.",
     });
-    // Application submitted — hand the user off to the Overview page.
-    navigate("/overview");
+    // Application submitted — hand the user off to the waiting screen. Training
+    // opens once the team verifies, and the dashboard after the exam.
+    navigate("/verification");
   };
 
-  // Skip the entire onboarding wizard and jump straight to the dashboard.
+  // Skip the entire onboarding wizard and jump straight to the waiting screen.
   // No step data is submitted; the user can finish these details later from
-  // their profile. Same destination as handleSubmit, minus the submit.
+  // their profile. Same destination as handleSubmit, minus the submit — and
+  // deliberately without submitForReview(): nothing was fixed, so a rejected
+  // profile stays rejected rather than rejoining the queue on a skip.
   const skipAll = () => {
-    // Still flip the flag — otherwise RequireOnboarding bounces them straight
+    // Still flip the flag — otherwise the funnel guard bounces them straight
     // back here and Skip becomes a no-op.
     completeOnboarding();
     showAlert({
@@ -126,7 +134,7 @@ export default function OnboardingScreen() {
       title: "Onboarding skipped",
       message: "You can complete your details anytime from your profile.",
     });
-    navigate("/overview");
+    navigate("/verification");
   };
 
   // The Review step goes full-width (its cards tile into a grid), so the
@@ -153,13 +161,11 @@ export default function OnboardingScreen() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#fafafa] font-sans">
-
-      <Topbar />
-
-      <main className="flex-1">
-        {/* Content shell — caps at 7xl on most screens, widens on very large ones */}
-        <div className="mx-auto w-full max-w-7xl 2xl:max-w-400 box-border px-4 sm:px-6 lg:px-10 xl:px-14 py-4 sm:py-6 lg:py-8">
+    <FunnelLayout header="auto">
+      {/* Content shell — caps at 7xl on most screens, widens on very large ones.
+          Vertical padding is the wizard's own; FUNNEL_SHELL carries the width
+          and the side padding it shares with the rest of the funnel. */}
+      <div className={`${FUNNEL_SHELL} py-4 sm:py-6 lg:py-8`}>
 
           {/* Progress stepper */}
           <div className="anim-fade mb-4 lg:mb-5 mx-auto w-full max-w-5xl xl:max-w-6xl">
@@ -183,7 +189,7 @@ export default function OnboardingScreen() {
               <span className="font-semibold text-slate-700">On Boarding</span>
             </nav>
 
-            {/* Skip the whole wizard — lands on the dashboard without submitting. */}
+            {/* Skip the whole wizard — lands on verification without submitting. */}
             <button
               type="button"
               onClick={skipAll}
@@ -211,11 +217,7 @@ export default function OnboardingScreen() {
             {!isReview && <OnboardingSidebar />}
           </div>
 
-        </div>
-      </main>
-
-      <OnboardingFooter />
-
-    </div>
+      </div>
+    </FunnelLayout>
   );
 }

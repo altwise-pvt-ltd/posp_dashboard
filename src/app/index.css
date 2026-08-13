@@ -175,7 +175,7 @@
 
 /* ── Training handoff display scale ─────────────────────────────────────────
    Same mechanism as .landing-scale above, at 75% and pointed the other way:
-   the verification-complete / start-training screen was built at the app's
+   the start-training intro card was built at the app's
    base scale and reads oversized on a laptop, so from `sm` up it renders at
    three-quarter size. Below 640px it is left alone — 0.75 × text-sm is 10.5px,
    too small to ship on a phone, and the single-column mobile layout was never

@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { HeartPulse, ShieldCheck } from 'lucide-react';
-import BrandTopbar from '@/shared/layouts/BrandTopbar';
-import OnboardingFooter from '@/features/onboarding/components/OnboardingFooter';
+import FunnelLayout from '@/shared/layouts/FunnelLayout';
 import { SECTIONS } from '../data/sections';
 import { trainingModules } from '../data/trainingModules';
 import { useCountdown } from '../hooks/useCountdown';
@@ -58,9 +57,9 @@ function TrainingPage() {
     }
 
     if (!hasStarted) {
-      /* `training-scale` is scoped to the intro so the card matches the
-         standalone /verification-complete page; the syllabus and exam below
-         keep the app's base scale. */
+      /* `training-scale` is scoped to the intro, which was drawn at the app's
+         base scale and reads oversized on a laptop; the syllabus and exam below
+         keep the base scale. */
       return (
         <div className="training-scale flex w-full flex-1 flex-col items-center justify-center p-4 md:p-8">
           <VerificationCompleteCard onStart={() => setHasStarted(true)} />
@@ -125,19 +124,17 @@ function TrainingPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50">
-      {/* The exam is a focused, full-bleed view — no chrome around it. The
-          footer is gated the same way. `main` holds flex-1, so on the short
-          screens it settles at the bottom of the viewport rather than riding up
-          under the content. */}
-      {!isExamOpen && <BrandTopbar />}
-
-      <main className={`flex w-full flex-1 flex-col ${isExamOpen ? 'p-0' : 'p-4 md:p-6 lg:p-8'}`}>
-        {renderStage()}
-      </main>
-
-      {!isExamOpen && <OnboardingFooter />}
-    </div>
+    /* The exam is a focused, full-bleed view — both bar and footer come off for
+       it. `main` holds flex-1, so on short screens it settles at the bottom of
+       the viewport rather than riding up under the content. */
+    <FunnelLayout
+      header={isExamOpen ? 'none' : 'brand'}
+      footer={!isExamOpen}
+      className="bg-slate-50"
+      mainClassName={`flex w-full flex-1 flex-col ${isExamOpen ? 'p-0' : 'p-4 md:p-6 lg:p-8'}`}
+    >
+      {renderStage()}
+    </FunnelLayout>
   );
 }
 

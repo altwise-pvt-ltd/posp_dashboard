@@ -28,13 +28,12 @@ const WHAT_TO_EXPECT = [
 
 /**
  * VerificationCompleteCard — the "documents verified, start your training"
- * screen.
+ * screen, and the opening state of TrainingPage: `onStart` flips that page
+ * into the module list in place.
  *
- * Rendered in two places, which is why it's a component rather than page
- * markup: the /verification-complete page (Start Training routes to the
- * training module) and the opening state of TrainingPage (Start Training
- * flips the page into the module list in place). `onStart` is the only
- * difference between the two.
+ * The other half of the pair is VerificationPendingPage, the waiting screen a
+ * POSP sits on until the back office signs their profile off. This card is what
+ * they get on the far side of that gate.
  */
 export default function VerificationCompleteCard({ onStart }) {
   return (

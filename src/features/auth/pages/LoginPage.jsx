@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { showAlert } from "@/shared/store/alertStore";
 import { signIn } from "@/shared/store/authStore";
-import { isOnboardingComplete } from "@/shared/store/onboardingStore";
+import { landingPath } from "@/app/funnel";
 import LoginForm from "../components/LoginForm";
 import Header from "../components/landing/Header";
 import HeroSection from "../components/landing/HeroSection";
@@ -28,9 +28,9 @@ export default function LoginPage() {
       title: "Signed in",
       message: "You're verified — welcome back!",
     });
-    navigate(isOnboardingComplete() ? "/overview" : "/onboarding", {
-      replace: true,
-    });
+    // signIn() has already flipped the auth flag, so landingPath() resolves to
+    // the next unfinished stage: onboarding, then training, then the dashboard.
+    navigate(landingPath(), { replace: true });
   };
 
   return (

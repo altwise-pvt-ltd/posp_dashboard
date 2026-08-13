@@ -1,23 +1,36 @@
 import { motion } from 'framer-motion';
-import { ArrowRight, Clock, CircleCheckBig, TriangleAlert } from 'lucide-react';
+import { ArrowRight, Clock, CircleCheckBig, ScrollText, TriangleAlert } from 'lucide-react';
 import { EXAM_SHELL } from './examShell';
 
 /**
- * Accent per instruction card, carried on the icon tile alone.
+ * Accent per highlighted rule: one string for the row's tinted surface, one for
+ * the icon tile that sits on it.
  *
- * One class string owns the tile's border, surface and icon colour together —
- * mixing an accent into a tile that already has a base `bg-*`/`border-*` leaves
- * two competing utilities on one element, where the winner is decided by
- * stylesheet order rather than by which one was written last.
+ * Each string owns its element's border, surface and colour together — mixing
+ * an accent into an element that already has a base `bg-*`/`border-*` leaves two
+ * competing utilities on one element, where the winner is decided by stylesheet
+ * order rather than by which one was written last.
  */
 const ACCENT = {
-  info: 'border-orange-100 bg-orange-50 text-orange-600',
-  warning: 'border-red-100 bg-red-50 text-red-600',
+  info: {
+    row: 'border-orange-100 bg-orange-50/60',
+    tile: 'border-orange-100 bg-white text-orange-600',
+  },
+  warning: {
+    row: 'border-red-100 bg-red-50/60',
+    tile: 'border-red-100 bg-white text-red-600',
+  },
 };
 
 /**
- * The gate in front of the exam: the rules on the right, the way in on the
- * left. Nothing is timed until the learner presses start.
+ * The gate in front of the exam: one rules panel on the right, the way in on
+ * the left. Nothing is timed until the learner presses start.
+ *
+ * The rules live in a single container rather than three floating cards — they
+ * are one set of terms being agreed to, and separate cards read as three
+ * unrelated notices. The brief sets the shape of the paper; the three points
+ * below it are the ones a learner cannot afford to skim, so each is highlighted
+ * on its own tinted row.
  *
  * Framed like SectionTransition — the same shell, border and surface — because
  * both are static screens the exam pauses on, and the view should not resize
@@ -26,6 +39,7 @@ const ACCENT = {
 function ExamInstructions({ sections, sectionMinutes, passPercentage, onStart }) {
   const sectionNames = sections.map((section) => section.label).join(' & ');
   const firstSection = sections[0];
+  const totalMinutes = sectionMinutes * sections.length;
 
   const instructions = [
     {
@@ -81,35 +95,69 @@ function ExamInstructions({ sections, sectionMinutes, passPercentage, onStart })
           <p className="mt-3 text-xs text-slate-400">Your progress will be saved automatically.</p>
         </div>
 
-        {/* Right: the rules */}
-        <div className="space-y-4 md:col-span-3">
-          {instructions.map((item, index) => {
-            const Icon = item.icon;
+        {/* Right: the rules, as one set of terms */}
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.4 }}
+          className="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_8px_30px_rgba(15,23,42,0.05)] md:col-span-3 md:p-8"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-orange-100 bg-orange-50 text-orange-600">
+              <ScrollText className="h-5 w-5" strokeWidth={2} aria-hidden="true" />
+            </div>
+            <div>
+              <h3 className="text-base font-semibold tracking-tight text-slate-900">
+                Exam Guidelines
+              </h3>
+              <p className="text-xs text-slate-400">Please read before you start</p>
+            </div>
+          </div>
 
-            return (
-              <motion.div
-                key={item.title}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.1, duration: 0.4 }}
-                className="group relative flex items-center gap-5 rounded-2xl border border-orange-200 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-orange-400 hover:shadow-md"
-              >
-                <div
-                  className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border shadow-inner transition-transform duration-300 group-hover:scale-105 ${item.accent}`}
-                >
-                  <Icon className="h-7 w-7" strokeWidth={2} aria-hidden="true" />
-                </div>
+          <p className="mt-5 text-sm leading-relaxed text-slate-500">
+            The certification exam is sat in{' '}
+            {sections.length === 1 ? 'a single section' : `${sections.length} sections`} —{' '}
+            <span className="font-medium text-slate-700">{sectionNames}</span> — and takes about{' '}
+            <span className="font-medium text-slate-700">{totalMinutes} minutes</span> in total. Each
+            section is a set of multiple-choice questions, scored on its own, and you may move freely
+            between questions until you submit that section.
+          </p>
 
-                <div className="flex-1">
-                  <h4 className="text-base font-semibold text-slate-800 transition-colors group-hover:text-slate-900">
-                    {item.title}
-                  </h4>
-                  <p className="mt-1 text-sm leading-relaxed text-slate-500">{item.description}</p>
-                </div>
-              </motion.div>
-            );
-          })}
-        </div>
+          <div className="mt-6 border-t border-slate-100 pt-6">
+            <div className="text-[10px] font-semibold tracking-[0.14em] text-slate-400 uppercase">
+              Key Points
+            </div>
+
+            <ul className="mt-3 space-y-3">
+              {instructions.map((item, index) => {
+                const Icon = item.icon;
+
+                return (
+                  <motion.li
+                    key={item.title}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.15 + index * 0.08, duration: 0.3 }}
+                    className={`flex items-start gap-4 rounded-xl border p-4 ${item.accent.row}`}
+                  >
+                    <div
+                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border ${item.accent.tile}`}
+                    >
+                      <Icon className="h-4.5 w-4.5" strokeWidth={2} aria-hidden="true" />
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <h4 className="text-sm font-semibold text-slate-800">{item.title}</h4>
+                      <p className="mt-0.5 text-sm leading-relaxed text-slate-500">
+                        {item.description}
+                      </p>
+                    </div>
+                  </motion.li>
+                );
+              })}
+            </ul>
+          </div>
+        </motion.div>
       </div>
     </div>
   );

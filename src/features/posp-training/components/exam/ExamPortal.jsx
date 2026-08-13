@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { examQuestions } from '../../data/examQuestions';
 import { SECTIONS } from '../../data/sections';
+import { completeTraining } from '@/shared/store/trainingStore';
 import { useCountdown } from '../../hooks/useCountdown';
 import { PASS_PERCENTAGE, scoreSection } from '../../lib/examScoring';
 import CertificateScreen from '../certificate/CertificateScreen';
@@ -122,7 +123,13 @@ function ExamPortal({ onRetakeTraining }) {
           section: examSection,
           score: scoreSection(examQuestions[examSection.id], answers[examSection.id]),
         }))}
-        onViewCertificate={() => setStage(STAGE.CERTIFICATE)}
+        onViewCertificate={() => {
+          // Reaching the certificate means they passed — this is the moment the
+          // dashboard unlocks. Flipped here rather than on the Go to Dashboard
+          // button so the guard is satisfied before that navigation fires.
+          completeTraining();
+          setStage(STAGE.CERTIFICATE);
+        }}
         onRetakeTraining={onRetakeTraining}
       />
     );

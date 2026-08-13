@@ -21,22 +21,24 @@ function TrainingCompleteCard({ onStartExam }) {
         you're ready.
       </p>
 
-      <button
-        type="button"
-        onClick={onStartExam}
-        className="group mt-8 inline-flex items-center justify-center gap-2 rounded-xl bg-orange-600 px-7 py-3.5 text-sm font-bold text-white shadow-lg shadow-orange-600/20 transition-all duration-200 hover:bg-orange-700 hover:shadow-orange-700/30 focus:outline-none focus-visible:ring-4 focus-visible:ring-orange-500/30 active:scale-[0.98] sm:text-base"
-      >
-        Start exam
-        <ArrowRight
-          className="size-4 transition-transform duration-200 group-hover:translate-x-0.5"
-          aria-hidden="true"
-        />
-      </button>
+      <div className="mt-8 flex flex-col items-center gap-6">
+        <button
+          type="button"
+          onClick={onStartExam}
+          className="group inline-flex items-center justify-center gap-2 rounded-xl bg-orange-600 px-7 py-3.5 text-sm font-bold text-white shadow-lg shadow-orange-600/20 transition-all duration-200 hover:bg-orange-700 hover:shadow-orange-700/30 focus:outline-none focus-visible:ring-4 focus-visible:ring-orange-500/30 active:scale-[0.98] sm:text-base"
+        >
+          Start exam
+          <ArrowRight
+            className="size-4 transition-transform duration-200 group-hover:translate-x-0.5"
+            aria-hidden="true"
+          />
+        </button>
 
-      <p className="mt-6 inline-flex items-center justify-center gap-2 text-xs text-slate-400">
-        <Lock className="size-3.5" aria-hidden="true" />
-        Secure examination environment
-      </p>
+        <p className="flex items-center gap-2 text-xs text-slate-400">
+          <Lock className="size-3.5" aria-hidden="true" />
+          Secure examination environment
+        </p>
+      </div>
     </div>
   );
 }

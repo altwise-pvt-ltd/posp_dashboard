@@ -3,20 +3,17 @@ import OverviewPage from '@/features/overview/pages/OverviewPage';
 import ProfilePage from '@/features/profile/pages/ProfilePage';
 import TrainingPage from '@/features/posp-training/pages/TrainingPage';
 import OnboardingScreen from '@/features/onboarding/pages/OnboardingScreen';
+import VerificationPendingPage from '@/features/verification/pages/VerificationPendingPage';
 import LoginPage from '@/features/auth/pages/LoginPage';
 import AlertContainer from '@/shared/components/alert/AlertContainer';
-import RequireAuth from '@/app/RequireAuth';
-import RequireOnboarding from '@/app/RequireOnboarding';
-import { isAuthenticated } from '@/shared/store/authStore';
-import { isOnboardingComplete } from '@/shared/store/onboardingStore';
+import RequireFunnel from '@/app/RequireFunnel';
+import { landingPath } from '@/app/funnel';
 
-
-// Entry funnel: sign in first, then finish onboarding, then the dashboard.
-const landingPath = () => {
-  if (!isAuthenticated()) return '/login';
-  return isOnboardingComplete() ? '/overview' : '/onboarding';
-};
-
+/**
+ * Every protected route names the last stage that must be behind the user, and
+ * RequireFunnel resolves the rest from `FUNNEL_STAGES`. The order lives in
+ * app/funnel.js — don't re-encode it here.
+ */
 function App() {
   return (
     <BrowserRouter>
@@ -28,24 +25,39 @@ function App() {
         {/* Public */}
         <Route path="/login" element={<LoginPage />} />
 
-        {/* Signed in, but onboarding may still be pending */}
+        {/* Signed in. No onboarding gate: the verification screen's breadcrumb
+            links back here so a submitted user can review what they sent. */}
         <Route
           path="/onboarding"
-          element={<RequireAuth><OnboardingScreen /></RequireAuth>}
+          element={<RequireFunnel through="auth"><OnboardingScreen /></RequireFunnel>}
         />
 
-        {/* Dashboard — signed in *and* onboarded */}
+        {/* Submitted, waiting on the back office. Forwards a cleared POSP on
+            rather than leaving them on a screen with nothing left to say. */}
+        <Route
+          path="/verification"
+          element={
+            <RequireFunnel through="onboarding" forwardWhenClear="verification">
+              <VerificationPendingPage />
+            </RequireFunnel>
+          }
+        />
+
+        {/* Verified. Stays reachable after certification — the sidebar links
+            here for a POSP who wants to revisit the material. */}
+        <Route
+          path="/posp-training"
+          element={<RequireFunnel through="verification"><TrainingPage /></RequireFunnel>}
+        />
+
+        {/* Dashboard — the whole funnel behind them. */}
         <Route
           path="/overview"
-          element={<RequireAuth><RequireOnboarding><OverviewPage /></RequireOnboarding></RequireAuth>}
+          element={<RequireFunnel through="training"><OverviewPage /></RequireFunnel>}
         />
         <Route
           path="/profile"
-          element={<RequireAuth><RequireOnboarding><ProfilePage /></RequireOnboarding></RequireAuth>}
-        />
-        <Route
-          path="/posp-training"
-          element={<RequireAuth><RequireOnboarding><TrainingPage /></RequireOnboarding></RequireAuth>}
+          element={<RequireFunnel through="training"><ProfilePage /></RequireFunnel>}
         />
 
         <Route path="*" element={<Navigate to="/" replace />} />
