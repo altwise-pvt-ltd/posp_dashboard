@@ -33,7 +33,7 @@ export const VERIFICATION = {
  * the real response will have — a reviewer rarely sends back exactly one thing.
  * The ids match `UNDER_REVIEW` on the verification page.
  */
-export const DEMO_REJECTIONS = [
+const DEMO_REJECTIONS = [
   {
     id: 'pan',
     reason: 'The name on your PAN does not match the name you entered.',

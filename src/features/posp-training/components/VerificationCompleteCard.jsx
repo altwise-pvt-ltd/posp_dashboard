@@ -81,11 +81,6 @@ export default function VerificationCompleteCard({ onStart }) {
               knowledge, and ethical selling practices as mandated by{" "}
               <span className="font-semibold text-orange-500">IRDAI</span>.
             </p>
-            {/* <p className="mx-auto mt-2 max-w-2xl text-start text-sm leading-6 text-slate-500 sm:text-base sm:leading-7">
-                 All your documents have been successfully verified. You are now ready to
-                  begin your mandatory 15-hour POSP training program and take the next
-                  step in your insurance career.
-            </p> */}
 
             {/* What the programme involves */}
             <ul className="mt-7 space-y-4 rounded-2xl border border-slate-200/70 bg-slate-50/80 p-4 sm:p-5">

@@ -44,7 +44,9 @@ function TrainingPage() {
   const [isExamOpen, setIsExamOpen] = useState(false);
   const { secondsLeft, reset } = useCountdown(TRAINING_SECONDS, { running: hasStarted });
 
-  const isTrainingComplete = secondsLeft === 0;
+  /* The clock running out, not the exam being passed — `isTrainingComplete` in
+     trainingStore means the latter, so this deliberately doesn't share its name. */
+  const hoursComplete = secondsLeft === 0;
 
   const handleRetakeTraining = () => {
     setIsExamOpen(false);
@@ -67,7 +69,7 @@ function TrainingPage() {
       );
     }
 
-    if (isTrainingComplete) {
+    if (hoursComplete) {
       return (
         <div className="flex w-full flex-1 items-center justify-center py-10">
           <TrainingCompleteCard onStartExam={() => setIsExamOpen(true)} />
