@@ -120,11 +120,11 @@ export default function PartnersSection() {
           <div
             key={rowIndex}
             className={`relative flex justify-center hover:z-10 ${
-              rowIndex === 0 ? "" : "mt-[var(--hex-overlap)]"
+              rowIndex === 0 ? "" : "mt-(--hex-overlap)"
             } ${
               rowIndex % 2 === 0
-                ? "translate-x-[var(--hex-shift-back)]"
-                : "translate-x-[var(--hex-shift)]"
+                ? "translate-x-(--hex-shift-back)"
+                : "translate-x-(--hex-shift)"
             }`}
           >
             {row.map((partner) => (
@@ -136,7 +136,7 @@ export default function PartnersSection() {
                  follows the hex silhouette instead of its bounding box. */
               <div
                 key={partner.path}
-                className="group w-[var(--hex-w)] shrink-0 p-[3px] aspect-[0.866] transition duration-300 ease-out hover:-translate-y-1 hover:drop-shadow-lg"
+                className="group w-(--hex-w) shrink-0 p-0.75 aspect-[0.866] transition duration-300 ease-out hover:-translate-y-1 hover:drop-shadow-lg"
               >
                 <div
                   className={`h-full w-full bg-gray-200 p-px transition-colors duration-300 group-hover:bg-brand/50 ${HEX}`}
@@ -148,10 +148,6 @@ export default function PartnersSection() {
                       src={partner.src}
                       alt=""
                       loading="lazy"
-                      /* Held back at rest so the wall reads as one calm block
-                         and no single brand shouts; full colour on hover.
-                         Add `grayscale group-hover:grayscale-0` here for the
-                         fully desaturated treatment. */
                       className="max-h-[45%] max-w-[80%] object-contain  transition-opacity duration-300 group-hover:opacity-100"
                     />
                   </div>

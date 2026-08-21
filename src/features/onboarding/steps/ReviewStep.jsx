@@ -109,11 +109,18 @@ const SECTIONS = [
     title: "Business",
     Icon: Building2,
     Editor: BusinessStep,
+    // No business → the step collected an address only, so the business-only
+    // rows are dropped rather than listed blank.
     rows: (d) => [
-      ["Business Type", d.businessType],
-      ["Business Name", d.businessName],
+      ["Runs a Business", d.hasBusiness ? "Yes" : "No"],
+      ...(d.hasBusiness
+        ? [
+            ["Business Type", d.businessType],
+            ["Business Name", d.businessName],
+          ]
+        : []),
       ["Address", [d.addressLine1, d.addressLine2, d.city, d.state, d.pincode].filter(Boolean).join(", ")],
-      ["GSTIN", d.gstIn || "—"],
+      ...(d.hasBusiness ? [["GSTIN", d.gstIn || "—"]] : []),
     ],
     files: () => [],
   },

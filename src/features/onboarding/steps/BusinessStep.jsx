@@ -8,19 +8,29 @@ import Button from "@/shared/components/Button";
 import { alertOnInvalid } from "@/shared/store/alertStore";
 
 /* ── Schema ──
+ * Two shapes, picked by the "Do you run a business?" answer:
+ *   No  → address only. That's all we need to place the POSP.
+ *   Yes → address + business identity (type, name) + the optional GSTIN.
+ *
  * India-aware: 6-digit PIN code (can't start with 0), and a 15-char GSTIN
  * that's only format-checked when the user actually fills it in.
  */
 const GSTIN_RE = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
 
-const businessSchema = z.object({
-  businessType: z.string().trim().min(1, "Business type is required.").max(200),
-  businessName: z.string().trim().min(1, "Business name is required.").max(200),
+const addressShape = {
   addressLine1: z.string().trim().min(1, "Address line 1 is required.").max(200),
   addressLine2: z.string().trim().max(200, "Keep it under 200 characters.").optional(),
   city: z.string().trim().min(1, "City is required.").max(100),
   state: z.string().trim().min(1, "State is required.").max(100),
   pincode: z.string().regex(/^[1-9][0-9]{5}$/, "Enter a valid 6-digit PIN code."),
+};
+
+const addressOnlySchema = z.object(addressShape);
+
+const businessSchema = z.object({
+  businessType: z.string().trim().min(1, "Business type is required.").max(200),
+  businessName: z.string().trim().min(1, "Business name is required.").max(200),
+  ...addressShape,
   gstIn: z
     .string()
     .trim()
@@ -29,28 +39,49 @@ const businessSchema = z.object({
 });
 
 export default function BusinessStep({ onNext, onSkip, initialValues }) {
+  /* "Do you run a business?" — the gate for this whole step.
+   * Default to Yes only when we're editing a record that already has business
+   * details (older saves predate the flag, so fall back to sniffing the name). */
+  const [hasBusiness, setHasBusiness] = useState(
+    initialValues?.hasBusiness ?? Boolean(initialValues?.businessName)
+  );
+
+  // "Do you have a GST number?" — nested under Yes; input only appears on Yes.
+  const [hasGst, setHasGst] = useState(Boolean(initialValues?.gstIn));
+
   const form = useForm({
-    resolver: zodResolver(businessSchema),
+    // Swapping the resolver with the answer is what makes business type/name
+    // required on Yes and absent (not just ignored) on No — z.object strips
+    // the keys it doesn't know, so the payload stays clean either way.
+    resolver: zodResolver(hasBusiness ? businessSchema : addressOnlySchema),
     defaultValues: {
       businessType: "",
       businessName: "",
       addressLine1: "",
-      addressLine2: "",
       city: "",
       state: "",
       pincode: "",
-      gstIn: "",
       ...initialValues,
       // Optionals persist as undefined — coerce back to controlled strings.
+      // (Listed only here, so they double as the "" defaults.)
       addressLine2: initialValues?.addressLine2 ?? "",
       gstIn: initialValues?.gstIn ?? "",
     },
     mode: "onTouched",
   });
 
-  // "Do you have a GST number?" — the GSTIN input only appears on Yes.
-  // Default to Yes only when we're editing a record that already has one.
-  const [hasGst, setHasGst] = useState(Boolean(initialValues?.gstIn));
+  const chooseHasBusiness = (value) => {
+    setHasBusiness(value);
+    if (!value) {
+      // Switching to No: drop everything business-only and clear its errors,
+      // so a half-typed business name can't block an address-only submit.
+      form.setValue("businessType", "");
+      form.setValue("businessName", "");
+      form.setValue("gstIn", "");
+      form.clearErrors(["businessType", "businessName", "gstIn"]);
+      setHasGst(false);
+    }
+  };
 
   const chooseHasGst = (value) => {
     setHasGst(value);
@@ -77,10 +108,11 @@ export default function BusinessStep({ onNext, onSkip, initialValues }) {
 
   const onSubmit = form.handleSubmit((data) => {
     const clean = {
+      hasBusiness,
       ...data,
       // Normalise empty optionals to undefined.
       addressLine2: data.addressLine2 || undefined,
-      gstIn: data.gstIn || undefined,
+      ...(hasBusiness ? { gstIn: data.gstIn || undefined } : {}),
     };
     onNext?.(clean);
   }, alertOnInvalid);
@@ -97,7 +129,7 @@ export default function BusinessStep({ onNext, onSkip, initialValues }) {
               Step 7 · Business
             </span>
             <h2 className="text-lg sm:text-xl lg:text-2xl font-extrabold text-slate-800 tracking-tight">
-              Your business details
+              {hasBusiness ? "Your business details" : "Your address"}
             </h2>
           </div>
 
@@ -115,33 +147,73 @@ export default function BusinessStep({ onNext, onSkip, initialValues }) {
 
         <p className="flex items-center gap-1.5 text-xs sm:text-sm text-slate-500 mt-1 lg:mt-2">
           <ShieldCheck size={14} className="text-emerald-500 shrink-0" />
-          Where your business is registered. GSTIN is optional.
+          {hasBusiness
+            ? "Where your business is registered. GSTIN is optional."
+            : "Just where you're based — we'll use this for your POSP record."}
         </p>
       </div>
 
       <form onSubmit={onSubmit} className="px-4 sm:px-5 lg:px-6 py-5 flex flex-col gap-4 sm:gap-5">
 
-        {/* Business type + name — paired on larger screens. */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
-          <Input
-            id="businessType"
-            label="Business Type *"
-            placeholder="e.g. Proprietorship"
-            maxLength={200}
-            error={form.formState.errors.businessType?.message}
-            {...form.register("businessType")}
-          />
+        {/* Business gate — everything business-only hangs off this answer. */}
+        <div className="flex flex-col gap-2.5">
+          <span className="text-sm font-semibold text-slate-700">
+            Do you run a business?
+          </span>
 
-          <Input
-            id="businessName"
-            label="Business Name *"
-            placeholder="Registered business name"
-            maxLength={200}
-            error={form.formState.errors.businessName?.message}
-            {...form.register("businessName")}
-          />
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => chooseHasBusiness(true)}
+              className={`inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-all duration-200 active:scale-[0.98] focus:outline-none focus:ring-4 ${
+                hasBusiness
+                  ? "border-orange-300 bg-orange-50 text-orange-600 focus:ring-orange-200/50"
+                  : "border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-700 focus:ring-slate-200/50"
+              }`}
+            >
+              <Check size={16} strokeWidth={2.5} />
+              Yes
+            </button>
+
+            <button
+              type="button"
+              onClick={() => chooseHasBusiness(false)}
+              className={`inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-all duration-200 active:scale-[0.98] focus:outline-none focus:ring-4 ${
+                !hasBusiness
+                  ? "border-orange-300 bg-orange-50 text-orange-600 focus:ring-orange-200/50"
+                  : "border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-700 focus:ring-slate-200/50"
+              }`}
+            >
+              <X size={16} strokeWidth={2.5} />
+              No
+            </button>
+          </div>
         </div>
 
+        {/* Business identity — Yes branch only. */}
+        {hasBusiness && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
+            <Input
+              id="businessType"
+              label="Business Type *"
+              placeholder="e.g. Proprietorship"
+              maxLength={200}
+              error={form.formState.errors.businessType?.message}
+              {...form.register("businessType")}
+            />
+
+            <Input
+              id="businessName"
+              label="Business Name *"
+              placeholder="Registered business name"
+              maxLength={200}
+              error={form.formState.errors.businessName?.message}
+              {...form.register("businessName")}
+            />
+          </div>
+        )}
+
+        {/* Address — collected either way. */}
         <Input
           id="addressLine1"
           label="Address Line 1 *"
@@ -194,54 +266,57 @@ export default function BusinessStep({ onNext, onSkip, initialValues }) {
           onChange={handlePincodeChange}
         />
 
-        {/* GSTIN gate — ask first, only reveal the input on Yes. */}
-        <div className="flex flex-col gap-2.5">
-          <span className="text-sm font-semibold text-slate-700">
-            Do you have a GST number?
-          </span>
+        {/* GSTIN gate — a business registration, so it lives under the Yes
+            branch. Ask first, only reveal the input on Yes. */}
+        {hasBusiness && (
+          <div className="flex flex-col gap-2.5">
+            <span className="text-sm font-semibold text-slate-700">
+              Do you have a GST number?
+            </span>
 
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={() => chooseHasGst(true)}
-              className={`inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-all duration-200 active:scale-[0.98] focus:outline-none focus:ring-4 ${
-                hasGst
-                  ? "border-orange-300 bg-orange-50 text-orange-600 focus:ring-orange-200/50"
-                  : "border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-700 focus:ring-slate-200/50"
-              }`}
-            >
-              <Check size={16} strokeWidth={2.5} />
-              Yes
-            </button>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => chooseHasGst(true)}
+                className={`inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-all duration-200 active:scale-[0.98] focus:outline-none focus:ring-4 ${
+                  hasGst
+                    ? "border-orange-300 bg-orange-50 text-orange-600 focus:ring-orange-200/50"
+                    : "border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-700 focus:ring-slate-200/50"
+                }`}
+              >
+                <Check size={16} strokeWidth={2.5} />
+                Yes
+              </button>
 
-            <button
-              type="button"
-              onClick={() => chooseHasGst(false)}
-              className={`inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-all duration-200 active:scale-[0.98] focus:outline-none focus:ring-4 ${
-                !hasGst
-                  ? "border-orange-300 bg-orange-50 text-orange-600 focus:ring-orange-200/50"
-                  : "border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-700 focus:ring-slate-200/50"
-              }`}
-            >
-              <X size={16} strokeWidth={2.5} />
-              No
-            </button>
+              <button
+                type="button"
+                onClick={() => chooseHasGst(false)}
+                className={`inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-all duration-200 active:scale-[0.98] focus:outline-none focus:ring-4 ${
+                  !hasGst
+                    ? "border-orange-300 bg-orange-50 text-orange-600 focus:ring-orange-200/50"
+                    : "border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-700 focus:ring-slate-200/50"
+                }`}
+              >
+                <X size={16} strokeWidth={2.5} />
+                No
+              </button>
+            </div>
+
+            {hasGst && (
+              <Input
+                id="gstIn"
+                label="GSTIN"
+                placeholder="15-char GSTIN"
+                autoComplete="off"
+                maxLength={15}
+                className="font-mono tracking-widest uppercase"
+                error={form.formState.errors.gstIn?.message}
+                {...gstField}
+                onChange={handleGstChange}
+              />
+            )}
           </div>
-
-          {hasGst && (
-            <Input
-              id="gstIn"
-              label="GSTIN"
-              placeholder="15-char GSTIN"
-              autoComplete="off"
-              maxLength={15}
-              className="font-mono tracking-widest uppercase"
-              error={form.formState.errors.gstIn?.message}
-              {...gstField}
-              onChange={handleGstChange}
-            />
-          )}
-        </div>
+        )}
 
         <div className="flex gap-3 pt-1">
           <Button type="submit" className="flex-1 flex items-center justify-center gap-2">
