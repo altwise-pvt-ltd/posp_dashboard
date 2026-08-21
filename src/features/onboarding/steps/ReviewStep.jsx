@@ -145,12 +145,45 @@ const SECTIONS = [
     title: "Business",
     Icon: Building2,
     Editor: BusinessStep,
-    rows: (d) => [
-      ["Business Type", humanizeValue(d.businessType)],
-      ["Business Name", d.businessName],
-      ["Address", [d.addressLine1, d.addressLine2, d.city, d.state, d.pincode].filter(Boolean).join(", ")],
-      ["GSTIN", d.gstIn || "—"],
-    ],
+    /**
+     * Three shapes, because the step now asks "do you have a business?" first
+     * and the honest summary differs by answer.
+     *
+     * The `undefined` case is not the same as "No" and must not be drawn as
+     * one: it's a section that was skipped, or saved before the question
+     * existed, and nobody has answered anything. It keeps the original row set
+     * so the card still renders — and so its Edit pill, the only way back into
+     * a skipped step, stays on screen.
+     */
+    rows: (d) => {
+      const address = [d.addressLine1, d.addressLine2, d.city, d.state, d.pincode]
+        .filter(Boolean)
+        .join(", ");
+
+      if (d.hasBusiness === true) {
+        return [
+          ["Business", "Yes"],
+          ["Business Type", humanizeValue(d.businessType)],
+          ["Business Name", d.businessName],
+          ["Business Address", address],
+          ["GSTIN", d.gstIn || "—"],
+        ];
+      }
+
+      if (d.hasBusiness === false) {
+        return [
+          ["Business", "No"],
+          ["Address", address],
+        ];
+      }
+
+      return [
+        ["Business Type", humanizeValue(d.businessType)],
+        ["Business Name", d.businessName],
+        ["Address", address],
+        ["GSTIN", d.gstIn || "—"],
+      ];
+    },
     files: () => [],
   },
 ];

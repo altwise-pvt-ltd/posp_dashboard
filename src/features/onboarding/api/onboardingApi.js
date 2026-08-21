@@ -470,10 +470,23 @@ export async function saveEducationDetails({
  * `false` the GSTIN is nulled regardless of what was typed before the user
  * changed their mind, so the two can never disagree in the record.
  *
+ * `hasBusiness` works the same way, one level up. The step asks it before
+ * anything else and only collects a type and a name when the answer is yes, so
+ * on `false` both are nulled here as well as in the step — the record can never
+ * say "no business" and still carry a business name. The address is sent on
+ * either branch; it is the one thing this step always wants, whether it
+ * describes a registered business or just where the POSP lives.
+ *
+ * NOTE: this assumes the server treats `businessType` and `businessName` as
+ * nullable. If it rejects a `hasBusiness: false` save for a missing type or
+ * name, the field is required server-side and the fix belongs there — sending
+ * a filler value would put a business on the record that does not exist.
+ *
  * `businessType` must be a `value` from `fetchBusinessTypes` —
  * `PRIVATE_LIMITED`, not `Private Limited`.
  */
 export async function saveBusinessDetails({
+  hasBusiness,
   businessType,
   businessName,
   addressLine1,
@@ -484,16 +497,18 @@ export async function saveBusinessDetails({
   hasGst,
   gstIn,
 } = {}) {
+  const owns = Boolean(hasBusiness);
   const response = await api.post(ENDPOINTS.onboarding.saveBusinessDetails, {
-    businessType,
-    businessName,
+    hasBusiness: owns,
+    businessType: owns ? businessType || null : null,
+    businessName: owns ? businessName || null : null,
     addressLine1,
     addressLine2: addressLine2 || null,
     city,
     state,
     pincode,
-    hasGst: Boolean(hasGst),
-    gstIn: hasGst ? gstIn || null : null,
+    hasGst: owns && Boolean(hasGst),
+    gstIn: owns && hasGst ? gstIn || null : null,
   });
   return unwrap(response) ?? null;
 }
@@ -638,6 +653,20 @@ export function normalizeReview(data = {}) {
       },
 
       business: {
+        /**
+         * Unlike `hasGst` below, this is *not* a strict `=== true` check.
+         *
+         * A record written before the step asked the question has no
+         * `hasBusiness` at all, and reading that absence as "no business"
+         * would wipe a filled-in type and name off the review screen and out
+         * of the editor. So an explicit boolean wins, and only when there
+         * isn't one does the presence of a business name stand in for the
+         * answer — the same fallback `BusinessStep` seeds its gate with.
+         */
+        hasBusiness:
+          typeof business.hasBusiness === 'boolean'
+            ? business.hasBusiness
+            : Boolean(business.businessName || business.businessType),
         businessType: business.businessType ?? '',
         businessName: business.businessName ?? '',
         addressLine1: business.addressLine1 ?? '',

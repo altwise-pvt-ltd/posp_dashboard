@@ -120,7 +120,7 @@ export default function PartnersSection() {
           <div
             key={rowIndex}
             className={`relative flex justify-center hover:z-10 ${
-              rowIndex === 0 ? "" : "mt-[var(--hex-overlap)]"
+              rowIndex === 0 ? "" : "mt-(--hex-overlap)"
             } ${
               rowIndex % 2 === 0
                 ? "translate-x-[var(--hex-shift-back)]"
