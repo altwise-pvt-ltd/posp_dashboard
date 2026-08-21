@@ -1,54 +1,94 @@
+import { useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Landmark, ShieldCheck, Upload } from "lucide-react";
+import { Landmark, Loader2, ShieldCheck, Upload } from "lucide-react";
 import Input from "@/shared/components/Input";
 import Button from "@/shared/components/Button";
 import FileUpload from "@/shared/components/FileUpload";
+import { fileField } from "@/shared/upload/schema";
 import { alertOnInvalid } from "@/shared/store/alertStore";
+import { reportFormError } from "@/shared/api/formErrors";
+import { useMasterOptions } from "../hooks/useMasterOptions";
+import OptionsUnavailable from "../components/OptionsUnavailable";
+import {
+  fetchAccountTypes,
+  matchMasterValue,
+  saveBankDetails,
+} from "../api/onboardingApi";
 
 /* ── Schema ── */
 const bankSchema = z
   .object({
-    accountType: z.enum(["savings", "current"], { required_error: "Choose an account type." }),
+    /**
+     * A plain string, not an enum. The permitted values come from
+     * `GET /onboarding/masters/account-types` at runtime, so a literal union
+     * here would be a second, staler copy of the same list — and the one that
+     * silently rejects a value the server had just offered. The selector below
+     * renders only server-supplied options, so the field cannot hold anything
+     * else; this rule exists to catch "nothing chosen".
+     */
+    accountType: z.string().min(1, "Choose an account type."),
     accountHolder: z.string().trim().min(1, "Account holder name is required.").max(200),
     accountNumber: z.string().regex(/^[0-9]{9,18}$/, "Enter a valid account number (9–18 digits)."),
     confirmAccountNumber: z.string().min(1, "Please re-enter the account number."),
     // Real IFSC shape: 4 bank letters, a 0, then 6 branch alphanumerics.
     ifsc: z.string().regex(/^[A-Z]{4}0[A-Z0-9]{6}$/, "Enter a valid 11-character IFSC code."),
     bankName: z.string().trim().min(1, "Bank name is required.").max(200),
-    passbookImage: z.any().refine((f) => f instanceof File, "Please upload your passbook photo."),
-    chequeImage: z.any().refine((f) => f instanceof File, "Please upload a cancelled cheque."),
+    passbookImage: fileField({ message: "Please upload your passbook photo." }),
+    chequeImage: fileField({ message: "Please upload a cancelled cheque." }),
   })
   .refine((d) => d.accountNumber === d.confirmAccountNumber, {
     path: ["confirmAccountNumber"],
     message: "Account numbers don't match.",
   });
 
-/* Account-type options for the segmented selector (no icons). */
-const ACCOUNT_TYPES = [
-  { value: "savings", label: "Savings" },
-  { value: "current", label: "Current" },
-];
-
 export default function BankStep({ onNext, initialValues }) {
   const form = useForm({
     resolver: zodResolver(bankSchema),
     defaultValues: {
-      accountType: "savings",
+      // Left blank rather than guessed at: the real options arrive from the
+      // server a moment later, and a pre-selected button the user never pressed
+      // is how a wrong account type gets submitted without anyone noticing.
+      accountType: "",
       accountHolder: "",
       accountNumber: "",
-      confirmAccountNumber: "",
       ifsc: "",
       bankName: "",
       passbookImage: undefined,
       chequeImage: undefined,
       ...initialValues,
       // The confirm mirror isn't persisted — pre-satisfy it when editing.
+      // Covers the empty case too, hence no earlier `confirmAccountNumber: ""`.
       confirmAccountNumber: initialValues?.accountNumber ?? "",
     },
     mode: "onTouched",
   });
+
+  const {
+    options: accountTypes,
+    loading,
+    unavailable,
+    reload,
+  } = useMasterOptions(fetchAccountTypes);
+
+  /**
+   * Settle the selection once the options land.
+   *
+   * Keep whatever the form already holds if the server recognises it — an edit
+   * arriving back from Review — and otherwise pre-select the first option,
+   * which preserves the Savings-by-default this step has always shown. Either
+   * way the stored value is now the server's own `value`, so what gets
+   * submitted is `SAVINGS` rather than the rendered label.
+   */
+  useEffect(() => {
+    if (!accountTypes.length) return;
+    const current = form.getValues("accountType");
+    form.setValue(
+      "accountType",
+      matchMasterValue(current, accountTypes) ?? accountTypes[0].value
+    );
+  }, [accountTypes, form]);
 
   // Account numbers → digits only.
   const digitsOnly = (field, max) => (e) => {
@@ -66,9 +106,26 @@ export default function BankStep({ onNext, initialValues }) {
   const acctField = form.register("accountNumber");
   const confirmField = form.register("confirmAccountNumber");
 
-  const onSubmit = form.handleSubmit((data) => {
-    const { confirmAccountNumber, ...clean } = data; // drop the confirm mirror
-    onNext?.(clean);
+  /**
+   * Save to the server, then advance — only on success.
+   *
+   * No `fallbackField`: a rejection could name the account number, the IFSC,
+   * either image or the bank itself, and parking that under one input blames an
+   * entry the user probably got right.
+   */
+  const onSubmit = form.handleSubmit(async (data) => {
+    // The confirm mirror is a check on the user, not a fact about them, so it
+    // goes no further than this line. (Deleted rather than left out of a rest
+    // destructure, which lints as an unused binding under this config.)
+    const clean = { ...data };
+    delete clean.confirmAccountNumber;
+
+    try {
+      await saveBankDetails(clean);
+      onNext?.(clean);
+    } catch (error) {
+      reportFormError(form, error, "Couldn't save your bank details");
+    }
   }, alertOnInvalid);
 
   return (
@@ -108,26 +165,43 @@ export default function BankStep({ onNext, initialValues }) {
           render={({ field }) => (
             <div>
               <span className="block mb-2 text-sm font-semibold text-slate-700">Account Type *</span>
-              <div className="grid grid-cols-2 gap-3">
-                {ACCOUNT_TYPES.map(({ value, label }) => {
-                  const active = field.value === value;
-                  return (
-                    <button
-                      key={value}
-                      type="button"
-                      onClick={() => field.onChange(value)}
-                      aria-pressed={active}
-                      className={`flex items-center justify-center rounded-xl border-2 py-3 px-4 font-semibold transition-all duration-200 active:scale-[0.98] ${
-                        active
-                          ? "border-orange-400 bg-orange-50 text-orange-600 shadow-sm"
-                          : "border-slate-200 bg-slate-50 text-slate-500 hover:border-orange-200 hover:bg-orange-50/40"
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  );
-                })}
-              </div>
+              {unavailable ? (
+                <OptionsUnavailable label="account types" onRetry={reload} />
+              ) : loading ? (
+                /* Placeholders rather than the old hardcoded pair — the options
+                   are the server's to name, and rendering a guess would let the
+                   user press a button that is about to be replaced. */
+                <div className="grid grid-cols-2 gap-3" aria-busy="true">
+                  <div className="h-12 rounded-xl bg-slate-100 animate-pulse" />
+                  <div className="h-12 rounded-xl bg-slate-100 animate-pulse" />
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  {accountTypes.map(({ value, label }) => {
+                    const active = field.value === value;
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => field.onChange(value)}
+                        aria-pressed={active}
+                        className={`flex items-center justify-center rounded-xl border-2 py-3 px-4 font-semibold transition-all duration-200 active:scale-[0.98] ${
+                          active
+                            ? "border-orange-400 bg-orange-50 text-orange-600 shadow-sm"
+                            : "border-slate-200 bg-slate-50 text-slate-500 hover:border-orange-200 hover:bg-orange-50/40"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              {form.formState.errors.accountType && (
+                <p className="mt-1.5 text-xs font-medium text-red-500" role="alert">
+                  {form.formState.errors.accountType.message}
+                </p>
+              )}
             </div>
           )}
         />
@@ -187,10 +261,8 @@ export default function BankStep({ onNext, initialValues }) {
         <Controller name="passbookImage" control={form.control} render={({ field }) => (
           <FileUpload
             id="passbookImage"
-            label="Passbook Photo *"
+            label="Passbook Photo"
             required
-            accept="image/*,application/pdf"
-            maxMB={10}
             error={form.formState.errors.passbookImage?.message}
             hint="First page showing your name, account number and IFSC."
             onChange={field.onChange}
@@ -200,10 +272,8 @@ export default function BankStep({ onNext, initialValues }) {
         <Controller name="chequeImage" control={form.control} render={({ field }) => (
           <FileUpload
             id="chequeImage"
-            label="Cancelled Cheque *"
+            label="Cancelled Cheque"
             required
-            accept="image/*,application/pdf"
-            maxMB={10}
             error={form.formState.errors.chequeImage?.message}
             hint="A cheque with 'CANCELLED' written across it."
             onChange={field.onChange}
@@ -211,8 +281,23 @@ export default function BankStep({ onNext, initialValues }) {
         )} />
 
         <div className="flex gap-3 pt-1">
-          <Button type="submit" className="flex-1 flex items-center justify-center gap-2">
-            <Upload size={16} strokeWidth={2.5} /> Submit Bank Details
+          {/* Held closed until the options land, too: submitting before then
+              would post an empty accountType the server would reject. */}
+          <Button
+            type="submit"
+            disabled={loading || unavailable || form.formState.isSubmitting}
+            className="flex-1 flex items-center justify-center gap-2"
+          >
+            {form.formState.isSubmitting ? (
+              <>
+                <Loader2 size={16} strokeWidth={2.5} className="animate-spin" />
+                Saving…
+              </>
+            ) : (
+              <>
+                <Upload size={16} strokeWidth={2.5} /> Submit Bank Details
+              </>
+            )}
           </Button>
         </div>
       </form>

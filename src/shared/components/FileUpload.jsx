@@ -1,35 +1,13 @@
-import { useRef, useState, useCallback } from "react";
-import { UploadCloud, X, CheckCircle2, FileImage, AlertCircle } from "lucide-react";
+import { useRef, useState, useCallback, useEffect } from "react";
+import { UploadCloud, X, CheckCircle2, FileImage, AlertCircle, Loader2 } from "lucide-react";
+import { DOCUMENT, acceptAttribute, policyCaption } from "@/shared/upload/policy";
+import { prepareFile } from "@/shared/upload/validate";
 
-/**
- * FileUpload — drag-and-drop + click-to-browse upload zone.
- *
- * Presentational + self-contained: it owns its own file/preview state and
- * reports outward via callbacks. It does NOT talk to the global alert store —
- * a generic input shouldn't depend on app infrastructure. The inline note below
- * the zone is the built-in feedback; wire `onError` to a toast if you want one.
- *
- * Props:
- *   id          string   — unique id for the hidden <input>
- *   label       string   — field label shown above the zone
- *   required    bool     — shows red asterisk
- *   accept      string   — e.g. "image/*" (default)
- *   maxMB       number   — max file size in MB (default 10)
- *   onChange    fn(File|null) — called when the accepted file changes
- *   onError     fn(message)   — called when a file is rejected (e.g. too large)
- *   error       string   — validation error message (from the caller / RHF)
- *   hint        string   — optional caption below the zone
- *
- * Tailwind note: the zone's border/background swap between discrete states
- * (error / dragging / has-file / idle), so each state maps to a fixed set of
- * classes chosen with a ternary — not a runtime-computed style.
- */
 export default function FileUpload({
   id,
   label,
   required = false,
-  accept = "image/*",
-  maxMB = 10,
+  profile = DOCUMENT,
   onChange,
   onError,
   error,
@@ -39,36 +17,76 @@ export default function FileUpload({
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [dragging, setDragging] = useState(false);
-  const [sizeError, setSizeError] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [rejection, setRejection] = useState(null);
+
+
+  const selectionRef = useRef(0);
+  const mountedRef = useRef(true);
+
+
+  const previewRef = useRef(null);
+  const showPreview = useCallback((url) => {
+    if (previewRef.current) URL.revokeObjectURL(previewRef.current);
+    previewRef.current = url;
+    setPreview(url);
+  }, []);
+
+  useEffect(() => {
+
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      if (previewRef.current) URL.revokeObjectURL(previewRef.current);
+    };
+  }, []);
 
   const processFile = useCallback(
-    (f) => {
-      if (!f) return;
-      setSizeError(null);
-      if (f.size > maxMB * 1024 * 1024) {
-        const msg = `File too large. Max size is ${maxMB} MB.`;
-        setSizeError(msg);
+    async (candidate) => {
+      if (!candidate) return;
+
+      const selection = selectionRef.current + 1;
+      selectionRef.current = selection;
+
+      const isCurrent = () => mountedRef.current && selectionRef.current === selection;
+
+      setRejection(null);
+      setBusy(true);
+
+      const result = await prepareFile(candidate, profile);
+
+      if (!isCurrent()) return;
+      setBusy(false);
+
+      if (!result.ok) {
+        setRejection(result.message);
         // Report outward so the caller can also surface a toast if it wants —
         // the component itself stays decoupled from the alert system.
-        onError?.(`"${f.name}" is too large. Max size is ${maxMB} MB.`);
+        onError?.(result.message);
         return;
       }
-      setFile(f);
-      onChange?.(f);
-      if (f.type.startsWith("image/")) {
-        const reader = new FileReader();
-        reader.onload = (e) => setPreview(e.target.result);
-        reader.readAsDataURL(f);
-      } else {
-        setPreview(null);
-      }
+
+      // `result.file` rather than the original matters for a HEIC, which
+      // arrives here as the JPEG it was transcoded into, and for an oversized
+      // photo, which arrives compressed. Everything else is the same File the
+      // user picked.
+      setFile(result.file);
+      onChange?.(result.file);
+      showPreview(URL.createObjectURL(result.file));
     },
-    [maxMB, onChange, onError]
+    [profile, onChange, onError, showPreview]
   );
+
+  const hasFile = !!file;
+  const interactive = !hasFile && !busy;
 
   const handleDrop = (e) => {
     e.preventDefault();
     setDragging(false);
+    // Same guard the click path uses. A filled zone shows no browse affordance,
+    // so accepting a drop onto it would silently replace a file the user can't
+    // see themselves replacing.
+    if (!interactive) return;
     const dropped = e.dataTransfer.files?.[0];
     if (dropped) processFile(dropped);
   };
@@ -80,15 +98,18 @@ export default function FileUpload({
 
   const clear = (e) => {
     e.stopPropagation();
+    // Bump the counter so in-flight work can't repopulate the field after the
+    // user has cleared it.
+    selectionRef.current += 1;
     setFile(null);
-    setPreview(null);
-    setSizeError(null);
+    showPreview(null);
+    setRejection(null);
+    setBusy(false);
     onChange?.(null);
     if (inputRef.current) inputRef.current.value = "";
   };
 
-  const displayError = error || sizeError;
-  const hasFile = !!file;
+  const displayError = error || rejection;
 
   // Discrete-state styling → fixed class sets picked per state.
   const zoneBorder = displayError
@@ -114,12 +135,12 @@ export default function FileUpload({
       </label>
 
       <div
-        onClick={() => !hasFile && inputRef.current?.click()}
-        onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+        onClick={() => interactive && inputRef.current?.click()}
+        onDragOver={(e) => { e.preventDefault(); if (interactive) setDragging(true); }}
         onDragLeave={() => setDragging(false)}
         onDrop={handleDrop}
         className={`relative flex min-h-27.5 items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed transition-all duration-200 ${zoneBorder} ${zoneBg} ${
-          hasFile ? "cursor-default" : "cursor-pointer"
+          interactive ? "cursor-pointer" : "cursor-default"
         }`}
       >
         {/* Hidden input */}
@@ -127,15 +148,30 @@ export default function FileUpload({
           ref={inputRef}
           id={id}
           type="file"
-          accept={accept}
+          accept={acceptAttribute(profile)}
+          {...(profile.capture ? { capture: profile.capture } : {})}
           className="hidden"
           onChange={handleInputChange}
         />
 
-        {hasFile ? (
+        {busy ? (
+          /* ── Working state — checking the file, transcoding a HEIC,
+                compressing an oversized photo ── */
+          <div className="flex w-full flex-col items-center gap-2 px-4 py-4 sm:py-5 text-center">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-orange-500/10">
+              <Loader2 size={22} className="animate-spin text-orange-500" />
+            </div>
+            <span className="text-[0.8125rem] font-semibold text-slate-600">
+              Checking your photo…
+            </span>
+            <span className="text-[0.6875rem] text-slate-400">
+              Large or iPhone photos take a moment.
+            </span>
+          </div>
+        ) : hasFile ? (
           /* ── File preview state ── */
           <div className="flex w-full items-center gap-3.5 px-4 py-3.5">
-            {/* Thumbnail or file icon */}
+            {/* Thumbnail — always renders now that everything is JPG or PNG */}
             <div className="flex h-17 w-17 shrink-0 items-center justify-center overflow-hidden rounded-[10px] border border-slate-200 bg-slate-100">
               {preview ? (
                 <img src={preview} alt="preview" className="h-full w-full object-cover" />
@@ -143,7 +179,7 @@ export default function FileUpload({
                 <FileImage size={28} className="text-slate-400" />
               )}
             </div>
- 
+
             {/* File info */}
             <div className="min-w-0 flex-1">
               <div className="truncate text-[0.8125rem] font-semibold text-slate-800">
@@ -157,7 +193,7 @@ export default function FileUpload({
                 Uploaded
               </div>
             </div>
- 
+
             {/* Clear button */}
             <button
               type="button"
@@ -186,8 +222,10 @@ export default function FileUpload({
               </span>
               <span className="text-[0.8125rem] text-slate-400"> or drag & drop</span>
             </div>
+            {/* Derived from the profile, so it can never advertise a format the
+                validator rejects. */}
             <div className="text-[0.6875rem] text-slate-300">
-              JPG, PNG, PDF · Max {maxMB} MB
+              {policyCaption(profile)}
             </div>
           </div>
         )}
@@ -196,7 +234,7 @@ export default function FileUpload({
       {/* Hint or error */}
       {displayError ? (
         <p className="mt-0.5 flex items-center gap-1.5 text-[0.75rem] font-medium text-red-500" role="alert">
-          <AlertCircle size={12} />
+          <AlertCircle size={12} className="shrink-0" />
           {displayError}
         </p>
       ) : hint ? (

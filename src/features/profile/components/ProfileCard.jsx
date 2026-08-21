@@ -1,5 +1,3 @@
-import React from 'react';
-
 const ProfileCard = () => {
   const employee = {
     name: 'Rakesh Pawar',

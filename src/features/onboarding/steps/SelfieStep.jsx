@@ -1,7 +1,10 @@
 import { useRef, useState, useEffect, useCallback } from "react";
-import { Camera, ShieldCheck, Upload, RotateCcw, Check, UserRound, AlertCircle } from "lucide-react";
+import { Camera, ShieldCheck, Upload, RotateCcw, Check, UserRound, AlertCircle, Loader2 } from "lucide-react";
 import Button from "@/shared/components/Button";
+import { SELFIE, acceptAttribute } from "@/shared/upload/policy";
+import { prepareFile } from "@/shared/upload/validate";
 import { showAlert } from "@/shared/store/alertStore";
+import { uploadSelfie } from "../api/onboardingApi";
 
 /**
  * SelfieStep — capture a selfie live or upload one from the device.
@@ -22,6 +25,7 @@ export default function SelfieStep({ onNext, initialValues }) {
       : null
   ); // { url, file }
   const [live, setLive] = useState(false);  // camera preview running
+  const [preparing, setPreparing] = useState(false); // validating / transcoding an upload
   const [error, setError] = useState(null);
 
   // Always release the camera when it stops being needed.
@@ -76,16 +80,38 @@ export default function SelfieStep({ onNext, initialValues }) {
     }, "image/jpeg", 0.92);
   };
 
-  const handleUpload = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      setError("Please choose an image file.");
+  /**
+   * Uploads go through the same policy the document fields use.
+   *
+   * The old check here was `file.type.startsWith("image/")`, which trusts a
+   * label the browser derives from the filename and admits anything renamed to
+   * .jpg. Routing through prepareFile means the bytes are identified for real —
+   * and, on the path that matters most here, an iPhone HEIC is transcoded to
+   * JPEG before it lands, so the preview below actually renders it on a browser
+   * that isn't Safari.
+   */
+  const handleUpload = async (e) => {
+    const selected = e.target.files?.[0];
+    // Cleared immediately so re-picking the same file after a rejection still
+    // fires a change event.
+    e.target.value = "";
+    if (!selected) return;
+
+    setError(null);
+    setPreparing(true);
+    const result = await prepareFile(selected, SELFIE);
+    setPreparing(false);
+
+    if (!result.ok) {
+      setError(result.message);
       return;
     }
-    setError(null);
+
     stopCamera();
-    setPhoto({ url: URL.createObjectURL(file), file });
+    setPhoto((previous) => {
+      if (previous?.url) URL.revokeObjectURL(previous.url);
+      return { url: URL.createObjectURL(result.file), file: result.file };
+    });
   };
 
   const retake = () => {
@@ -94,7 +120,16 @@ export default function SelfieStep({ onNext, initialValues }) {
     setError(null);
   };
 
-  const submit = () => {
+  const [uploading, setUploading] = useState(false);
+
+  /**
+   * Upload, then advance — only on success, so a failed upload leaves the photo
+   * on screen to retry rather than moving on from a selfie the server never
+   * got. This step has no react-hook-form instance to hang an error on, so the
+   * failure goes to the inline `error` line the camera path already uses, and
+   * to a toast for anyone whose eyes are on the photo rather than under it.
+   */
+  const submit = async () => {
     if (!photo) {
       showAlert({
         variant: "warning",
@@ -103,7 +138,22 @@ export default function SelfieStep({ onNext, initialValues }) {
       });
       return;
     }
-    onNext?.({ selfie: photo.file });
+
+    setError(null);
+    setUploading(true);
+    try {
+      await uploadSelfie(photo.file);
+      onNext?.({ selfie: photo.file });
+    } catch (uploadError) {
+      setError(uploadError.message);
+      showAlert({
+        variant: uploadError.isValidation ? "warning" : "error",
+        title: "Couldn't upload your selfie",
+        message: uploadError.message,
+      });
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
@@ -132,7 +182,12 @@ export default function SelfieStep({ onNext, initialValues }) {
           <div className="absolute -inset-2 rounded-full bg-linear-to-br from-orange-200/40 to-rose-200/30 blur-xl" />
 
           <div className="relative h-full w-full rounded-full border-4 border-white shadow-[0_8px_28px_rgba(222,123,61,0.18)] overflow-hidden bg-slate-50 ring-1 ring-slate-100">
-            {photo ? (
+            {preparing ? (
+              <div className="flex h-full w-full flex-col items-center justify-center gap-2.5 text-slate-400">
+                <Loader2 size={40} strokeWidth={1.75} className="animate-spin text-orange-500" />
+                <span className="text-xs font-medium">Preparing photo…</span>
+              </div>
+            ) : photo ? (
               <img key={photo.url} src={photo.url} alt="Your selfie" className="anim-photo h-full w-full object-cover" />
             ) : live ? (
               <video
@@ -151,7 +206,7 @@ export default function SelfieStep({ onNext, initialValues }) {
           </div>
 
           {/* Success ring flash + done badge */}
-          {photo && (
+          {photo && !preparing && (
             <>
               <div key={`${photo.url}-flash`} className="anim-ring-flash pointer-events-none absolute -inset-1 rounded-full ring-4 ring-emerald-400/70" />
               <div className="anim-badge absolute bottom-1 right-1 flex h-9 w-9 items-center justify-center rounded-full bg-emerald-500 text-white shadow-lg ring-4 ring-white">
@@ -173,8 +228,8 @@ export default function SelfieStep({ onNext, initialValues }) {
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/*"
-          capture="user"
+          accept={acceptAttribute(SELFIE)}
+          capture={SELFIE.capture}
           className="hidden"
           onChange={handleUpload}
         />
@@ -201,24 +256,45 @@ export default function SelfieStep({ onNext, initialValues }) {
               <button
                 type="button"
                 onClick={retake}
-                className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-3 px-4 font-semibold text-slate-600 transition-all duration-200 hover:bg-slate-50 active:scale-[0.98]"
+                disabled={uploading}
+                className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-3 px-4 font-semibold text-slate-600 transition-all duration-200 hover:bg-slate-50 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <RotateCcw size={16} strokeWidth={2.5} /> Retake
               </button>
-              <Button type="button" onClick={submit} className="flex-1 flex items-center justify-center gap-2">
-                <Check size={16} strokeWidth={2.5} /> Use this photo
+              <Button
+                type="button"
+                onClick={submit}
+                disabled={uploading}
+                className="flex-1 flex items-center justify-center gap-2"
+              >
+                {uploading ? (
+                  <>
+                    <Loader2 size={16} strokeWidth={2.5} className="animate-spin" />
+                    Uploading…
+                  </>
+                ) : (
+                  <>
+                    <Check size={16} strokeWidth={2.5} /> Use this photo
+                  </>
+                )}
               </Button>
             </div>
           ) : (
             /* Idle → choose a source */
             <div className="flex flex-col sm:flex-row gap-3">
-              <Button type="button" onClick={startCamera} className="flex-1 flex items-center justify-center gap-2">
+              <Button
+                type="button"
+                onClick={startCamera}
+                disabled={preparing}
+                className="flex-1 flex items-center justify-center gap-2"
+              >
                 <Camera size={16} strokeWidth={2.5} /> Take photo now
               </Button>
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-3 px-4 font-semibold text-slate-600 transition-all duration-200 hover:border-orange-200 hover:bg-orange-50/40 hover:text-orange-600 active:scale-[0.98]"
+                disabled={preparing}
+                className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-3 px-4 font-semibold text-slate-600 transition-all duration-200 hover:border-orange-200 hover:bg-orange-50/40 hover:text-orange-600 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Upload size={16} strokeWidth={2.5} /> Upload from device
               </button>

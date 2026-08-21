@@ -1,11 +1,20 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Building2, ShieldCheck, ArrowRight, SkipForward, Check, X } from "lucide-react";
+import { Building2, ShieldCheck, ArrowRight, SkipForward, Check, X, Loader2 } from "lucide-react";
 import Input from "@/shared/components/Input";
+import Select from "@/shared/components/Select";
 import Button from "@/shared/components/Button";
 import { alertOnInvalid } from "@/shared/store/alertStore";
+import { reportFormError } from "@/shared/api/formErrors";
+import { useMasterOptions } from "../hooks/useMasterOptions";
+import OptionsUnavailable from "../components/OptionsUnavailable";
+import {
+  fetchBusinessTypes,
+  matchMasterValue,
+  saveBusinessDetails,
+} from "../api/onboardingApi";
 
 /* ── Schema ──
  * India-aware: 6-digit PIN code (can't start with 0), and a 15-char GSTIN
@@ -14,6 +23,12 @@ import { alertOnInvalid } from "@/shared/store/alertStore";
 const GSTIN_RE = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
 
 const businessSchema = z.object({
+  /**
+   * Was free text, is now one of the server's `business-types` values. The
+   * rule is unchanged — a non-empty string — because the dropdown can only
+   * hold an option the server supplied, so there is nothing left for a literal
+   * union here to catch except a list that has drifted out of date.
+   */
   businessType: z.string().trim().min(1, "Business type is required.").max(200),
   businessName: z.string().trim().min(1, "Business name is required.").max(200),
   addressLine1: z.string().trim().min(1, "Address line 1 is required.").max(200),
@@ -35,22 +50,53 @@ export default function BusinessStep({ onNext, onSkip, initialValues }) {
       businessType: "",
       businessName: "",
       addressLine1: "",
-      addressLine2: "",
       city: "",
       state: "",
       pincode: "",
-      gstIn: "",
       ...initialValues,
       // Optionals persist as undefined — coerce back to controlled strings.
+      // These cover the empty case too, hence no earlier `""` pair.
       addressLine2: initialValues?.addressLine2 ?? "",
       gstIn: initialValues?.gstIn ?? "",
     },
     mode: "onTouched",
   });
 
-  // "Do you have a GST number?" — the GSTIN input only appears on Yes.
-  // Default to Yes only when we're editing a record that already has one.
-  const [hasGst, setHasGst] = useState(Boolean(initialValues?.gstIn));
+  const {
+    options: businessTypes,
+    loading: loadingTypes,
+    unavailable: typesUnavailable,
+    reload: reloadTypes,
+  } = useMasterOptions(fetchBusinessTypes);
+
+  /**
+   * Reconcile anything the form already holds against the fetched list.
+   *
+   * This field used to be free text, so a value coming back from Review could
+   * be anything the user typed. Re-matching swaps a recognisable one for the
+   * server's spelling and drops anything else back to the placeholder — better
+   * an empty required field than a submit rejected for a value the dropdown
+   * can no longer even display.
+   */
+  useEffect(() => {
+    if (!businessTypes.length) return;
+    const current = form.getValues("businessType");
+    if (!current) return;
+    form.setValue("businessType", matchMasterValue(current, businessTypes) ?? "");
+  }, [businessTypes, form]);
+
+  /**
+   * "Do you have a GST number?" — the GSTIN input only appears on Yes.
+   *
+   * The saved record answers this directly now that `hasGst` is a field in its
+   * own right, so that is what seeds the toggle. Inferring it from whether a
+   * GSTIN is present is the fallback, and only right when there is no explicit
+   * answer to read: someone who said Yes and left the number blank would
+   * otherwise come back to a form saying they'd said No.
+   */
+  const [hasGst, setHasGst] = useState(
+    initialValues?.hasGst ?? Boolean(initialValues?.gstIn)
+  );
 
   const chooseHasGst = (value) => {
     setHasGst(value);
@@ -75,14 +121,29 @@ export default function BusinessStep({ onNext, onSkip, initialValues }) {
     gstField.onChange(e);
   };
 
-  const onSubmit = form.handleSubmit((data) => {
+  /**
+   * Save, then advance — only on success.
+   *
+   * `hasGst` is carried in explicitly because it lives in component state
+   * rather than the form: it gates whether the GSTIN input renders at all, and
+   * the server stores it as a field in its own right. Answering "No" is a fact
+   * about the business, not the absence of one, and without this it never left
+   * the browser.
+   */
+  const onSubmit = form.handleSubmit(async (data) => {
     const clean = {
       ...data,
       // Normalise empty optionals to undefined.
       addressLine2: data.addressLine2 || undefined,
-      gstIn: data.gstIn || undefined,
+      hasGst,
+      gstIn: hasGst ? data.gstIn || undefined : undefined,
     };
-    onNext?.(clean);
+    try {
+      await saveBusinessDetails(clean);
+      onNext?.(clean);
+    } catch (error) {
+      reportFormError(form, error, "Couldn't save your business details");
+    }
   }, alertOnInvalid);
 
   return (
@@ -123,14 +184,27 @@ export default function BusinessStep({ onNext, onSkip, initialValues }) {
 
         {/* Business type + name — paired on larger screens. */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
-          <Input
-            id="businessType"
-            label="Business Type *"
-            placeholder="e.g. Proprietorship"
-            maxLength={200}
-            error={form.formState.errors.businessType?.message}
-            {...form.register("businessType")}
-          />
+          {typesUnavailable ? (
+            <div className="mb-3 sm:mb-3.5">
+              <span className="block mb-1 sm:mb-1.5 text-xs sm:text-sm font-semibold text-slate-700 sm:flex sm:items-end sm:min-h-[2.5rem]">
+                Business Type *
+              </span>
+              <OptionsUnavailable label="business types" onRetry={reloadTypes} />
+            </div>
+          ) : (
+            <Select
+              id="businessType"
+              label="Business Type *"
+              /* Disabled rather than hidden while the list loads: the field
+                 keeps its place in the grid, so the row doesn't reflow under
+                 the user the moment the request lands. */
+              disabled={loadingTypes}
+              options={businessTypes}
+              placeholder={loadingTypes ? "Loading…" : "Select business type"}
+              error={form.formState.errors.businessType?.message}
+              {...form.register("businessType")}
+            />
+          )}
 
           <Input
             id="businessName"
@@ -244,8 +318,21 @@ export default function BusinessStep({ onNext, onSkip, initialValues }) {
         </div>
 
         <div className="flex gap-3 pt-1">
-          <Button type="submit" className="flex-1 flex items-center justify-center gap-2">
-            Continue <ArrowRight size={16} strokeWidth={2.5} />
+          <Button
+            type="submit"
+            disabled={loadingTypes || typesUnavailable || form.formState.isSubmitting}
+            className="flex-1 flex items-center justify-center gap-2"
+          >
+            {form.formState.isSubmitting ? (
+              <>
+                <Loader2 size={16} strokeWidth={2.5} className="animate-spin" />
+                Saving…
+              </>
+            ) : (
+              <>
+                Continue <ArrowRight size={16} strokeWidth={2.5} />
+              </>
+            )}
           </Button>
         </div>
       </form>

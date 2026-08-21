@@ -1,4 +1,3 @@
-import React from 'react';
 import Button from '@/shared/components/Button';
 
 /* Small inline icons — no extra dependency, matches ProfileCard's icon-free style. */

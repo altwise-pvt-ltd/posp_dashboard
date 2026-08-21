@@ -13,11 +13,17 @@ import { landingPath } from '@/app/funnel';
  * Every protected route names the last stage that must be behind the user, and
  * RequireFunnel resolves the rest from `FUNNEL_STAGES`. The order lives in
  * app/funnel.js — don't re-encode it here.
+ *
+ * Routes render immediately, with no gate in front of them: the auth store
+ * seeds itself synchronously from storage (see `shared/auth/storedSession.js`),
+ * so `landingPath()` and every `RequireFunnel` below have a real answer on the
+ * first render rather than a pending one.
  */
 function App() {
   return (
     <BrowserRouter>
       <AlertContainer />
+
       <Routes>
         {/* Entry point — send the visitor to whichever stage of the funnel they're at. */}
         <Route path="/" element={<Navigate to={landingPath()} replace />} />
