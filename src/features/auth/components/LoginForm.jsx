@@ -8,8 +8,11 @@ import {
   Download,
   RotateCcw,
   CheckCircle2,
+  Loader2,
 } from "lucide-react";
 import { showAlert, alertOnInvalid } from "@/shared/store/alertStore";
+import { reportFormError } from "@/shared/api/formErrors";
+import { requestOtp, resendOtp, verifyOtp } from "../api/authApi";
 import BrandButton from "./landing/ui/BrandButton";
 import StoreBadges from "./landing/ui/StoreBadges";
 import Highlight from "./landing/ui/Highlight";
@@ -60,8 +63,9 @@ const digitsOnly = (field, max) => (e) => {
 /**
  * LoginForm — the "Login or Register" card that sits in the hero. Enter a
  * mobile number → Start Earning Now sends a code → enter the 6-digit OTP →
- * Verify. The OTP is mocked for now (any 6 digits pass); `onVerified(mobile)`
- * fires on success and the page handles signIn + navigation.
+ * Verify. Each step is a real request (see `features/auth/api/authApi`);
+ * `onVerified({ token, user })` fires once the server accepts the code and the
+ * page handles signIn + navigation.
  */
 export default function LoginForm({ onVerified }) {
   const [sentTo, setSentTo] = useState(null); // mobile the code was sent to
@@ -86,8 +90,11 @@ export default function LoginForm({ onVerified }) {
 
   /* ── Resend cooldown ticker ── */
   const timerRef = useRef(null);
-  const startCooldown = () => {
-    setCooldown(RESEND_SECONDS);
+  /* `seconds` lets the server win. It is the one enforcing the throttle, so
+     when it sends a Retry-After the local guess is wrong by definition — and
+     wrong in the direction that offers a resend the server will refuse. */
+  const startCooldown = (seconds) => {
+    setCooldown(seconds > 0 ? Math.ceil(seconds) : RESEND_SECONDS);
     clearInterval(timerRef.current);
     timerRef.current = setInterval(() => {
       setCooldown((s) => {
@@ -104,32 +111,68 @@ export default function LoginForm({ onVerified }) {
   const mobileField = mobileForm.register("mobile");
   const otpField = otpForm.register("otp");
 
-  const sendCode = mobileForm.handleSubmit((data) => {
-    // TODO: call API to dispatch the OTP via SMS
-    setSentTo(data.mobile.trim());
-    otpForm.reset({ otp: "" });
-    startCooldown();
-    showAlert({
-      variant: "success",
-      title: "OTP sent",
-      message: `We've sent a 6-digit code to +91 ${data.mobile.trim()}.`,
-    });
+  /* `sentTo` is set only after the server confirms the dispatch, so a failed
+     send leaves the card on the mobile step rather than asking for a code that
+     was never sent. */
+  const sendCode = mobileForm.handleSubmit(async (data) => {
+    const mobile = data.mobile.trim();
+    try {
+      const result = await requestOtp(mobile);
+      setSentTo(mobile);
+      otpForm.reset({ otp: "" });
+      startCooldown(result?.retryAfter);
+      showAlert({
+        variant: "success",
+        title: "OTP sent",
+        message: `We've sent a 6-digit code to +91 ${mobile}.`,
+      });
+    } catch (error) {
+      reportFormError(mobileForm, error, "Couldn't send the code");
+    }
   }, alertOnInvalid);
 
-  const resend = () => {
-    if (cooldown > 0) return;
-    // TODO: call API to resend the OTP
-    startCooldown();
-    showAlert({
-      variant: "info",
-      title: "OTP resent",
-      message: `A new code is on its way to +91 ${sentTo}.`,
-    });
+  const [resending, setResending] = useState(false);
+
+  const resend = async () => {
+    if (cooldown > 0 || resending) return;
+    setResending(true);
+    try {
+      const result = await resendOtp(sentTo);
+      startCooldown(result?.retryAfter);
+      showAlert({
+        variant: "info",
+        title: "OTP resent",
+        message: `A new code is on its way to +91 ${sentTo}.`,
+      });
+    } catch (error) {
+      // A 429 here isn't a failure so much as the server's own throttle being
+      // stricter than ours — adopt its clock so the button stops offering a
+      // resend that would be refused again.
+      if (error.status === 429 && error.retryAfter) {
+        startCooldown(error.retryAfter);
+      }
+      reportFormError(otpForm, error, "Couldn't resend the code");
+    } finally {
+      setResending(false);
+    }
   };
 
-  const verify = otpForm.handleSubmit(() => {
-    // TODO: verify the OTP with the API. For now any 6-digit code is accepted.
-    onVerified?.(sentTo);
+  /* Hands the verified session up to the page, which owns signIn + navigation.
+     `verifyOtp` throws if the response carried no token, so anything reaching
+     `onVerified` is a session the app can actually authenticate with.
+
+     Awaited, because the handler does more than navigate: it fetches the
+     onboarding status so the user lands on the step they left. Without the
+     await, `isSubmitting` clears the moment the OTP is accepted and the button
+     goes idle while that second call is still out — an unexplained pause on a
+     form that looks finished. */
+  const verify = otpForm.handleSubmit(async (data) => {
+    try {
+      const session = await verifyOtp(sentTo, data.otp.trim());
+      await onVerified?.(session);
+    } catch (error) {
+      reportFormError(otpForm, error, "Couldn't verify the code", "otp");
+    }
   }, alertOnInvalid);
 
   return (
@@ -173,8 +216,20 @@ export default function LoginForm({ onVerified }) {
         <FieldError error={mobileForm.formState.errors.mobile} />
 
         {!codeSent && (
-          <BrandButton type="submit" size="field" className="mt-5 w-full">
-            Start Earning Now
+          <BrandButton
+            type="submit"
+            size="field"
+            className="mt-5 w-full"
+            disabled={mobileForm.formState.isSubmitting}
+          >
+            {mobileForm.formState.isSubmitting ? (
+              <>
+                <Loader2 size={18} strokeWidth={2.5} className="animate-spin" />
+                Sending code…
+              </>
+            ) : (
+              "Start Earning Now"
+            )}
           </BrandButton>
         )}
       </form>
@@ -206,17 +261,39 @@ export default function LoginForm({ onVerified }) {
             <button
               type="button"
               onClick={resend}
-              disabled={cooldown > 0}
+              disabled={cooldown > 0 || resending}
               className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand transition-colors hover:text-brand-hover disabled:cursor-not-allowed disabled:text-slate-400"
             >
-              <RotateCcw size={13} strokeWidth={2.5} />
-              {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend code"}
+              <RotateCcw
+                size={13}
+                strokeWidth={2.5}
+                className={resending ? "animate-spin" : undefined}
+              />
+              {resending
+                ? "Resending…"
+                : cooldown > 0
+                  ? `Resend in ${cooldown}s`
+                  : "Resend code"}
             </button>
           </div>
 
-          <BrandButton type="submit" size="field" className="mt-4 w-full">
-            <CheckCircle2 size={18} strokeWidth={2.5} />
-            Verify &amp; Continue
+          <BrandButton
+            type="submit"
+            size="field"
+            className="mt-4 w-full"
+            disabled={otpForm.formState.isSubmitting}
+          >
+            {otpForm.formState.isSubmitting ? (
+              <>
+                <Loader2 size={18} strokeWidth={2.5} className="animate-spin" />
+                Verifying…
+              </>
+            ) : (
+              <>
+                <CheckCircle2 size={18} strokeWidth={2.5} />
+                Verify &amp; Continue
+              </>
+            )}
           </BrandButton>
         </form>
       )}

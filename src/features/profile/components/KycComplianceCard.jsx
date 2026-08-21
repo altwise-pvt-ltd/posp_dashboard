@@ -1,4 +1,3 @@
-import React from 'react';
 import Button from '@/shared/components/Button';
 
 function CheckIcon({ className = 'w-4 h-4' }) {

@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+#Html KT notes
+Kt.html
+
 # Local env files
 .env
 .env.*
@@ -33,6 +36,7 @@ coverage
 *.njsproj
 *.sln
 *.sw?
+
 
 # Windows OS files
 Thumbs.db

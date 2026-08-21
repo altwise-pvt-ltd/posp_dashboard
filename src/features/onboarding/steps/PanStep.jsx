@@ -1,11 +1,14 @@
 import { useForm, useWatch, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { CreditCard, ShieldCheck, Sparkles, Upload } from "lucide-react";
+import { CreditCard, Loader2, ShieldCheck, Sparkles, Upload } from "lucide-react";
 import Input from "@/shared/components/Input";
 import Button from "@/shared/components/Button";
 import FileUpload from "@/shared/components/FileUpload";
+import { fileField } from "@/shared/upload/schema";
 import { alertOnInvalid } from "@/shared/store/alertStore";
+import { reportFormError } from "@/shared/api/formErrors";
+import { submitPanDetails } from "../api/onboardingApi";
 
 /* Parse a strict dd/mm/yyyy string → Date, or null if it isn't a real calendar date. */
 const parseDob = (v) => {
@@ -65,9 +68,7 @@ const panSchema = z.object({
         });
       }
     }),
-  panFrontImage: z
-    .any()
-    .refine((f) => f instanceof File, "Please upload your PAN card image."),
+  panFrontImage: fileField({ message: "Please upload your PAN card image." }),
 });
 
 const HOLDER_TYPE = {
@@ -121,8 +122,27 @@ export default function PanStep({ onNext, initialValues }) {
     dobField.onChange(e);
   };
 
-  const onSubmit = form.handleSubmit((data) => {
-    onNext?.(data);
+  /**
+   * Save to the server, then advance — in that order, and only on success.
+   *
+   * `onNext` is what ticks the stepper and moves the wizard on, so calling it
+   * before the server has accepted the details would march the user forward
+   * over a step that didn't save. Awaiting inside `handleSubmit` is also what
+   * keeps `isSubmitting` true for the whole round trip, which the button reads.
+   *
+   * No `fallbackField` on the error: a rejection here could be about the PAN,
+   * the name, the date or the image, and parking a generic message under the
+   * PAN box would blame the one input the user is most likely to have typed
+   * correctly. The toast carries it instead, and a server that names a field
+   * still gets it placed exactly.
+   */
+  const onSubmit = form.handleSubmit(async (data) => {
+    try {
+      await submitPanDetails(data);
+      onNext?.(data);
+    } catch (error) {
+      reportFormError(form, error, "Couldn't save your PAN details");
+    }
   }, alertOnInvalid);
 
   return (
@@ -196,10 +216,8 @@ export default function PanStep({ onNext, initialValues }) {
           render={({ field }) => (
             <FileUpload
               id="panFrontImage"
-              label="PAN Card Image *"
+              label="PAN Card Image"
               required
-              accept="image/*,application/pdf"
-              maxMB={10}
               error={form.formState.errors.panFrontImage?.message}
               hint="Make sure the photo is clear, flat, and well-lit."
               onChange={field.onChange}
@@ -208,11 +226,23 @@ export default function PanStep({ onNext, initialValues }) {
         />
 
         <div className="flex gap-3 pt-1">
+          {/* Disabled while the upload is out — the image makes this the first
+              step with a round trip long enough to double-submit by accident. */}
           <Button
             type="submit"
+            disabled={form.formState.isSubmitting}
             className="flex-1 flex items-center justify-center gap-2 lg:text-base"
           >
-            <Upload size={16} strokeWidth={2.5} /> Submit PAN
+            {form.formState.isSubmitting ? (
+              <>
+                <Loader2 size={16} strokeWidth={2.5} className="animate-spin" />
+                Saving…
+              </>
+            ) : (
+              <>
+                <Upload size={16} strokeWidth={2.5} /> Submit PAN
+              </>
+            )}
           </Button>
         </div>
       </form>
