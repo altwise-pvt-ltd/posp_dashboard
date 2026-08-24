@@ -20,8 +20,11 @@ import { useTrainingStore } from '@/shared/store/trainingStore';
  *                      verification, not bounced down one step at a time.
  *   forwardWhenClear — optional. If this stage is *already* clear the page has
  *                      nothing left to say, so send the user on to wherever
- *                      they actually belong. Used by the verification screen,
- *                      which a cleared POSP shouldn't be able to sit on.
+ *                      they actually belong. Currently unused: the verification
+ *                      screen was its one caller, and it now renders its own
+ *                      cleared state rather than being redirected off. Kept
+ *                      because it's the right answer for any stage page that
+ *                      genuinely has nothing to show once it's behind you.
  *
  * Subscribes to the stores rather than reading `isClear()` snapshots, so a
  * guard re-renders the moment a flag flips — a user watching the waiting screen

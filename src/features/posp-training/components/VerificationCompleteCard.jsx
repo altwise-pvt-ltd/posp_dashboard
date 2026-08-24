@@ -1,10 +1,5 @@
 import { ArrowRight, Award, Check, Clock, FileText } from "lucide-react";
 
-/**
- * What the learner is signing up for. Deliberately describes the programme
- * rather than previewing a specific chapter — the syllabus lives on the next
- * screen, and naming a chapter here means two places to update when it changes.
- */
 const WHAT_TO_EXPECT = [
   {
     icon: Clock,
@@ -25,15 +20,8 @@ const WHAT_TO_EXPECT = [
       "Once your hours are complete the exam unlocks, and your POSP certificate follows.",
   },
 ];
-
 /**
- * VerificationCompleteCard — the "documents verified, start your training"
- * screen, and the opening state of TrainingPage: `onStart` flips that page
- * into the module list in place.
- *
- * The other half of the pair is VerificationPendingPage, the waiting screen a
- * POSP sits on until the back office signs their profile off. This card is what
- * they get on the far side of that gate.
+ * ⚠ Detached — nothing renders this.
  */
 export default function VerificationCompleteCard({ onStart }) {
   return (

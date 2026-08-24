@@ -1,17 +1,30 @@
 import { useEffect } from "react";
-import { useForm, useWatch } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Building2, ShieldCheck, ArrowRight, SkipForward, Check, X, Loader2 } from "lucide-react";
+import {
+  Building2,
+  ShieldCheck,
+  ArrowRight,
+  SkipForward,
+  Check,
+  X,
+  Loader2,
+  MapPin,
+  Info,
+} from "lucide-react";
 import Input from "@/shared/components/Input";
 import Select from "@/shared/components/Select";
+import Autocomplete from "@/shared/components/Autocomplete";
 import Button from "@/shared/components/Button";
 import { alertOnInvalid } from "@/shared/store/alertStore";
 import { reportFormError } from "@/shared/api/formErrors";
 import { useMasterOptions } from "../hooks/useMasterOptions";
+import { useDistricts, usePincodeLookup } from "../hooks/useGeography";
 import OptionsUnavailable from "../components/OptionsUnavailable";
 import {
   fetchBusinessTypes,
+  fetchStates,
   matchMasterValue,
   saveBusinessDetails,
 } from "../api/onboardingApi";
@@ -52,8 +65,15 @@ const businessSchema = z
        is registered; for everyone else it's simply where they live. */
     addressLine1: z.string().trim().min(1, "Address line 1 is required.").max(200),
     addressLine2: z.string().trim().max(200, "Keep it under 200 characters.").optional(),
-    city: z.string().trim().min(1, "City is required.").max(100),
-    state: z.string().trim().min(1, "State is required.").max(100),
+    /**
+     * `city` and `state` are plain non-empty strings here, but the fields that
+     * fill them only ever commit a name from the geography lists — see the note
+     * on `Autocomplete`. So this rule fires for "typed something we don't
+     * recognise" as well as for "left it blank", which is why the messages ask
+     * the user to *pick* rather than to fill in.
+     */
+    city: z.string().trim().min(1, "Pick a city or district from the list."),
+    state: z.string().trim().min(1, "Pick a state from the list."),
     pincode: z.string().regex(/^[1-9][0-9]{5}$/, "Enter a valid 6-digit PIN code."),
 
     hasGst: z.boolean(),
@@ -120,6 +140,50 @@ function ChoicePair({ value, onChange }) {
   );
 }
 
+/**
+ * What the PIN lookup found, in one line under the field.
+ *
+ * `notFound` is drawn in slate rather than red on purpose. An unrecognised PIN
+ * is not the user's mistake to fix — it is a gap in the server's table, and the
+ * form still accepts the value. Colouring it as an error would tell someone
+ * their own address is wrong.
+ */
+function PincodeStatus({ status, data }) {
+  if (status === "idle") return null;
+
+  const line = {
+    loading: {
+      icon: <Loader2 size={13} strokeWidth={2.5} className="animate-spin shrink-0" />,
+      tone: "text-slate-400",
+      text: "Looking up your PIN code…",
+    },
+    found: {
+      icon: <MapPin size={13} strokeWidth={2.5} className="shrink-0" />,
+      tone: "text-emerald-600",
+      text: data ? [data.district, data.state].filter(Boolean).join(", ") : "",
+    },
+    notFound: {
+      icon: <Info size={13} strokeWidth={2.5} className="shrink-0" />,
+      tone: "text-slate-500",
+      text: "We don't have that PIN on file — pick the state and city yourself.",
+    },
+    error: {
+      icon: <Info size={13} strokeWidth={2.5} className="shrink-0" />,
+      tone: "text-slate-500",
+      text: "Couldn't check that PIN just now. You can still fill the rest in.",
+    },
+  }[status];
+
+  if (!line?.text) return null;
+
+  return (
+    <p className={`-mt-2 flex items-center gap-1.5 text-xs font-medium ${line.tone}`}>
+      {line.icon}
+      {line.text}
+    </p>
+  );
+}
+
 export default function BusinessStep({ onNext, onSkip, initialValues }) {
   const form = useForm({
     resolver: zodResolver(businessSchema),
@@ -157,35 +221,109 @@ export default function BusinessStep({ onNext, onSkip, initialValues }) {
     mode: "onTouched",
   });
 
-  /* Both gates drive what renders, so they're subscribed to rather than read.
-     `useWatch` over `form.watch` for the same reason PanStep uses it — it
-     doesn't defeat the React Compiler's memoisation of this component. */
+  /* These four drive what renders or what gets fetched, so they're subscribed
+     to rather than read. `useWatch` over `form.watch` for the same reason
+     PanStep uses it — it doesn't defeat the React Compiler's memoisation. */
   const hasBusiness = useWatch({ control: form.control, name: "hasBusiness" });
   const hasGst = useWatch({ control: form.control, name: "hasGst" });
+  const stateValue = useWatch({ control: form.control, name: "state" });
+  const pincodeValue = useWatch({ control: form.control, name: "pincode" });
+
   const answered = hasBusiness === true || hasBusiness === false;
 
+  /* ── Remote lists ──
+   *
+   * Every one of these is gated on something the user has actually reached.
+   * Business types wait for the Yes branch — the answer that makes the
+   * dropdown exist — and the geography lists wait for the gate to be answered
+   * at all, which is when the address fields first render. Nothing here is
+   * requested by simply arriving on the step, let alone by loading the app.
+   */
   const {
     options: businessTypes,
     loading: loadingTypes,
     unavailable: typesUnavailable,
     reload: reloadTypes,
-  } = useMasterOptions(fetchBusinessTypes);
+  } = useMasterOptions(fetchBusinessTypes, { enabled: hasBusiness === true });
+
+  const { options: states, loading: loadingStates } = useMasterOptions(fetchStates, {
+    enabled: answered,
+  });
+
+  /** Districts follow the chosen state, and the hook holds its own request
+   *  back until there is one — so this is silent until a state is committed. */
+  const { options: districts, loading: loadingDistricts } = useDistricts(stateValue, {
+    enabled: answered,
+  });
+
+  /** Six digits → state, district and localities. Debounced inside the hook. */
+  const lookup = usePincodeLookup(pincodeValue, { enabled: answered });
 
   /**
-   * Reconcile anything the form already holds against the fetched list.
+   * Reconcile anything the form already holds against a list that has just
+   * arrived — the same job in three places, so it's one helper.
    *
-   * This field used to be free text, so a value coming back from Review could
-   * be anything the user typed. Re-matching swaps a recognisable one for the
-   * server's spelling and drops anything else back to the placeholder — better
-   * an empty required field than a submit rejected for a value the dropdown
-   * can no longer even display.
+   * Two things make it worth doing rather than trusting the stored value.
+   * `businessType` used to be free text, so a value coming back from Review
+   * can be anything the user once typed. And a state or district can arrive
+   * from the PIN lookup, whose spelling is its own — close to the list's, but
+   * not guaranteed identical. Re-matching swaps a recognisable value for the
+   * list's own and drops anything else back to empty: better a required field
+   * the user can still fill than a submit rejected for a value no field on
+   * screen can even display.
+   */
+  const reconcile = (name, options) => {
+    if (!options.length) return;
+    const current = form.getValues(name);
+    if (!current) return;
+    const matched = matchMasterValue(current, options);
+    if (matched !== current) form.setValue(name, matched ?? "");
+  };
+
+  useEffect(() => {
+    reconcile("businessType", businessTypes);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [businessTypes]);
+
+  useEffect(() => {
+    reconcile("state", states);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [states]);
+
+  /**
+   * A district only means anything inside its state, so this runs on every new
+   * district list — which is to say every time the state changes. A city left
+   * over from the previous state won't match the new list and is cleared,
+   * rather than being submitted as a Pune address in Gujarat.
    */
   useEffect(() => {
-    if (!businessTypes.length) return;
-    const current = form.getValues("businessType");
-    if (!current) return;
-    form.setValue("businessType", matchMasterValue(current, businessTypes) ?? "");
-  }, [businessTypes, form]);
+    reconcile("city", districts);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [districts]);
+
+  /**
+   * The PIN's answer fills the two fields below it.
+   *
+   * Guarded on the current value differing, so this writes once per lookup and
+   * then leaves the fields alone — someone who looks up a PIN and then edits
+   * the state by hand keeps their edit. `lookup.data` only changes identity
+   * when a new PIN resolves, which is what makes that true.
+   *
+   * `state` is set here and `city` is left to the reconcile above: setting the
+   * state re-fetches the districts, and the city has to be matched against the
+   * list that arrives, not the one on screen now. Writing it here as well would
+   * be a value the district field can't yet display.
+   */
+  useEffect(() => {
+    if (lookup.status !== "found" || !lookup.data) return;
+    const { state: foundState, district } = lookup.data;
+    if (foundState && form.getValues("state") !== foundState) {
+      form.setValue("state", foundState, { shouldValidate: true });
+    }
+    if (district && form.getValues("city") !== district) {
+      form.setValue("city", district, { shouldValidate: true });
+    }
+  }, [lookup.status, lookup.data, form]);
 
   /**
    * Answering "No" clears the business half rather than just hiding it.
@@ -231,6 +369,11 @@ export default function BusinessStep({ onNext, onSkip, initialValues }) {
     gstField.onChange(e);
   };
 
+  /** Localities inside the looked-up PIN, offered as one-tap fills for the
+   *  optional second address line. Suggestions only — nothing is required and
+   *  nothing is stored. */
+  const areas = lookup.status === "found" ? lookup.data?.areas ?? [] : [];
+
   /**
    * Save, then advance — only on success.
    *
@@ -262,10 +405,14 @@ export default function BusinessStep({ onNext, onSkip, initialValues }) {
   }, alertOnInvalid);
 
   return (
-    <div className="w-full max-w-77.5 sm:max-w-90 lg:max-w-97.5 xl:max-w-97.5 mx-auto lg:mx-0 rounded-2xl border border-slate-100 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04),0_20px_48px_rgba(222,123,61,0.08)] overflow-hidden">
+    /* No `overflow-hidden` here, unlike the other step cards: the address
+       typeaheads drop a suggestion list below their field, and a clipped
+       dropdown is worse than the squared header corner this would otherwise
+       hide. The header rounds its own top instead. */
+    <div className="w-full max-w-77.5 sm:max-w-90 lg:max-w-97.5 xl:max-w-97.5 mx-auto lg:mx-0 rounded-2xl border border-slate-100 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04),0_20px_48px_rgba(222,123,61,0.08)]">
 
       {/* Header — padding and type scale with breakpoints */}
-      <div className="px-4 sm:px-5 lg:px-6 pt-5 pb-4 bg-linear-to-br from-orange-50/60 to-white border-b border-orange-100/60">
+      <div className="rounded-t-2xl px-4 sm:px-5 lg:px-6 pt-5 pb-4 bg-linear-to-br from-orange-50/60 to-white border-b border-orange-100/60">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <span className="inline-flex items-center gap-1.5 text-[10px] sm:text-xs font-bold tracking-widest uppercase text-orange-500 mb-3">
@@ -365,6 +512,78 @@ export default function BusinessStep({ onNext, onSkip, initialValues }) {
                 {hasBusiness ? "Business address" : "Your address"}
               </span>
 
+              {/* PIN first, and deliberately so: six digits fill the state and
+                  the city below, so asking for it last would mean overwriting
+                  two fields the user had just finished searching for. */}
+              {/* Wrapped so the status line sits against its field. Loose in
+                  the column it would inherit the parent's `gap` on top of the
+                  input's own bottom margin, and read as a note about the next
+                  field down rather than about this one. */}
+              <div>
+                <Input
+                  id="pincode"
+                  label="PIN Code *"
+                  placeholder="6-digit PIN"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  maxLength={6}
+                  className="font-mono tracking-wide"
+                  error={form.formState.errors.pincode?.message}
+                  {...pincodeField}
+                  onChange={handlePincodeChange}
+                />
+
+                {!form.formState.errors.pincode && (
+                  <PincodeStatus status={lookup.status} data={lookup.data} />
+                )}
+              </div>
+
+              {/* State + City — paired on larger screens. */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
+                <Controller
+                  name="state"
+                  control={form.control}
+                  render={({ field, fieldState }) => (
+                    <Autocomplete
+                      id="state"
+                      label="State *"
+                      placeholder="Start typing…"
+                      value={field.value}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      options={states}
+                      loading={loadingStates}
+                      error={fieldState.error?.message}
+                      emptyMessage="No state matches that"
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="city"
+                  control={form.control}
+                  render={({ field, fieldState }) => (
+                    <Autocomplete
+                      id="city"
+                      label="City / District *"
+                      /* Districts are a per-state list, so this genuinely has
+                         nothing to suggest until a state is chosen. Disabled
+                         with a reason beats an open field that returns nothing
+                         however carefully you type. */
+                      disabled={!stateValue}
+                      placeholder={stateValue ? "Start typing…" : "Pick a state first"}
+                      value={field.value}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      options={districts}
+                      loading={loadingDistricts}
+                      error={fieldState.error?.message}
+                      emptyMessage="No district matches that"
+                    />
+                  )}
+                />
+              </div>
+
               <Input
                 id="addressLine1"
                 label="Address Line 1 *"
@@ -374,48 +593,42 @@ export default function BusinessStep({ onNext, onSkip, initialValues }) {
                 {...form.register("addressLine1")}
               />
 
-              <Input
-                id="addressLine2"
-                label="Address Line 2"
-                placeholder="Area, landmark (optional)"
-                maxLength={200}
-                error={form.formState.errors.addressLine2?.message}
-                {...form.register("addressLine2")}
-              />
-
-              {/* City + State — paired on larger screens. */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
+              {/* Wrapped for the same reason as the PIN above — the chips are
+                  this field's suggestions, so they belong against it. */}
+              <div>
                 <Input
-                  id="city"
-                  label="City *"
-                  placeholder="e.g. Pune"
-                  maxLength={100}
-                  error={form.formState.errors.city?.message}
-                  {...form.register("city")}
+                  id="addressLine2"
+                  label="Address Line 2"
+                  placeholder="Area, landmark (optional)"
+                  maxLength={200}
+                  error={form.formState.errors.addressLine2?.message}
+                  {...form.register("addressLine2")}
                 />
 
-                <Input
-                  id="state"
-                  label="State *"
-                  placeholder="e.g. Maharashtra"
-                  maxLength={100}
-                  error={form.formState.errors.state?.message}
-                  {...form.register("state")}
-                />
+                {/* The localities the PIN covers, as one-tap fills. Purely a
+                    shortcut — the field stays free text either way. */}
+                {areas.length > 0 && (
+                  <div className="flex flex-col gap-2">
+                    <span className="text-xs font-semibold text-slate-400">
+                      Areas in {pincodeValue}
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {areas.map((area) => (
+                        <button
+                          key={area}
+                          type="button"
+                          onClick={() =>
+                            form.setValue("addressLine2", area, { shouldValidate: true })
+                          }
+                          className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-500 transition-all duration-150 hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600 active:scale-[0.97]"
+                        >
+                          {area}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
-
-              <Input
-                id="pincode"
-                label="PIN Code *"
-                placeholder="6-digit PIN"
-                inputMode="numeric"
-                autoComplete="off"
-                maxLength={6}
-                className="font-mono tracking-wide"
-                error={form.formState.errors.pincode?.message}
-                {...pincodeField}
-                onChange={handlePincodeChange}
-              />
             </div>
 
             {/* GSTIN gate — a business question, so it rides with that half.
@@ -449,7 +662,10 @@ export default function BusinessStep({ onNext, onSkip, initialValues }) {
                 type="submit"
                 /* The masters list only gates the Yes branch — a No-business
                    user has no dropdown to wait for, and shouldn't be stuck
-                   behind a failed fetch for a field they'll never see. */
+                   behind a failed fetch for a field they'll never see. The
+                   geography lists gate nothing: they are typeaheads over
+                   fields the schema already guards, so a slow states call
+                   delays a suggestion, not the form. */
                 disabled={
                   form.formState.isSubmitting ||
                   (hasBusiness === true && (loadingTypes || typesUnavailable))

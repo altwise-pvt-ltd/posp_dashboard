@@ -9,8 +9,10 @@ import {
 import { showAlert } from './alertStore';
 import { resetOnboarding } from './onboardingStore';
 import { resetOnboardingStatus } from './onboardingStatusStore';
+import { resetPospProfile } from './pospProfileStore';
 import { resetVerification } from './verificationStore';
 import { resetTraining } from './trainingStore';
+import { resetTrainingPlan } from './trainingPlanStore';
 
 /**
  * Tracks whether the POSP has signed in (mobile + OTP) — the single source of
@@ -46,11 +48,23 @@ export const useAuthStore = create((set, get) => ({
    */
   authenticated: Boolean(restored),
 
-  /** The signed-in POSP. Null when not. */
+  /** The signed-in POSP — `{ id, fullName, email, mobile, role }`. Null when not. */
   user: restored?.user ?? null,
 
   /** Convenience mirror — the topbar and verification screen show the number. */
   mobile: restored?.user?.mobile ?? null,
+
+  /**
+   * Which world this session is in: `ONBOARDING`, `CORRECTION` or `REGISTERED`
+   * (see `AUTH_FLOW` in `features/auth/api/authApi.js`).
+   *
+   * Held so a *refresh* can tell the two apart as cheaply as the sign-in did —
+   * it rides along in the persisted session, so the answer survives without a
+   * request. Nothing routes on it directly: the funnel routes on the flags
+   * `resumeSession` sets from it, and adding a second reader of the same fact
+   * is how the two would drift.
+   */
+  flow: restored?.flow ?? null,
 
   /**
    * The onboarding application this session belongs to: `{ id, currentStep }`,
@@ -80,12 +94,13 @@ export const useAuthStore = create((set, get) => ({
    * a second edit here.
    */
   signIn: (session = {}) => {
-    const { token, user, application } = session;
+    const { token, user, application, flow } = session;
     storeSession(session);
     set({
       authenticated: Boolean(token),
       user: user ?? null,
       mobile: user?.mobile ?? null,
+      flow: flow ?? null,
       application: application ?? null,
       applicationId: application?.id ?? null,
     });
@@ -129,10 +144,14 @@ export const useAuthStore = create((set, get) => ({
      * a stale cache under a new token has no defensible reading.
      */
     resetOnboardingStatus();
+    /** Same reasoning, for the other resume path: the POSP record was fetched
+     *  with this token and describes this user. */
+    resetPospProfile();
     set({
       authenticated: false,
       user: null,
       mobile: null,
+      flow: null,
       application: null,
       applicationId: null,
     });
@@ -199,6 +218,9 @@ if (typeof window !== 'undefined') {
     resetOnboarding();
     resetVerification();
     resetTraining();
+    // The chosen insurance line goes too — otherwise the replay skips the
+    // choice screen and studies whatever the last run picked.
+    resetTrainingPlan();
     console.log(
       '[auth] Denied() — session + onboarding + verification + training cleared. Next login goes through the full flow: login → onboarding → verification → training → dashboard.'
     );

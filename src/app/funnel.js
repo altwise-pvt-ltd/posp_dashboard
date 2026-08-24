@@ -1,6 +1,6 @@
 import { isAuthenticated } from '@/shared/store/authStore';
 import { isOnboardingComplete } from '@/shared/store/onboardingStore';
-import { isVerified } from '@/shared/store/verificationStore';
+import { isVerificationSeen } from '@/shared/store/verificationStore';
 import { isTrainingComplete } from '@/shared/store/trainingStore';
 
 /**
@@ -27,7 +27,12 @@ import { isTrainingComplete } from '@/shared/store/trainingStore';
 export const FUNNEL_STAGES = [
   { id: 'auth', path: '/login', isClear: isAuthenticated },
   { id: 'onboarding', path: '/onboarding', isClear: isOnboardingComplete },
-  { id: 'verification', path: '/verification', isClear: isVerified },
+  // Clear means approved *and* acknowledged — see `isVerificationSeen`. A POSP
+  // whose approval landed while they were away is brought back here to be told,
+  // rather than being dropped into training with no explanation of how they got
+  // there. The `/posp-training` guard reads plain verified status, so the button
+  // on that screen isn't held back by the flag it sets.
+  { id: 'verification', path: '/verification', isClear: isVerificationSeen },
   { id: 'training', path: '/posp-training', isClear: isTrainingComplete },
 ];
 

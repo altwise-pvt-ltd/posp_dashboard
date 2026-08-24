@@ -348,6 +348,74 @@ export const fetchQualifications = () =>
 export const fetchBusinessTypes = () =>
   fetchMasterOptions(ENDPOINTS.onboarding.getBusinessTypes);
 
+/* ── Geography ─────────────────────────────────────────────────────────── */
+
+/**
+ * All 36 states and union territories, as `[{ value, label }]`.
+ *
+ * Module-level and argument-free so it is referentially stable — `useMasterOptions`
+ * takes the fetcher as an effect dependency, and an inline arrow would re-run
+ * the request on every render.
+ */
+export const fetchStates = () => fetchMasterOptions(ENDPOINTS.geography.states);
+
+/**
+ * The districts of one state, as `[{ value, label }]`.
+ *
+ * Takes the state's exact name from `fetchStates` — the server matches on it
+ * literally and answers a misspelling with an empty list rather than an error,
+ * so "no districts" and "no such state" arrive looking identical. The step
+ * avoids ever asking the question: the state field commits only a value picked
+ * or matched against the fetched list, so anything reaching here is a name the
+ * server supplied.
+ *
+ * An empty or absent state short-circuits without a request. The district field
+ * is disabled until a state is chosen, so this is the belt to that braces —
+ * without it, a cleared state would fire a `?state=` call whose empty result is
+ * then indistinguishable from a real one.
+ */
+export async function fetchDistricts(state) {
+  if (!state) return [];
+  const response = await api.get(ENDPOINTS.geography.districts, { params: { state } });
+  const raw = unwrap(response);
+  if (!Array.isArray(raw)) return [];
+
+  return raw
+    .map((option) => ({
+      value: option?.value ?? '',
+      label: option?.label ?? option?.value ?? '',
+    }))
+    .filter((option) => option.value);
+}
+
+/**
+ * One PIN code → the state, district and localities it covers.
+ *
+ * The only geography call that isn't a list, and the reason the PIN is the fast
+ * path through the address: six digits settle two fields that would otherwise
+ * be two searches.
+ *
+ * Returns `null` for a PIN the server doesn't recognise rather than throwing,
+ * because an unknown PIN is a normal thing for a user to type on the way to a
+ * real one — the step treats it as "fill the rest in yourself", not as an error
+ * worth a toast. A genuine failure (network, 500) still throws, so the two stay
+ * distinguishable; only the shape of the *answer* is softened here.
+ */
+export async function fetchPincodeDetails(pincode) {
+  const response = await api.get(ENDPOINTS.geography.pincode(pincode));
+  const data = unwrap(response);
+  if (!data || typeof data !== 'object') return null;
+
+  return {
+    pincode: data.pincode ?? String(pincode),
+    state: data.state ?? '',
+    district: data.district ?? '',
+    /** Localities inside the PIN. Suggestions for address line 2 — the form
+     *  neither requires one nor stores the list. */
+    areas: Array.isArray(data.areas) ? data.areas.filter(Boolean) : [],
+  };
+}
+
 /**
  * Match a value already held by a form to one of a masters list's `value`s.
  *

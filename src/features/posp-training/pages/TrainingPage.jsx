@@ -1,18 +1,23 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { HeartPulse, ShieldCheck } from 'lucide-react';
 import FunnelLayout from '@/shared/layouts/FunnelLayout';
+import {
+  markTrainingStarted,
+  remainingSeconds,
+  selectTrainingPlan,
+  useTrainingPlanStore,
+} from '@/shared/store/trainingPlanStore';
 import { SECTIONS } from '../data/sections';
 import { trainingModules } from '../data/trainingModules';
 import { useCountdown } from '../hooks/useCountdown';
-import VerificationCompleteCard from '../components/VerificationCompleteCard';
+import { useInsuranceTypes } from '../hooks/useInsuranceTypes';
+import { selectInsuranceType, startTraining } from '../api/trainingApi';
 import ExamPortal from '../components/exam/ExamPortal';
+import InsuranceTypeChoice from '../components/training/InsuranceTypeChoice';
 import SectionSyllabus from '../components/training/SectionSyllabus';
 import TrainingCompleteCard from '../components/training/TrainingCompleteCard';
 import TrainingProgressRail from '../components/training/TrainingProgressRail';
-
-/** The mandated study period, in seconds. One definition — the countdown, the
- *  progress bar and the reset after a retake all read it. */
-const TRAINING_SECONDS = 15 * 60 * 60;
+import TrainingStartCard from '../components/training/TrainingStartCard';
 
 /** Section id → the icon that stands for it. Kept out of `sections.js` so the
  *  data layer stays free of presentation. */
@@ -21,8 +26,8 @@ const SECTION_ICONS = {
   life: HeartPulse,
 };
 
-/** The syllabus as the page renders it: every section that has material, with
- *  its icon and modules attached. Built once — none of it depends on state. */
+/** Every section that has material, with its icon and modules attached. The
+ *  chosen line narrows this further — see `syllabus` below. */
 const SYLLABUS_SECTIONS = SECTIONS.map((section) => ({
   ...section,
   icon: SECTION_ICONS[section.id],
@@ -30,19 +35,51 @@ const SYLLABUS_SECTIONS = SECTIONS.map((section) => ({
 })).filter((section) => section.modules.length > 0);
 
 /**
- * TrainingPage — the 15-hour POSP programme, start to certificate.
+ * TrainingPage — the POSP programme, start to certificate.
  *
- * Four screens behind one route, chosen from two flags and the clock rather
- * than a stage variable, so they cannot disagree with each other:
- *   intro     — the verification-complete card, before the clock starts
+ * Five screens behind one route, chosen from the plan and the clock rather than
+ * a stage variable, so they cannot disagree with each other:
+ *   choose    — which insurance line, before anything else exists
+ *   ready     — enrolled, nothing running; the hours start on a press
  *   studying  — syllabus and countdown
  *   complete  — hours done, exam unlocked
  *   exam      — the exam portal, full bleed
+ *
+ * `choose` and `ready` are two screens rather than one because they are two
+ * calls and two decisions: `select-insurance-type` records the line, and
+ * `start-training` sets the mandated hours running. A POSP can sit on `ready`
+ * for a week without spending any of their period.
+ *
+ * There is no "verification complete" intro. That confirmation now lives on
+ * `/verification`, which renders all three verdicts itself — so arriving here
+ * already *means* verified.
  */
 function TrainingPage() {
-  const [hasStarted, setHasStarted] = useState(false);
   const [isExamOpen, setIsExamOpen] = useState(false);
-  const { secondsLeft, reset } = useCountdown(TRAINING_SECONDS, { running: hasStarted });
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
+  const plan = useTrainingPlanStore((s) => s.plan);
+  const insuranceTypes = useInsuranceTypes();
+
+  /* The mandated period is the server's number, not a constant — 15 hours for a
+     single line, 30 for both. */
+  const trainingSeconds = (plan?.requiredHours ?? 0) * 60 * 60;
+
+  /* Seeded from `startedAt` rather than from the full period, so a reload picks
+     the clock up where it left off instead of handing back the whole thing. The
+     initial value is read once, at mount, which is exactly when that matters. */
+  const { secondsLeft, reset } = useCountdown(remainingSeconds(plan), {
+    running: Boolean(plan?.startedAt),
+  });
+
+  /** The syllabus cut to the chosen line. */
+  const syllabus = useMemo(
+    () =>
+      plan
+        ? SYLLABUS_SECTIONS.filter((section) => plan.sectionIds.includes(section.id))
+        : [],
+    [plan]
+  );
 
   /* The clock running out, not the exam being passed — `isTrainingComplete` in
      trainingStore means the latter, so this deliberately doesn't share its name. */
@@ -50,22 +87,90 @@ function TrainingPage() {
 
   const handleRetakeTraining = () => {
     setIsExamOpen(false);
-    reset(TRAINING_SECONDS);
+    reset(trainingSeconds);
+  };
+
+  /**
+   * Record the line. Nothing starts here — the plan is persisted so the choice
+   * survives a reload, and the ready screen takes it from there.
+   */
+  const handleChoosePlan = async (chosen) => {
+    setSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      await selectInsuranceType(chosen.id);
+      selectTrainingPlan(chosen);
+      setSubmitting(false);
+    } catch (err) {
+      setSubmitError(err);
+      setSubmitting(false);
+    }
+  };
+
+  /**
+   * Open the programme. The server is asked first and the local clock is only
+   * started once it agrees — the reverse would leave a POSP counting down hours
+   * the LMS never began.
+   *
+   * The clock is seeded at mount, so a start after that has to be put on it
+   * explicitly: the countdown would otherwise sit at the zero it began with and
+   * hand a fresh POSP a finished programme.
+   */
+  const handleStartTraining = async () => {
+    setSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      await startTraining();
+      markTrainingStarted();
+      reset(trainingSeconds);
+    } catch (err) {
+      setSubmitError(err);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const renderStage = () => {
-    if (isExamOpen) {
-      return <ExamPortal onRetakeTraining={handleRetakeTraining} />;
+    if (!plan) {
+      return (
+        <div className="flex w-full flex-1 items-center justify-center py-10">
+          <InsuranceTypeChoice
+            types={insuranceTypes.types}
+            loading={insuranceTypes.loading}
+            error={insuranceTypes.error}
+            onRetry={insuranceTypes.retry}
+            onConfirm={handleChoosePlan}
+            submitting={submitting}
+            submitError={submitError}
+          />
+        </div>
+      );
     }
 
-    if (!hasStarted) {
-      /* `training-scale` is scoped to the intro, which was drawn at the app's
-         base scale and reads oversized on a laptop; the syllabus and exam below
-         keep the base scale. */
+    /* Enrolled, but the hours haven't been set running yet. Checked before the
+       clock, because an unstarted plan reads as zero seconds left and would
+       otherwise fall through to the "hours complete" screen. */
+    if (!plan.startedAt) {
       return (
-        <div className="training-scale flex w-full flex-1 flex-col items-center justify-center p-4 md:p-8">
-          <VerificationCompleteCard onStart={() => setHasStarted(true)} />
+        <div className="flex w-full flex-1 items-center justify-center py-10">
+          <TrainingStartCard
+            plan={plan}
+            starting={submitting}
+            error={submitError}
+            onStart={handleStartTraining}
+          />
         </div>
+      );
+    }
+
+    if (isExamOpen) {
+      return (
+        <ExamPortal
+          sectionIds={plan.sectionIds}
+          onRetakeTraining={handleRetakeTraining}
+        />
       );
     }
 
@@ -91,17 +196,16 @@ function TrainingPage() {
         <header className="anim-fade lg:col-start-1 lg:row-start-1">
           <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-orange-600">
             <span aria-hidden="true" className="pulse-dot size-2 rounded-full bg-orange-600" />
-            Training in progress
+            {plan.name} · training in progress
           </span>
 
           <h1 className="mt-4 text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">
             You're one step closer to becoming a POSP
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
-            Work through the General and Life Insurance material below at your own pace. Your
-            certification exam with{' '}
+            Work through the material below at your own pace. Your certification exam with{' '}
             <span className="font-semibold text-slate-700">Lets Insurance Broker</span> unlocks once
-            the 15 hours are complete.
+            your {plan.requiredHours} hours are complete.
           </p>
         </header>
 
@@ -111,13 +215,13 @@ function TrainingPage() {
         <aside className="anim-fade-d1 self-start lg:sticky lg:top-24 lg:col-start-2 lg:row-span-2 lg:row-start-1">
           <TrainingProgressRail
             secondsLeft={secondsLeft}
-            totalSeconds={TRAINING_SECONDS}
+            totalSeconds={trainingSeconds}
             onSkip={() => reset(0)}
           />
         </aside>
 
         <div className="anim-fade-d1 space-y-10 lg:col-start-1 lg:row-start-2">
-          {SYLLABUS_SECTIONS.map(({ id, title, icon, modules }) => (
+          {syllabus.map(({ id, title, icon, modules }) => (
             <SectionSyllabus key={id} title={title} icon={icon} modules={modules} />
           ))}
         </div>

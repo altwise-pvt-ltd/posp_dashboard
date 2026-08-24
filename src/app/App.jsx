@@ -38,12 +38,16 @@ function App() {
           element={<RequireFunnel through="auth"><OnboardingScreen /></RequireFunnel>}
         />
 
-        {/* Submitted, waiting on the back office. Forwards a cleared POSP on
-            rather than leaving them on a screen with nothing left to say. */}
+        {/* Submitted, and the back office's answer whatever it turns out to be.
+            The page renders all three verdicts, so a cleared POSP is *not*
+            forwarded off it: they watch the screen flip to verified and go on
+            via its own button. `landingPath()` keeps landing them here until
+            they press it — an approval delivered to an empty room isn't
+            delivered — and sends them straight to training afterwards. */}
         <Route
           path="/verification"
           element={
-            <RequireFunnel through="onboarding" forwardWhenClear="verification">
+            <RequireFunnel through="onboarding">
               <VerificationPendingPage />
             </RequireFunnel>
           }

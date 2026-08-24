@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { examQuestions } from '../../data/examQuestions';
 import { SECTIONS } from '../../data/sections';
@@ -23,11 +23,17 @@ const STAGE = {
 
 /**
  * The sections actually sat, in syllabus order — a section with no questions
- * written yet is skipped rather than presented as an empty paper. This is what
- * keeps the portal free of "is there a life section?" special cases: with one
- * bank it runs a single section straight to the results.
+ * written yet is skipped rather than presented as an empty paper, and one
+ * outside the line the POSP chose is not theirs to sit. This is what keeps the
+ * portal free of "is there a life section?" special cases: with one bank it runs
+ * a single section straight to the results.
  */
-const EXAM_SECTIONS = SECTIONS.filter((section) => examQuestions[section.id]?.length > 0);
+const examSectionsFor = (sectionIds) =>
+  SECTIONS.filter(
+    (section) =>
+      examQuestions[section.id]?.length > 0 &&
+      (!sectionIds || sectionIds.includes(section.id))
+  );
 
 /**
  * ExamPortal — the POSP certification exam, from instructions to verdict.
@@ -39,8 +45,9 @@ const EXAM_SECTIONS = SECTIONS.filter((section) => examQuestions[section.id]?.le
  * `answers` is keyed section id → question id → the index of the chosen
  * option, the same shape `scoreSection` reads at the end.
  */
-function ExamPortal({ onRetakeTraining }) {
+function ExamPortal({ sectionIds, onRetakeTraining }) {
   const navigate = useNavigate();
+  const EXAM_SECTIONS = useMemo(() => examSectionsFor(sectionIds), [sectionIds]);
   const [stage, setStage] = useState(STAGE.INSTRUCTIONS);
   const [sectionIndex, setSectionIndex] = useState(0);
   const [answers, setAnswers] = useState({});

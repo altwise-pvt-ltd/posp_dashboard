@@ -12,19 +12,68 @@ import { ENDPOINTS } from '@/shared/api/endpoints';
  */
 
 /**
+ * The three worlds a verified mobile can be in — the field the whole sign-in
+ * path branches on.
+ *
+ *   ONBOARDING — the application is still being filled in. `GET /onboarding/status`
+ *                is the only thing that knows where they got to.
+ *   CORRECTION — a reviewer sent the application back and reopened it. Same call
+ *                as ONBOARDING — it is the wizard again — but arrived at from
+ *                the other end, so the local flags have to be reopened too: this
+ *                POSP's browser remembers a *finished* application.
+ *   REGISTERED — a POSP record exists and the wizard is behind them. `GET /posp/me`
+ *                is what describes them now; the onboarding status has nothing
+ *                left to say.
+ *
+ * Branching on this rather than probing both endpoints matters because the two
+ * answers aren't interchangeable: a registered POSP still has an application
+ * row behind them, so `/onboarding/status` would answer — with a step position
+ * for a form that was submitted, which is how someone who finished ends up
+ * looking at step 9 of a wizard.
+ */
+export const AUTH_FLOW = {
+  ONBOARDING: 'ONBOARDING',
+  CORRECTION: 'CORRECTION',
+  REGISTERED: 'REGISTERED',
+};
+
+/**
+ * `flow`, or null if the server didn't send one.
+ *
+ * Upper-cased rather than compared as-is: the value is an enum name on the
+ * wire and a casing change would silently route every registered POSP back
+ * through the wizard. Null is left null on purpose — see `resumeSession`, which
+ * treats "no flow" as "ask the onboarding status", the behaviour that predates
+ * this field.
+ */
+function toFlow(value) {
+  return typeof value === 'string' && value.trim() ? value.trim().toUpperCase() : null;
+}
+
+/**
  * The user, in the shape the app uses.
  *
- * Thin on purpose. Verify's `data` describes the *application*, not the person
- * — there is no user object on the wire at all — so the only fact we hold about
- * them is the number the server has just confirmed, which is as authoritative
- * as anything it could have sent back.
+ * The verify reply now carries a real `user` object — id, name, email, mobile
+ * and role — where it used to describe only the application. That makes this
+ * the first point the app knows who it is talking to, so the topbar and the
+ * verification screen no longer have to wait for a profile call to put a name
+ * on screen.
  *
- * `name` and `email` are collected by the onboarding wizard rather than handed
- * out at sign-in; when a profile endpoint exists, this is the function its
- * fields get normalised in, so the components reading them never change.
+ * `mobile` falls back to the number that was just verified: it is the one field
+ * we know independently of the reply, and it is what the OTP screen and the
+ * topbar show.
  */
-function toUser(mobile) {
-  return { mobile: mobile ?? null };
+function toUser(data = {}, mobile) {
+  const user = data.user ?? {};
+  return {
+    id: user.id ?? null,
+    fullName: user.fullName ?? null,
+    email: user.email ?? null,
+    mobile: user.mobile ?? mobile ?? null,
+    /** `POSP` today. Carried rather than assumed — an ops or admin login
+     *  arriving on the same endpoint would differ here and nowhere else. */
+    role: user.role ?? null,
+  };
 }
 
 /**
@@ -51,13 +100,21 @@ export async function resendOtp(mobile) {
  *
  * The reply's `data` is:
  *
- *   { token, applicationId, currentStep, expiresAt }
+ *   { flow, token, applicationId, currentStep, expiresAt, refreshToken,
+ *     user: { id, fullName, email, mobile, role }, overallStatus }
  *
- * and it is split into four fields here because they have four different
- * owners: the token is the credential, `user` is what the topbar renders,
- * `application` is what every later onboarding call has to quote, and
- * `expiresAt` is the server's own word on how long the rest of it is good for.
- * Returning the raw envelope instead would push that sorting into each caller.
+ * and it is split up here because those fields have different owners: the token
+ * is the credential, `user` is what the topbar renders, `application` is what
+ * every later onboarding call has to quote, `expiresAt` is the server's own word
+ * on how long the rest of it is good for, and `flow` decides which endpoint the
+ * sign-in path asks next. Returning the raw envelope instead would push that
+ * sorting into each caller.
+ *
+ * `refreshToken` is deliberately *not* carried. Nothing in the app renews a
+ * session — a 401 signs the user out and they log in again (see the note in
+ * `shared/api/client.js`) — so keeping it would mean persisting a second,
+ * longer-lived credential in web storage that no code path can spend. When
+ * refresh is built, this is where it starts being read.
  *
  * `applicationId` in particular is the one field that cannot be recovered if it
  * is dropped — nothing else in the app knows which application the wizard is
@@ -84,6 +141,24 @@ export async function verifyOtp(mobile, otp) {
 
   return {
     token,
+
+    /**
+     * Which resume path the session takes. See `AUTH_FLOW` above and
+     * `shared/auth/resumeSession.js`, which is the only thing that reads it.
+     */
+    flow: toFlow(data.flow),
+
+    /**
+     * The server's headline on the application — `UNDER_VERIFICATION` for a
+     * POSP waiting on the back office.
+     *
+     * A fallback, not the source: `GET /posp/me` carries the same fact with
+     * more detail, and is what the verdict is normally read from. This is what
+     * stands in when that call fails, so a POSP whose profile request 500s
+     * still lands on the waiting screen rather than in the wizard.
+     */
+    overallStatus: data.overallStatus ?? null,
+
     /**
      * Carried because the server sent it, not because anything gates on it —
      * a 401 is still the only expiry signal the app acts on (see the note in
@@ -92,7 +167,7 @@ export async function verifyOtp(mobile, otp) {
      * identically without it.
      */
     expiresAt: data.expiresAt ?? null,
-    user: toUser(mobile),
+    user: toUser(data, mobile),
     application: {
       id: data.applicationId ?? null,
       /**
