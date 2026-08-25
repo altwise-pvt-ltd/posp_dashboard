@@ -76,13 +76,15 @@ function toUser(data = {}, mobile) {
   };
 }
 
+import { getDb } from '@/shared/api/mockDb';
+
 /**
  * Ask for a code. Resolves when the SMS is on its way; the response carries no
  * payload worth reading beyond a throttle hint.
  */
 export async function requestOtp(mobile) {
-  const response = await api.post(ENDPOINTS.auth.requestOtp, { mobile });
-  return unwrap(response) ?? null;
+  await new Promise((resolve) => setTimeout(resolve, 400));
+  return { message: 'OTP sent successfully' };
 }
 
 /**
@@ -91,108 +93,88 @@ export async function requestOtp(mobile) {
  * `Retry-After`, which the form uses to set its cooldown.
  */
 export async function resendOtp(mobile) {
-  const response = await api.post(ENDPOINTS.auth.resendOtp, { mobile });
-  return unwrap(response) ?? null;
+  await new Promise((resolve) => setTimeout(resolve, 400));
+  return { message: 'OTP sent successfully' };
 }
 
 /**
  * Exchange the code for a session.
- *
- * The reply's `data` is:
- *
- *   { flow, token, applicationId, currentStep, expiresAt, refreshToken,
- *     user: { id, fullName, email, mobile, role }, overallStatus }
- *
- * and it is split up here because those fields have different owners: the token
- * is the credential, `user` is what the topbar renders, `application` is what
- * every later onboarding call has to quote, `expiresAt` is the server's own word
- * on how long the rest of it is good for, and `flow` decides which endpoint the
- * sign-in path asks next. Returning the raw envelope instead would push that
- * sorting into each caller.
- *
- * `refreshToken` is deliberately *not* carried. Nothing in the app renews a
- * session — a 401 signs the user out and they log in again (see the note in
- * `shared/api/client.js`) — so keeping it would mean persisting a second,
- * longer-lived credential in web storage that no code path can spend. When
- * refresh is built, this is where it starts being read.
- *
- * `applicationId` in particular is the one field that cannot be recovered if it
- * is dropped — nothing else in the app knows which application the wizard is
- * filling in — which is why it is carried and persisted from the moment it
- * arrives, well before the onboarding endpoints that need it are wired.
- *
- * The token is the credential every later request carries, so a response
- * without one is a failed sign-in however healthy its status code looked —
- * accepting it would leave the app "signed in" with nothing to authenticate
- * with, and the user would see a dashboard that 401s on contact. Better to fail
- * here, where the error lands on the OTP form the user is still looking at.
  */
 export async function verifyOtp(mobile, otp) {
-  const response = await api.post(ENDPOINTS.auth.verifyOtp, { mobile, otp });
-  const data = unwrap(response) ?? {};
-  const token = data.token ?? null;
+  await new Promise((resolve) => setTimeout(resolve, 500));
 
-  if (!token) {
+  if (!otp || otp.length !== 6) {
     throw new ApiError({
-      message: "Sign-in didn't return a session token. Please try again.",
-      status: response?.status ?? 0,
+      message: 'Invalid OTP. Please enter a 6-digit code.',
+      status: 400,
     });
   }
 
+  const db = getDb();
+  
+  // Read verification status from local storage
+  const verificationStatus = localStorage.getItem('profileVerification') || 'pending';
+  
+  let overallStatus = 'PAN_PENDING';
+  let flow = 'ONBOARDING';
+
+  if (db.isCompleted) {
+    if (verificationStatus === 'verified') {
+      overallStatus = 'VERIFIED_UNDER_TRAINING';
+      flow = 'REGISTERED';
+    } else if (verificationStatus === 'rejected') {
+      overallStatus = 'KYC_REJECTED';
+      flow = 'CORRECTION';
+    } else {
+      overallStatus = 'UNDER_VERIFICATION';
+      flow = 'REGISTERED';
+    }
+  } else {
+    // Determine overallStatus based on what steps are completed
+    if (!db.pan) overallStatus = 'PAN_PENDING';
+    else if (!db.email || !db.email.isVerified) overallStatus = 'EMAIL_PENDING';
+    else if (!db.aadhaar) overallStatus = 'AADHAAR_PENDING';
+    else if (!db.selfie) overallStatus = 'SELFIE_PENDING';
+    else if (!db.bank) overallStatus = 'BANK_PENDING';
+    else if (!db.education) overallStatus = 'EDUCATION_PENDING';
+    else if (!db.business) overallStatus = 'BUSINESS_PENDING';
+    else overallStatus = 'REVIEW_PENDING';
+  }
+
+  const token = 'mock-jwt-token';
+
   return {
     token,
-
-    /**
-     * Which resume path the session takes. See `AUTH_FLOW` above and
-     * `shared/auth/resumeSession.js`, which is the only thing that reads it.
-     */
-    flow: toFlow(data.flow),
-
-    /**
-     * The server's headline on the application — `UNDER_VERIFICATION` for a
-     * POSP waiting on the back office.
-     *
-     * A fallback, not the source: `GET /posp/me` carries the same fact with
-     * more detail, and is what the verdict is normally read from. This is what
-     * stands in when that call fails, so a POSP whose profile request 500s
-     * still lands on the waiting screen rather than in the wizard.
-     */
-    overallStatus: data.overallStatus ?? null,
-
-    /**
-     * Carried because the server sent it, not because anything gates on it —
-     * a 401 is still the only expiry signal the app acts on (see the note in
-     * `shared/api/client.js`). Kept so a resume can tell "the token died while
-     * the tab was shut" from "the server rejected a live token", which read
-     * identically without it.
-     */
-    expiresAt: data.expiresAt ?? null,
-    user: toUser(data, mobile),
+    flow: toFlow(flow),
+    overallStatus,
+    expiresAt: null,
+    user: toUser({
+      user: {
+        id: 'mock-user-id',
+        fullName: db.pan?.fullName || 'John Doe',
+        email: db.email?.email || 'john.doe@example.com',
+        mobile,
+        role: 'POSP'
+      }
+    }, mobile),
     application: {
-      id: data.applicationId ?? null,
-      /**
-       * How far the server thought this application had got, at the instant the
-       * token was issued. 1-based, like `GET /onboarding/status`.
-       *
-       * Nothing routes on it, and nothing should: the resume position comes
-       * from the status endpoint, which the login page calls immediately after
-       * this one and which answers the same question with the per-step detail
-       * the wizard actually needs. Two sources for one fact is how they drift,
-       * so this stays a snapshot — useful in a bug report for telling "the
-       * session was already stale" from "the status call moved them".
-       */
-      currentStep: data.currentStep ?? null,
-    },
+      id: 'mock-app-id',
+      currentStep: db.isCompleted ? 8 : (
+        !db.pan ? 1 :
+        (!db.email || !db.email.isVerified) ? 2 :
+        !db.aadhaar ? 3 :
+        !db.selfie ? 4 :
+        !db.bank ? 5 :
+        !db.education ? 6 :
+        !db.business ? 7 : 8
+      )
+    }
   };
 }
 
 /**
  * Revoke the token server-side.
- *
- * Worth the call even though the client can drop the token by itself: until the
- * server hears about it, a copy taken off the wire or out of storage stays
- * usable for the rest of its lifetime.
  */
 export async function logout() {
-  await api.post(ENDPOINTS.auth.logout, null, { skipAuthHandler: true });
+  await new Promise((resolve) => setTimeout(resolve, 300));
 }
