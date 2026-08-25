@@ -14,6 +14,7 @@ import PrimaryAction from "../components/PrimaryAction";
 import StageStrip from "../components/StageStrip";
 import StatusBand from "../components/StatusBand";
 import StatusRefresh from "../components/StatusRefresh";
+import DemoStatusControl from "../components/DemoStatusControl";
 import { useVerificationStatus } from "../hooks/useVerificationStatus";
 import {
   buildDocumentStates,
@@ -85,6 +86,10 @@ export default function VerificationPendingPage() {
       {/* Tighter vertical padding than the wizard — this page is sized to sit
           inside one viewport, and the shell only carries the width. */}
       <div className={`${VERIFICATION_SHELL} py-4 lg:py-5`}>
+        <div className="mb-4">
+          <DemoStatusControl />
+        </div>
+
         <section
           aria-labelledby="verification-heading"
           className="anim-fade-d1 -mx-4 overflow-hidden border-y border-slate-200/80 bg-white shadow-[0_24px_60px_-40px_rgba(15,23,42,0.25)] sm:mx-0 sm:rounded-2xl sm:border-x"
