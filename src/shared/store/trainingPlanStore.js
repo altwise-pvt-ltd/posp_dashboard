@@ -68,6 +68,61 @@ export const useTrainingPlanStore = create((set, get) => ({
     set({ plan: started });
   },
 
+  /**
+   * Adopt the LMS's own training record — `GET /lms/progress/{pospId}`.
+   *
+   * This is what turns the store from a memory into a cache. The choice used to
+   * exist only here, so a POSP on a second device was asked to pick a line the
+   * server already had on file; now the server is asked first and this holds the
+   * answer for the rest of the session.
+   *
+   * A null record means the LMS has nothing for this POSP — they have genuinely
+   * not chosen yet — and the local plan is cleared to match. That is deliberate
+   * and it is the one case where hydration *removes* state: a stale local plan
+   * outliving the record it described would show a syllabus for a programme the
+   * server does not think exists, and the exam would refuse them at the end of
+   * it. Better to ask again now than to fail then.
+   */
+  hydrate: (record) => {
+    if (!record) {
+      try {
+        localStorage.removeItem(KEY);
+      } catch {
+        // Ignore.
+      }
+      set({ plan: null });
+      return;
+    }
+
+    persist(record);
+    set({ plan: record });
+  },
+
+  /**
+   * The *server's* word that the programme is already open — `overallStatus`
+   * came back `VERIFIED_UNDER_TRAINING` on sign-in.
+   *
+   * Separate from `markStarted` because the two have different rights over the
+   * stamp. `markStarted` is the button being pressed, and it overwrites; this is
+   * a resume reconciling with the server, and it must only ever fill a gap — a
+   * POSP ten hours into their period would otherwise have the clock rewound to
+   * full on every sign-in.
+   *
+   * ⚠ The stamp written here is *now*, not the true enrolment time, because the
+   * server does not send one. It is only reached when the local plan survived
+   * but its `startedAt` did not, which is rare; and over-serving hours is the
+   * safe direction to be wrong in. A `GET /lms/training-status` carrying the
+   * real `startedAt` is what retires this caveat — see the note on the store.
+   */
+  markEnrolled: () => {
+    const plan = get().plan;
+    if (!plan || plan.startedAt) return;
+
+    const started = { ...plan, startedAt: Date.now() };
+    persist(started);
+    set({ plan: started });
+  },
+
   clear: () => {
     try {
       localStorage.removeItem(KEY);
@@ -81,20 +136,55 @@ export const useTrainingPlanStore = create((set, get) => ({
 export const getTrainingPlan = () => useTrainingPlanStore.getState().plan;
 export const selectTrainingPlan = (plan) => useTrainingPlanStore.getState().select(plan);
 export const markTrainingStarted = () => useTrainingPlanStore.getState().markStarted();
+export const markTrainingEnrolled = () => useTrainingPlanStore.getState().markEnrolled();
+export const hydrateTrainingPlan = (record) => useTrainingPlanStore.getState().hydrate(record);
 export const resetTrainingPlan = () => useTrainingPlanStore.getState().clear();
 
 /**
- * Seconds still to serve, measured from `startedAt` rather than from when the
- * page happened to mount — a reload used to hand back the full period.
+ * ── The three readings of the clock ───────────────────────────────────────────
+ *
+ * One measurement, exported three ways, so that the countdown on screen and the
+ * hours reported to the LMS can never be two different numbers. They were, once:
+ * the display read the server's `remainingHours` while nothing on earth updated
+ * it, so every reload handed the POSP their fifteen hours back.
+ *
+ * Everything is derived from `startedAt` — the server's own `trainingStartDate`
+ * — and never accumulated, which is what makes the figures survive a reload, a
+ * second device, and a week away. See `useTrainingClock` for the other half.
+ */
+
+/** The mandated period, in seconds. 15 hours for one line, 30 for both. */
+export const requiredSeconds = (plan) => (Number(plan?.requiredHours) || 0) * 60 * 60;
+
+/**
+ * Seconds served so far, measured from the start stamp rather than from when
+ * the page happened to mount. Uncapped — the caller decides what passing the
+ * mandated period means.
+ *
+ * Floored at zero: a `startedAt` in the future — a device with a wrong clock, or
+ * a stamp that parsed into the wrong timezone — would otherwise read as negative
+ * time served and put *more* than the full period on the clock, which looks like
+ * a broken screen rather than the skew it is.
+ */
+export const servedSeconds = (plan) => {
+  if (!plan?.startedAt) return 0;
+  return Math.max(Math.floor((Date.now() - plan.startedAt) / 1000), 0);
+};
+
+/**
+ * Seconds still to serve.
  *
  * Zero when the plan hasn't been started, which the page reads as "not running"
  * rather than "finished"; the two are told apart by `startedAt`, not by the
  * clock.
+ *
+ * `hoursComplete` is checked first because zero is a real answer here and an
+ * ambiguous one: a served programme and one the server has never heard from both
+ * arrive as 0 remaining, and only the flag tells them apart.
  */
 export const remainingSeconds = (plan) => {
   if (!plan?.startedAt) return 0;
+  if (plan.hoursComplete) return 0;
 
-  const total = plan.requiredHours * 60 * 60;
-  const served = Math.floor((Date.now() - plan.startedAt) / 1000);
-  return Math.max(total - served, 0);
+  return Math.max(requiredSeconds(plan) - servedSeconds(plan), 0);
 };

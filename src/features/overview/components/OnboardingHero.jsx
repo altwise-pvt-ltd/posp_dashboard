@@ -75,12 +75,12 @@ function StepChip({ index, label, active }) {
 
 function OnboardingHero() {
   return (
-    <section className="bg-surface-container-lowest rounded-xl border border-gray-200 p-gutter relative overflow-hidden anim-fade-d1">
+    <section className="bg-surface-container-lowest rounded-xl border border-gray-200 p-4 sm:p-gutter relative overflow-hidden anim-fade-d1">
       <div className="absolute right-0 top-0 w-1/3 h-full bg-gradient-to-l from-primary-fixed/20 to-transparent pointer-events-none" />
 
-      <div className="flex justify-between items-start mb-gutter relative z-10">
+      <div className="flex flex-wrap justify-between items-start gap-unit mb-gutter relative z-10">
         <div>
-          <h2 className="font-headline-lg text-headline-lg text-on-surface mb-1">
+          <h2 className="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface mb-1">
             Onboard a customer
           </h2>
           <p className="font-body-lg text-body-lg text-on-surface-variant">
@@ -96,7 +96,14 @@ function OnboardingHero() {
         </AppLink>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-unit md:gap-gutter mb-gutter relative z-10">
+      {/*
+        Five across only from `xl`, where the rail is still stacked below and
+        this column has the shell's full width (~163px per card). It used to go
+        five-up at the same breakpoint the rail pulled out at, so the row gained
+        two columns in the same frame it lost 344px — which is what sliced
+        "Commercial" in half.
+      */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-unit sm:gap-gutter mb-gutter relative z-10">
         {PRODUCTS.map((p) => (
           <AppLink
             key={p.key}
@@ -112,9 +119,14 @@ function OnboardingHero() {
                 className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-105"
               />
             </div>
-            <div className="p-gutter">
+            {/* p-3, not the 24px page gutter: these cards are ~145px at their
+                narrowest, and gutter padding left 64px for a title that needs
+                85. The subtitle wraps rather than truncating for the same
+                reason — the grid stretches every card in a row to the tallest,
+                so a second line costs nothing. */}
+            <div className="p-3">
               <p className="font-body-lg text-body-lg font-semibold text-on-surface">{p.title}</p>
-              <p className="font-data-mono text-data-mono text-on-surface-variant truncate">
+              <p className="font-data-mono text-data-mono text-on-surface-variant">
                 {p.subtitle}
               </p>
             </div>

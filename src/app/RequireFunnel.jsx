@@ -3,7 +3,7 @@ import { FUNNEL_STAGES, landingPath } from '@/app/funnel';
 import { useAuthStore } from '@/shared/store/authStore';
 import { useOnboardingStore } from '@/shared/store/onboardingStore';
 import { useVerificationStore, VERIFICATION } from '@/shared/store/verificationStore';
-import { useTrainingStore } from '@/shared/store/trainingStore';
+import { useCertificationStore } from '@/shared/store/certificationStore';
 
 /**
  * The one route guard, for every stage of the funnel.
@@ -38,7 +38,7 @@ export default function RequireFunnel({ through, forwardWhenClear, children }) {
     auth: useAuthStore((s) => s.authenticated),
     onboarding: useOnboardingStore((s) => s.value),
     verification: useVerificationStore((s) => s.status === VERIFICATION.VERIFIED),
-    training: useTrainingStore((s) => s.value),
+    training: useCertificationStore((s) => s.value),
   };
 
   const upTo = FUNNEL_STAGES.findIndex((stage) => stage.id === through);

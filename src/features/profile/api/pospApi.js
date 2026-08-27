@@ -37,7 +37,7 @@ import { VERIFICATION } from '@/shared/store/verificationStore';
  * the anchored match this used to use it hit nothing, fell through to the
  * PENDING default, and pinned a fully verified POSP to the waiting screen.
  * Only the KYC half of that value is this function's business; the training
- * half belongs to `trainingStore`.
+ * half belongs to `certificationStore`.
  *
  * `UNDER_VERIFICATION` is the near-miss that shapes the pattern: it contains
  * `VERIFIC`, not `VERIFIED`, so it correctly stays PENDING. That is why CLEARED
@@ -56,6 +56,24 @@ const CLEARED = /VERIFIED|APPROVED|ACTIVE|COMPLETED/;
  *  all land the same way. Checked first, so a value carrying both wins here. */
 const SENT_BACK = /REJECT/;
 
+/**
+ * Already on the programme — the *training* half of the compound.
+ *
+ * `VERIFIED_UNDER_TRAINING` states two things at once: the KYC is cleared, and
+ * this POSP is enrolled. `deriveVerification` reads only the first half by
+ * design (see the note above); this reads the second, so the funnel can tell
+ * `VERIFIED` — cleared, hasn't picked a line yet — from `VERIFIED_UNDER_TRAINING`
+ * — cleared and already sitting the hours. Collapsing the two is what used to
+ * walk an enrolled POSP back through the approval screen and out onto "choose
+ * your insurance line".
+ *
+ * Deliberately narrow. A looser `/TRAINING/` would also match whatever the
+ * server calls the finished state (`TRAINING_COMPLETED` and the like) and read a
+ * certified POSP as still mid-course — the one direction this must not be wrong
+ * in, since it would hide the exam behind hours already served.
+ */
+const ENROLLED = /UNDER_?TRAINING/;
+
 const normalise = (value) =>
   typeof value === 'string' ? value.trim().toUpperCase() : '';
 
@@ -73,6 +91,23 @@ export function deriveVerification({ status, kycStatus, overallStatus } = {}) {
   if (signals.some((signal) => SENT_BACK.test(signal))) return VERIFICATION.REJECTED;
   if (signals.some((signal) => CLEARED.test(signal))) return VERIFICATION.VERIFIED;
   return VERIFICATION.PENDING;
+}
+
+/**
+ * Is this POSP already enrolled on the programme?
+ *
+ * Kept apart from `deriveVerification` rather than folded into it because it
+ * answers a different stage's question. Verification asks "has a human checked
+ * them?" and has three answers; this asks "have they started?" and has two, and
+ * a POSP can be enrolled only *because* they were verified — one is downstream
+ * of the other, not another value of it.
+ *
+ * Reads `overallStatus` alone: it is the only one of the three signals that
+ * carries the training half at all. `/posp/me`'s `status` and `kycStatus` stop
+ * at the KYC.
+ */
+export function isUnderTraining(overallStatus) {
+  return ENROLLED.test(normalise(overallStatus));
 }
 
 /**

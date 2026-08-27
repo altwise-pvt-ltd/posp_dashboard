@@ -1,12 +1,13 @@
 import { AUTH_FLOW } from '@/features/auth/api/authApi';
-import { deriveVerification } from '@/features/profile/api/pospApi';
+import { deriveVerification, isUnderTraining } from '@/features/profile/api/pospApi';
 import { completeOnboarding, resetOnboarding } from '@/shared/store/onboardingStore';
 import { refreshOnboardingStatus } from '@/shared/store/onboardingStatusStore';
 import {
   refreshPospProfile,
   applyVerificationVerdict,
 } from '@/shared/store/pospProfileStore';
-import { VERIFICATION } from '@/shared/store/verificationStore';
+import { markTrainingEnrolled } from '@/shared/store/trainingPlanStore';
+import { acknowledgeVerification, VERIFICATION } from '@/shared/store/verificationStore';
 
 /**
  * What happens between "the OTP was accepted" and "the user is looking at a
@@ -75,6 +76,34 @@ export async function resumeSession(session = {}) {
     applyVerificationVerdict(
       deriveVerification({ overallStatus: session.overallStatus })
     );
+
+    /**
+     * `VERIFIED_UNDER_TRAINING` — cleared *and* already enrolled. The stage
+     * above is not merely passed, it is two steps behind them, and both of the
+     * flags that say so have to be set here.
+     *
+     * The acknowledgement first. Every verdict write clears it, deliberately —
+     * a fresh decision is one the POSP has not seen. But this decision is not
+     * fresh: the server is telling us they were approved, read it, pressed on,
+     * and enrolled, all before this sign-in. Leaving the flag down would send a
+     * POSP who is mid-course back to be congratulated on their approval, on
+     * every new tab. Set after the verdict, never before, since that is the call
+     * that clears it.
+     *
+     * Then the plan. This one is a no-op in the ordinary case — a plan that
+     * still has its `startedAt` is left exactly as it is — and only matters when
+     * the local copy lost the stamp but kept the choice. See `markEnrolled`.
+     *
+     * ⚠ What this still cannot do is recreate a plan that is gone entirely.
+     * `overallStatus` says *that* they are enrolled, not which line they picked
+     * or how many hours it carries, and no endpoint exposes it yet; a POSP whose
+     * localStorage was cleared is still asked to choose again. That is the
+     * remaining half of this bug and it needs a server answer, not a local one.
+     */
+    if (isUnderTraining(session.overallStatus)) {
+      acknowledgeVerification();
+      markTrainingEnrolled();
+    }
 
     /**
      * The profile is still fetched, because the profile screens render off it

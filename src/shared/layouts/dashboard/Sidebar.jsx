@@ -24,7 +24,11 @@ const NAV_ITEMS = [
   { label: 'POSP Training', to: '/posp-training', icon: iconTraining },
 ];
 
-function Sidebar({ collapsed = false }) {
+// `onNavigate` fires when a real nav item is clicked. DashboardLayout uses it to
+// dismiss the mobile drawer, which would otherwise stay parked over the page it
+// just opened. It hangs off the click rather than off the route changing so that
+// tapping the item you are already on closes the drawer too.
+function Sidebar({ collapsed = false, onNavigate }) {
   // Shared between the real NavLink and the inert stand-in so both look identical.
   const linkClass = (isActive) =>
     `relative flex items-center rounded-xl text-sm font-medium transition-all duration-300 group select-none ${collapsed
@@ -95,12 +99,16 @@ function Sidebar({ collapsed = false }) {
             L
           </div>
         ) : (
+          // The wordmark is 172px wide at h-10, which is wider than the 152px
+          // this container has inside the 13rem rail. max-w-full lets
+          // object-contain scale it down to fit rather than clipping it; at the
+          // 16rem rail from `xl` up it renders at its natural size.
           <img
             src={logo}
             alt="LetsInsure"
             width={172}
             height={40}
-            className="h-10 w-auto object-contain transition-all duration-300 hover:scale-[1.03] active:scale-[0.98] drop-shadow-sm"
+            className="h-10 w-auto max-w-full object-contain transition-all duration-300 hover:scale-[1.03] active:scale-[0.98] drop-shadow-sm"
           />
         )}
       </div>
@@ -114,6 +122,7 @@ function Sidebar({ collapsed = false }) {
                 <NavLink
                   to={item.to}
                   end={item.to === '/'}
+                  onClick={onNavigate}
                   title={collapsed ? item.label : undefined}
                   className={({ isActive }) => linkClass(isActive)}
                 >

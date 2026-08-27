@@ -1,7 +1,7 @@
 import { isAuthenticated } from '@/shared/store/authStore';
 import { isOnboardingComplete } from '@/shared/store/onboardingStore';
 import { isVerificationSeen } from '@/shared/store/verificationStore';
-import { isTrainingComplete } from '@/shared/store/trainingStore';
+import { isCertified } from '@/shared/store/certificationStore';
 
 /**
  * The funnel, in order, once.
@@ -33,7 +33,9 @@ export const FUNNEL_STAGES = [
   // there. The `/posp-training` guard reads plain verified status, so the button
   // on that screen isn't held back by the flag it sets.
   { id: 'verification', path: '/verification', isClear: isVerificationSeen },
-  { id: 'training', path: '/posp-training', isClear: isTrainingComplete },
+  // The stage is "training", but what clears it is passing the exam — hours
+  // served are not enough. See `certificationStore`.
+  { id: 'training', path: '/posp-training', isClear: isCertified },
 ];
 
 /** Where a visitor lands once every stage is behind them. */

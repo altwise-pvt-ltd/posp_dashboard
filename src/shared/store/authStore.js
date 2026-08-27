@@ -11,7 +11,7 @@ import { resetOnboarding } from './onboardingStore';
 import { resetOnboardingStatus } from './onboardingStatusStore';
 import { resetPospProfile } from './pospProfileStore';
 import { resetVerification } from './verificationStore';
-import { resetTraining } from './trainingStore';
+import { resetCertification } from './certificationStore';
 import { resetTrainingPlan } from './trainingPlanStore';
 
 /**
@@ -217,7 +217,9 @@ if (typeof window !== 'undefined') {
     await useAuthStore.getState().signOut();
     resetOnboarding();
     resetVerification();
-    resetTraining();
+    // Two different facts, two different stores: the exam pass, then the
+    // enrolment. Clearing one without the other leaves a half-replayed funnel.
+    resetCertification();
     // The chosen insurance line goes too — otherwise the replay skips the
     // choice screen and studies whatever the last run picked.
     resetTrainingPlan();

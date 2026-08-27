@@ -28,12 +28,18 @@ function SectionSyllabus({ title, icon: Icon, modules }) {
       <div className="mt-6 space-y-6">
         {modules.map((module) => (
           <div key={module.id}>
+            {/* The module name is the eyebrow and its blurb sits under the rule,
+                so a long description can't push the divider off the line. */}
             <div className="mb-3 flex items-center gap-3">
               <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">
                 {module.title}
               </h3>
               <span aria-hidden="true" className="h-px flex-1 bg-slate-100" />
             </div>
+
+            {module.description ? (
+              <p className="mb-3 text-xs leading-5 text-slate-500">{module.description}</p>
+            ) : null}
 
             <div className="grid gap-3 sm:grid-cols-2">
               {module.chapters.map((chapter) => (
