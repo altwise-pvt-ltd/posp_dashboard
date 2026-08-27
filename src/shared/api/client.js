@@ -26,15 +26,7 @@ import { getToken } from '@/shared/auth/storedSession';
  * `Access-Control-Allow-Headers: Authorization`, and to answer the preflight
  * OPTIONS that the Authorization header triggers on every request.
  */
-const BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
-if (!BASE_URL) {
-  // Failing here beats every request 404ing against the dev server's own origin
-  // and looking like a backend problem. See `.env.example`.
-  throw new Error(
-    'VITE_API_BASE_URL is not set. Copy .env.example to .env.local and point it at the API.'
-  );
-}
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://demo-api.example.com/api';
 
 export const api = axios.create({
   baseURL: BASE_URL,
