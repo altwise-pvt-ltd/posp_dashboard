@@ -1,8 +1,13 @@
+import { api, unwrap } from '@/shared/api/client';
+import { ENDPOINTS } from '@/shared/api/endpoints';
 import { SECTIONS } from '../data/sections';
 
 /**
  * Which local syllabus sections an option covers, matched on its name rather
- * than its id.
+ * than its id — the ids are the LMS's own and say nothing about content, while
+ * "Both" / "Life Insurance" / "General Insurance" do. A name that matches
+ * nothing falls back to every section, which over-serves rather than silently
+ * hiding material a POSP paid hours for.
  */
 const sectionIdsFor = (name = '') => {
   const text = name.toLowerCase();
@@ -16,33 +21,38 @@ const normalizeInsuranceType = (entry = {}) => ({
   id: entry.id ?? null,
   name: entry.name ?? '',
   requiredHours: Number(entry.requiredHours) || 0,
+  /** App-side: the syllabus and exam sections this option opens. */
   sectionIds: sectionIdsFor(entry.name),
 });
 
 /**
- * The lines a POSP can train in.
+ * The lines a POSP can train in — `GET /lms/insurance-types`.
+ *
+ * Rejects on failure: the choice gates the whole programme, so an empty list
+ * shown as "no options" would read as a decision rather than a broken call.
  */
 export async function fetchInsuranceTypes() {
-  await new Promise((resolve) => setTimeout(resolve, 300));
-  const data = [
-    { id: 1, name: 'Life Insurance', requiredHours: 15 },
-    { id: 2, name: 'General Insurance', requiredHours: 15 },
-    { id: 3, name: 'Both (Life & General)', requiredHours: 30 }
-  ];
+  const response = await api.get(ENDPOINTS.lms.insuranceTypes);
+  const data = unwrap(response);
 
-  return data.map(normalizeInsuranceType);
+  return Array.isArray(data) ? data.map(normalizeInsuranceType) : [];
 }
 
 /**
- * Commit the choice.
+ * Commit the choice — `POST /lms/select-insurance-type`.
+ *
+ * Only the id goes up; the name and the hours are the server's own and it
+ * already knows them. Rejects on failure, because the caller's job is to stay
+ * on the choice screen rather than start a clock the server isn't counting.
  */
 export async function selectInsuranceType(insuranceTypeId) {
-  await new Promise((resolve) => setTimeout(resolve, 300));
-  return { success: true };
+  const response = await api.post(ENDPOINTS.lms.selectInsuranceType, {
+    insuranceTypeId,
+  });
+  return unwrap(response);
 }
 
 /**
-<<<<<<< HEAD
  * Record acceptance of the programme terms — `POST /lms/accept-terms`.
  *
  * No body: the token says who, and the selected line says which training the
@@ -78,16 +88,12 @@ export async function acceptTrainingNorms() {
  * No body — the bearer token says who, and `select-insurance-type` has already
  * said which line. Sending the id again would be a second copy of a fact the
  * server is holding, able to disagree with the one it trusts.
-=======
- * Open the programme.
->>>>>>> bdce511d89b8df44a661c25e1d59deb74fa7d54b
  */
 export async function startTraining() {
-  await new Promise((resolve) => setTimeout(resolve, 300));
-  return { success: true };
+  const response = await api.post(ENDPOINTS.lms.startTraining);
+  return unwrap(response);
 }
 
-<<<<<<< HEAD
 /**
  * The training record → the shape the app's plan store already speaks.
  *
@@ -285,12 +291,4 @@ export async function requestTrainingAccess() {
   const data = unwrap(response) ?? {};
 
   return { redirectUrl: firstUrl(data), data };
-=======
-/**
- * Ask the LMS to clear this POSP for training.
- */
-export async function verifyForTraining() {
-  await new Promise((resolve) => setTimeout(resolve, 400));
-  return { redirectUrl: null, data: { status: 'Success' } };
->>>>>>> bdce511d89b8df44a661c25e1d59deb74fa7d54b
 }

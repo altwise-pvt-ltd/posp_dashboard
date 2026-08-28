@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronRight, Home, Loader2, RotateCcw } from "lucide-react";
 import { showAlert } from "@/shared/store/alertStore";
@@ -89,21 +89,18 @@ export default function OnboardingScreen() {
     ensureLoaded();
   }, [ensureLoaded]);
 
-  // Every step's validated payload, namespaced by step key so colliding fields
-  // (PAN and Aadhaar both emit `fullName`) never overwrite each other.
-  //
-  // Still local to this sitting: once each step POSTs its own data the server
-  // becomes the record and this shrinks to the form buffer it already is.
-  const [formData, setFormData] = useState({});
-
   const goNext = () => goToStep(currentStep + 1);
 
-  // Forward flow: store this step's data under its key, then advance.
-  const saveAndNext = (key) => (data) => {
-    setFormData((prev) => ({ ...prev, [key]: data }));
-    // Ticks the stepper immediately. Once this step has an endpoint, the call
-    // goes here and `refresh()` replaces the optimistic mark with the
-    // server's own.
+  /**
+   * Forward flow: tick the stepper, then advance.
+   *
+   * The step's payload is not kept. It used to accumulate here, namespaced by
+   * step key, so the Review screen could show this sitting's answers — but each
+   * step POSTs its own details before calling this, and Review now reads the
+   * whole application back from `GET /onboarding/review`. Holding a second copy
+   * would only be a second answer to a question the server already answers.
+   */
+  const saveAndNext = (key) => () => {
     markStepComplete(key);
     const saved = STEP_SAVED_ALERTS[key] ?? {
       title: "Step saved",
@@ -113,17 +110,11 @@ export default function OnboardingScreen() {
     goNext();
   };
 
-  // Skip an optional step: drop any saved data for it, then advance. No
-  // markStepComplete — a skipped step is not a finished one, and the stepper
-  // should keep saying so.
-  const skipAndNext = (key) => () => {
-    setFormData((prev) => {
-      // Deleted rather than left out of a rest destructure, which lints as an
-      // unused binding under this config.
-      const rest = { ...prev };
-      delete rest[key];
-      return rest;
-    });
+  // Skip an optional step: advance without marking it done. No markStepComplete
+  // — a skipped step is not a finished one, and the stepper should keep saying
+  // so. Nothing local to clear: the step saved nothing, so the server has
+  // nothing for it either, and Review will show it empty.
+  const skipAndNext = () => {
     showAlert({
       variant: "info",
       title: "Step skipped",
@@ -132,16 +123,12 @@ export default function OnboardingScreen() {
     goNext();
   };
 
-  // Inline edit on the Review screen: overwrite one section without navigating.
-  const updateSection = (key, data) =>
-    setFormData((prev) => ({ ...prev, [key]: data }));
-
   /**
    * Submit the application, then unlock everything downstream — in that order.
    *
-   * Nothing is sent from `formData`: each step already POSTed its own details,
-   * so the server holds the application and `POST /onboarding/submit` needs no
-   * payload at all. What matters here is the ordering. The two store calls
+   * Nothing is sent from here: each step already POSTed its own details, so the
+   * server holds the application and `POST /onboarding/submit` needs no payload
+   * at all. What matters here is the ordering. The two store calls
    * below flip local flags that the route guards read, and doing that before
    * the server has accepted the submission — as this used to, unconditionally —
    * would let someone through to the waiting screen with an application that
@@ -288,8 +275,8 @@ export default function OnboardingScreen() {
       case 3: return <SelfieStep onNext={saveAndNext("selfie")} />;
       case 4: return <BankStep onNext={saveAndNext("bank")} />;
       case 5: return <EducationStep onNext={saveAndNext("education")} />;
-      case 6: return <BusinessStep onNext={saveAndNext("business")} onSkip={skipAndNext("business")} />;
-      case 7: return <ReviewStep data={formData} onUpdateSection={updateSection} onSubmit={handleSubmit} />;
+      case 6: return <BusinessStep onNext={saveAndNext("business")} onSkip={skipAndNext} />;
+      case 7: return <ReviewStep onSubmit={handleSubmit} />;
       default: return <StepPlaceholder step={STEPS[currentStep]} onNext={goNext} />;
     }
   };

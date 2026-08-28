@@ -48,13 +48,14 @@ const humanizeValue = (value = "") =>
  * One config object per section drives both the read-only summary and the
  * inline editor:
  *   rows(d)  → [ [label, value], ... ]   text fields to list
- *   files(d) → [ [label, source], ... ]  documents to thumbnail
+ *   files(d) → [ [label, documentKey], ... ]  documents to thumbnail
  *   Editor   → the step component, reused as-is with initialValues + onNext
  *
- * A file `source` is either a `File` this sitting uploaded or a document key
- * string from `GET /onboarding/review`. Each `files()` prefers the File — it
- * needs no request and is the freshest thing we have — and falls back to the
- * key, which is all a returning user's session has.
+ * A `documentKey` is a key string from `GET /onboarding/review` and nothing
+ * else. This screen has one source of truth — the server record — so a
+ * document is shown if and only if the server holds it. What the reviewer will
+ * open is what the applicant sees here, and a thumbnail can no longer be
+ * painted from a browser-local `File` that may never have landed.
  */
 const SECTIONS = [
   {
@@ -70,7 +71,7 @@ const SECTIONS = [
     /* The back is listed only when one exists — no step uploads it, so for most
        applications there is nothing there to show. */
     files: (d) => [
-      ["PAN Card", d.panFrontImage ?? d.panFrontImageKey],
+      ["PAN Card", d.panFrontImageKey],
       ...(d.panBackImageKey ? [["PAN Card (Back)", d.panBackImageKey]] : []),
     ],
   },
@@ -98,8 +99,8 @@ const SECTIONS = [
       ...(d.address ? [["Address", d.address]] : []),
     ],
     files: (d) => [
-      ["Aadhaar Front", d.aadhaarFrontImage ?? d.aadhaarFrontImageKey],
-      ["Aadhaar Back", d.aadhaarBackImage ?? d.aadhaarBackImageKey],
+      ["Aadhaar Front", d.aadhaarFrontImageKey],
+      ["Aadhaar Back", d.aadhaarBackImageKey],
     ],
   },
   {
@@ -108,7 +109,7 @@ const SECTIONS = [
     Icon: Camera,
     Editor: SelfieStep,
     rows: () => [],
-    files: (d) => [["Selfie", d.selfie ?? d.selfieKey]],
+    files: (d) => [["Selfie", d.selfieKey]],
   },
   {
     key: "bank",
@@ -123,8 +124,8 @@ const SECTIONS = [
       ["Bank Name", d.bankName],
     ],
     files: (d) => [
-      ["Passbook", d.passbookImage ?? d.passbookImageKey],
-      ["Cancelled Cheque", d.chequeImage ?? d.chequeImageKey],
+      ["Passbook", d.passbookImageKey],
+      ["Cancelled Cheque", d.chequeImageKey],
     ],
   },
   {
@@ -138,7 +139,7 @@ const SECTIONS = [
       ["Board / University", d.boardOrUniversity || "—"],
       ["Passing Year", d.passingYear || "—"],
     ],
-    files: (d) => [["Certificate", d.certificateImage ?? d.certificateImageKey]],
+    files: (d) => [["Certificate", d.certificateImageKey]],
   },
   {
     key: "business",
@@ -201,44 +202,44 @@ function EditPill({ onClick }) {
   );
 }
 
-/** True for anything we can turn into an object URL without a request. */
-const isBlob = (source) => source instanceof Blob;
-/** True for a document key from the review response. */
-const isKey = (source) => typeof source === "string" && source.length > 0;
-/** Anything renderable at all — a File to hand, or a key we can fetch. */
-const hasDocument = (source) => isBlob(source) || isKey(source);
+/** True for a document key from the review response — the only source there is. */
+const hasDocument = (key) => typeof key === "string" && key.length > 0;
 
 /**
- * A displayable URL for a document, whichever form we hold it in.
+ * A displayable URL for a document key.
  *
- * Two sources converge here. A `File` from this sitting is already local, so it
- * becomes an object URL during render and paints immediately. A document key
- * from `GET /onboarding/review` is a server-side reference, so the bytes are
- * fetched first — through the axios client, because the route is authenticated
- * and a bare `<img src>` would carry no bearer token and simply 401.
+ * The key is a server-side reference, so the bytes are fetched first — through
+ * the axios client, because the route is authenticated and a bare `<img src>`
+ * would carry no bearer token and simply 401. `fetchDocumentBlob` dedupes by
+ * key, so the several places this screen shows the same document cost one
+ * request between them.
  *
- * The URL is derived with `useMemo` rather than pushed into state, so the local
- * case costs no extra render; only the fetched blob needs state, and it is set
- * from a promise callback rather than the effect body.
+ * A re-upload is stored under a new key, so a refetched review swaps the
+ * thumbnail on its own — there is no cache to invalidate.
+ *
+ * The URL is derived with `useMemo` rather than pushed into state, so only the
+ * fetched blob needs state, and it is set from a promise callback rather than
+ * the effect body.
  *
  * A failed fetch resolves to no URL, which the callers already render as the
  * generic file icon — a missing thumbnail is a much smaller problem than a
  * review screen that errors out over one image.
  */
-function useDocumentUrl(source) {
-  const key = isKey(source) ? source : null;
-  const [fetched, setFetched] = useState(null);
+function useDocumentUrl(key) {
+  /* The key is stored beside its bytes rather than the bytes alone, so which
+     document a blob belongs to is a fact rather than an assumption. */
+  const [loaded, setLoaded] = useState({ key: null, blob: null });
 
   useEffect(() => {
-    if (!key) return;
+    if (!hasDocument(key)) return;
     let cancelled = false;
 
     fetchDocumentBlob(key)
       .then((blob) => {
-        if (!cancelled) setFetched(blob);
+        if (!cancelled) setLoaded({ key, blob });
       })
       .catch(() => {
-        if (!cancelled) setFetched(null);
+        if (!cancelled) setLoaded({ key, blob: null });
       });
 
     return () => {
@@ -246,7 +247,11 @@ function useDocumentUrl(source) {
     };
   }, [key]);
 
-  const blob = isBlob(source) ? source : fetched;
+  /* Only bytes belonging to the key being asked about now. Anything else is the
+     previous document — the state cannot be cleared on the way in without a
+     synchronous setState in the effect, and showing the old thumbnail while the
+     new one loads would be a worse answer than showing none. */
+  const blob = loaded.key === key ? loaded.blob : null;
 
   const url = useMemo(
     () => (blob instanceof Blob ? URL.createObjectURL(blob) : null),
@@ -263,12 +268,22 @@ function useDocumentUrl(source) {
   return { url, isImage: Boolean(blob?.type?.startsWith("image/")) };
 }
 
-/** What to caption a document with — a File has a name, a fetched blob doesn't. */
-const documentName = (source) => (source instanceof File && source.name) || "Uploaded";
+/**
+ * What to caption a document with.
+ *
+ * The original filename is not recoverable: the server stores each upload under
+ * a GUID (`.../pan/front/eb57a31b….jpg`) and the review response carries no
+ * filename anywhere on it. The format is the only honest thing left in the key,
+ * and it beats captioning every document on the screen with the same word.
+ */
+const documentName = (key) => {
+  const extension = hasDocument(key) && key.match(/\.([a-z0-9]{2,4})$/i)?.[1];
+  return extension ? `${extension.toUpperCase()} file` : "Uploaded";
+};
 
 /* ── A single uploaded file: image thumbnail, or a labelled chip for PDFs ── */
-function FilePreview({ label, source }) {
-  const { url, isImage } = useDocumentUrl(source);
+function FilePreview({ label, documentKey }) {
+  const { url, isImage } = useDocumentUrl(documentKey);
 
   return (
     <div className="flex items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50/70 p-2">
@@ -281,7 +296,7 @@ function FilePreview({ label, source }) {
       </div>
       <div className="min-w-0">
         <div className="text-[0.6875rem] font-semibold uppercase tracking-wide text-slate-400">{label}</div>
-        <div className="truncate text-[0.75rem] font-medium text-slate-600">{documentName(source)}</div>
+        <div className="truncate text-[0.75rem] font-medium text-slate-600">{documentName(documentKey)}</div>
       </div>
     </div>
   );
@@ -291,7 +306,7 @@ function FilePreview({ label, source }) {
 function SummaryCard({ section, data, onEdit }) {
   const { title, Icon } = section;
   const rows = section.rows(data);
-  const files = (section.files?.(data) || []).filter(([, source]) => hasDocument(source));
+  const files = (section.files?.(data) || []).filter(([, key]) => hasDocument(key));
 
   return (
     <div className="rounded-2xl border border-slate-100 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)] overflow-hidden">
@@ -315,8 +330,8 @@ function SummaryCard({ section, data, onEdit }) {
 
         {files.length > 0 && (
           <div className="mt-3.5 grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {files.map(([label, source]) => (
-              <FilePreview key={label} label={label} source={source} />
+            {files.map(([label, documentKey]) => (
+              <FilePreview key={label} label={label} documentKey={documentKey} />
             ))}
           </div>
         )}
@@ -328,28 +343,18 @@ function SummaryCard({ section, data, onEdit }) {
 /* ════════════════════ DESKTOP (xl+) — profile-style 3-zone view ════════════════════ */
 
 /* LEFT rail — the selfie becomes the applicant's avatar (mirrors ProfileCard). */
-function IdentityRail({ data, review }) {
-  const selfie = data.selfie?.selfie ?? data.selfie?.selfieKey;
-  const name = data.pan?.fullName || data.aadhaar?.fullName || "Your Application";
+function IdentityRail({ review }) {
+  const { sections } = review;
+  const selfie = sections.selfie?.selfieKey;
+  const name = sections.pan?.fullName || sections.aadhaar?.fullName || "Your Application";
 
-  /**
-   * The server's per-section `isCompleted` when we have it, and a look at the
-   * values themselves when we don't.
-   *
-   * The server's answer is the better one — it reflects what passed validation
-   * on save, not merely what this browser has a value for — so the local count
-   * is only the fallback for a review call that failed.
-   */
-  const completed = review
-    ? SECTIONS.filter((s) => review.completion[s.key]).length
-    : SECTIONS.filter((s) => {
-        const d = data[s.key];
-        return d && Object.values(d).some((v) => v !== "" && v != null && v !== false);
-      }).length;
+  /* The server's own per-section `isCompleted` — it reflects what passed
+     validation on save, not merely what this browser has a value for. */
+  const completed = SECTIONS.filter((s) => review.completion[s.key]).length;
 
   /* Was a hardcoded "Ready", which was a guess dressed as a fact — the server
      reports the real one (`REVIEW_PENDING` → "Review Pending"). */
-  const status = review?.overallStatus ? humanizeValue(review.overallStatus) : "In Progress";
+  const status = review.overallStatus ? humanizeValue(review.overallStatus) : "In Progress";
 
   const { url } = useDocumentUrl(selfie);
 
@@ -380,7 +385,7 @@ function IdentityRail({ data, review }) {
           {/* The number they signed in with. It is on the review response and
               had nowhere else to appear — and it belongs with the identity
               rather than in a section, since nothing here can edit it. */}
-          {review?.mobile && (
+          {review.mobile && (
             <p className="mt-0.5 text-xs font-medium text-slate-400">+91 {review.mobile}</p>
           )}
 
@@ -426,8 +431,10 @@ function Field({ label, value }) {
 
 /* MIDDLE — every text section as Field chips, hairline-divided, Edit per section
    (mirrors PersonalInfoCard). Keeps the same per-section Edit you have today. */
-function DetailsPanel({ data, onEdit }) {
-  const sections = SECTIONS.filter((s) => s.rows(data[s.key] || {}).length > 0);
+function DetailsPanel({ sections, onEdit }) {
+  /* Sections with nothing to list are dropped — Selfie has no text rows at all,
+     and a heading over an empty grid reads as a rendering fault. */
+  const visibleSections = SECTIONS.filter((s) => s.rows(sections[s.key] || {}).length > 0);
 
   return (
     <div className="flex-1 min-w-0 rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
@@ -439,7 +446,7 @@ function DetailsPanel({ data, onEdit }) {
       </div>
 
       <div className="px-6 flex flex-col divide-y divide-slate-100">
-        {sections.map((s) => (
+        {visibleSections.map((s) => (
           <div key={s.key} className="py-6 first:pt-6 last:pb-6">
             <div className="flex items-center justify-between gap-2 mb-4">
               <div className="flex items-center gap-2">
@@ -451,7 +458,7 @@ function DetailsPanel({ data, onEdit }) {
               <EditPill onClick={() => onEdit(s.key)} />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {s.rows(data[s.key] || {}).map(([label, value]) => (
+              {s.rows(sections[s.key] || {}).map(([label, value]) => (
                 <Field key={label} label={label} value={value} />
               ))}
             </div>
@@ -464,8 +471,8 @@ function DetailsPanel({ data, onEdit }) {
 
 /* One uploaded document row — thumbnail + name + Edit (mirrors KYC checklist). */
 function DocumentRow({ doc, onEdit }) {
-  const { label, source } = doc;
-  const { url, isImage } = useDocumentUrl(source);
+  const { label, documentKey } = doc;
+  const { url, isImage } = useDocumentUrl(documentKey);
 
   return (
     <li className="flex items-center gap-3 -mx-2 px-2 py-2 rounded-xl hover:bg-orange-50/60 transition-colors duration-200">
@@ -481,7 +488,7 @@ function DocumentRow({ doc, onEdit }) {
           {label}
         </span>
         <span className="block text-xs text-slate-400 font-medium truncate">
-          {documentName(source)}
+          {documentName(documentKey)}
         </span>
       </div>
       <button
@@ -498,11 +505,11 @@ function DocumentRow({ doc, onEdit }) {
 
 /* RIGHT rail — all uploaded documents as a verification checklist (mirrors
    KycComplianceCard). Each row's Edit jumps to that section's editor. */
-function DocumentsRail({ data, onEdit }) {
+function DocumentsRail({ sections, onEdit }) {
   const docs = SECTIONS.flatMap((s) =>
-    (s.files?.(data[s.key] || {}) || [])
-      .filter(([, source]) => hasDocument(source))
-      .map(([label, source]) => ({ sectionKey: s.key, label, source }))
+    (s.files?.(sections[s.key] || {}) || [])
+      .filter(([, key]) => hasDocument(key))
+      .map(([label, documentKey]) => ({ sectionKey: s.key, label, documentKey }))
   );
 
   return (
@@ -540,7 +547,21 @@ function DocumentsRail({ data, onEdit }) {
   );
 }
 
-export default function ReviewStep({ data = {}, onUpdateSection, onSubmit }) {
+/**
+ * Review & Submit — the server record, and nothing else.
+ *
+ * This screen deliberately takes no form data from the wizard. Every step POSTs
+ * its own details as it is completed, so `GET /onboarding/review` is the
+ * application: rendering the browser's copy alongside it would mean two answers
+ * to the same question, and the one the reviewer acts on is always the server's.
+ * It also makes the screen behave identically for someone who filled the wizard
+ * in one sitting and someone who came back a week later to submit.
+ *
+ * The cost is that an inline edit is not visible until the refetch it triggers
+ * comes back — a beat of the previous values rather than an instant local swap.
+ * That is the trade being made on purpose.
+ */
+export default function ReviewStep({ onSubmit }) {
   const [editing, setEditing] = useState(null); // section key currently open for edit
 
   const [review, setReview] = useState(null);
@@ -549,12 +570,9 @@ export default function ReviewStep({ data = {}, onUpdateSection, onSubmit }) {
   const [attempt, setAttempt] = useState(0);
 
   /**
-   * Pull the whole application back from the server.
-   *
-   * This is what makes the screen truthful for anyone who didn't fill the
-   * wizard in one sitting. `data` is the current sitting's buffer and is empty
-   * on a resume, so without this a POSP who finished six steps last week and
-   * came back to submit would be shown a review of nothing at all.
+   * Pull the whole application back from the server. This is the screen's only
+   * data source, so a failed fetch leaves nothing to review — handled below by
+   * showing the retry in place of the sections rather than a half-empty page.
    */
   useEffect(() => {
     let cancelled = false;
@@ -582,24 +600,6 @@ export default function ReviewStep({ data = {}, onUpdateSection, onSubmit }) {
     setAttempt((n) => n + 1);
   };
 
-  /**
-   * Server record underneath, this sitting's edits on top.
-   *
-   * Local wins on conflict, for two reasons: it is the more recent of the two
-   * whenever they disagree (a section edited here has been saved, so the server
-   * agrees anyway), and it carries the `File` objects, which let a document
-   * thumbnail render without a second round trip for bytes the browser already
-   * has.
-   */
-  const merged = useMemo(() => {
-    if (!review) return data;
-    const out = {};
-    for (const section of SECTIONS) {
-      out[section.key] = { ...review.sections[section.key], ...(data[section.key] ?? {}) };
-    }
-    return out;
-  }, [review, data]);
-
   /** Only shown once we have a verdict, and only when it's actually blocking. */
   const blockedReasons =
     review && !review.isSubmissionAllowed ? review.blockingReasons : [];
@@ -622,13 +622,14 @@ export default function ReviewStep({ data = {}, onUpdateSection, onSubmit }) {
     }
   };
 
-  const handleSave = (key) => (payload) => {
-    onUpdateSection?.(key, payload);
+  // The editor saved straight to the server, so the refetch is what brings the
+  // change back onto the screen — the payload it hands us is deliberately
+  // dropped rather than held as a second copy of the record. The verdict may
+  // have moved with it too: a section that was blocking submission might no
+  // longer be. Refetched without touching `loadingReview`, so the page updates
+  // in place instead of collapsing back to skeletons over a change just made.
+  const handleSave = () => {
     setEditing(null);
-    // The editor just saved to the server, so the verdict may have moved with
-    // it — a section that was blocking submission might no longer be. Refetched
-    // without touching `loadingReview`, so the page updates in place instead of
-    // collapsing back to skeletons over a change the user just made.
     setAttempt((n) => n + 1);
   };
 
@@ -648,7 +649,7 @@ export default function ReviewStep({ data = {}, onUpdateSection, onSubmit }) {
             <X size={12} strokeWidth={2.5} /> Cancel editing
           </button>
         </div>
-        <Editor initialValues={merged[editing] || {}} onNext={handleSave(editing)} />
+        <Editor initialValues={review?.sections[editing] || {}} onNext={handleSave} />
       </div>
     );
   }
@@ -671,17 +672,17 @@ export default function ReviewStep({ data = {}, onUpdateSection, onSubmit }) {
         </p>
       </div>
 
-      {/* The server record couldn't be read. Non-blocking on purpose: whatever
-          was filled in during this sitting is still worth showing and still
-          submittable, so this reports the gap and offers the retry rather than
-          replacing the screen with an error. */}
+      {/* The server record couldn't be read, and it is the only record — so
+          there is genuinely nothing to review below, and the honest thing is to
+          say so and offer the retry rather than imply the page is merely
+          incomplete. Nothing is lost either way: every step already saved. */}
       {reviewError && (
         <div className="rounded-2xl border border-amber-200 bg-amber-50/60 px-5 sm:px-8 py-4">
           <p className="flex items-start gap-1.5 text-xs sm:text-sm font-medium text-amber-700" role="alert">
             <AlertCircle size={14} className="mt-0.5 shrink-0" />
             <span>
-              Couldn't load your saved details, so anything entered in an earlier
-              session may be missing below.
+              We couldn't load your application, so there's nothing to review
+              yet. Your saved details are safe — try again.
             </span>
           </p>
           <button
@@ -701,7 +702,7 @@ export default function ReviewStep({ data = {}, onUpdateSection, onSubmit }) {
             <div key={i} className="h-44 rounded-2xl border border-slate-100 bg-slate-50 animate-pulse" />
           ))}
         </div>
-      ) : (
+      ) : review ? (
         <>
           {/* Mobile / tablet — the original tiled grid, unchanged (hidden on xl up) */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-start xl:hidden">
@@ -709,7 +710,7 @@ export default function ReviewStep({ data = {}, onUpdateSection, onSubmit }) {
               <SummaryCard
                 key={section.key}
                 section={section}
-                data={merged[section.key] || {}}
+                data={review.sections[section.key] || {}}
                 onEdit={() => setEditing(section.key)}
               />
             ))}
@@ -717,12 +718,12 @@ export default function ReviewStep({ data = {}, onUpdateSection, onSubmit }) {
 
           {/* Desktop — profile-style 3-zone: identity · details · documents */}
           <div className="hidden xl:flex gap-5 items-start">
-            <IdentityRail data={merged} review={review} />
-            <DetailsPanel data={merged} onEdit={setEditing} />
-            <DocumentsRail data={merged} onEdit={setEditing} />
+            <IdentityRail review={review} />
+            <DetailsPanel sections={review.sections} onEdit={setEditing} />
+            <DocumentsRail sections={review.sections} onEdit={setEditing} />
           </div>
         </>
-      )}
+      ) : null}
 
       {/* Submit — onSubmit navigates the user onward (a success toast greets
           them on the next page), so there's no post-submit state to show here. */}
@@ -748,13 +749,14 @@ export default function ReviewStep({ data = {}, onUpdateSection, onSubmit }) {
         <Button
           type="button"
           onClick={handleSubmitClick}
-          /* Only ever gated on a verdict we actually received: if the review
-             call failed there is no `review`, and blocking submission on a
-             fact we don't have would strand someone whose application is
-             perfectly complete. */
-          disabled={
-            submitting || loadingReview || (review ? !review.isSubmissionAllowed : false)
-          }
+          /* No record, no submit. This used to allow it — blocking on a verdict
+             we never received would have stranded someone whose application was
+             perfectly complete — but that reasoning rested on the sections
+             still being drawn from local data. With the server as the only
+             source, a failed fetch means the user is looking at an empty page,
+             and confirming an application they cannot see is worse than waiting
+             for the retry a few pixels above. */
+          disabled={submitting || loadingReview || !review?.isSubmissionAllowed}
           className="w-full flex items-center justify-center gap-2"
         >
           {submitting ? (

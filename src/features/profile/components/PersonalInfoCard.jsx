@@ -1,21 +1,11 @@
-function EditIcon({ className = 'w-4 h-4' }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 20h9" />
-      <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
-    </svg>
-  );
-}
-
-function DownloadIcon({ className = 'w-4 h-4' }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-      <path d="M7 10l5 5 5-5" />
-      <path d="M12 15V3" />
-    </svg>
-  );
-}
+import {
+  composeAddress,
+  formatLongDate,
+  formatMobile,
+  maskAccount,
+  maskPan,
+  verdictOf,
+} from '../lib/profileFields';
 
 /* Boxed label/value chip — the bg + rounding makes fields visually scannable. */
 function Field({ label, value, wide = false }) {
@@ -31,8 +21,17 @@ function Field({ label, value, wide = false }) {
   );
 }
 
-/* Section with an orange left-bar accent on the title. */
-function Section({ title, children }) {
+/**
+ * Section with an orange left-bar accent on the title.
+ *
+ * Renders nothing at all when every row in it came back empty — an "Identity"
+ * heading over a blank grid reads as a loading failure, and this screen has a
+ * real one of those to show instead.
+ */
+function Section({ title, rows }) {
+  const present = rows.filter((row) => row.value);
+  if (!present.length) return null;
+
   return (
     <div className="py-6 first:pt-0 last:pb-0">
       <div className="flex items-center gap-2 mb-4">
@@ -42,108 +41,75 @@ function Section({ title, children }) {
         </p>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {children}
+        {present.map((row) => (
+          <Field key={row.label} {...row} />
+        ))}
       </div>
     </div>
   );
 }
 
-function ActionButton({ children, icon, primary = false, ...props }) {
-  const base = 'flex items-center justify-center gap-2 py-2 px-4 rounded-xl text-sm font-semibold active:scale-[0.98] transition-all duration-300';
-  const variant = primary
-    ? 'bg-linear-to-r from-orange-500 to-rose-500 hover:from-orange-600 hover:to-rose-600 text-white shadow-md hover:shadow-orange-500/25'
-    : 'border-2 border-slate-200 text-slate-600 hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600';
-  return (
-    <button className={`${base} ${variant}`} {...props}>
-      {icon}
-      {children}
-    </button>
-  );
-}
+/**
+ * The POSP's own record, from `/posp/me`.
+ *
+ * Three sections that used to be Identity / Employment / Financials, filled
+ * with a fictional Pune developer on a salary account. Two of them were
+ * describing the wrong kind of person entirely: a POSP is an agent, not an
+ * employee, so "Designation", "Department", "Reporting Manager" and "Work
+ * Location" had no field behind them and no meaning here either. They are
+ * replaced by what the record actually holds — the POSP code, the referral
+ * code, and the KYC verdict.
+ *
+ * Father's name, marital status and nationality are gone for the simpler
+ * reason: `/posp/me` does not carry them.
+ */
+const PersonalInfoCard = ({ profile }) => {
+  const verdict = verdictOf(profile);
 
-const PersonalInfoCard = () => {
-  // Example data — replace with the real employee record later.
-  const identity = {
-    fullName: 'Rakesh Pawar',
-    dateOfBirth: 'August 22, 1990',
-    gender: 'Male',
-    fatherName: 'Suresh Pawar',
-    maritalStatus: 'Married',
-    nationality: 'Indian',
-    email: 'rakesh.pawar@posp.example',
-    phone: '+91 98220 11456',
-    address: '14, Shivaji Nagar, Pune, Maharashtra 411005',
-  };
+  const identity = [
+    { label: 'Full Name', value: profile?.fullName },
+    { label: 'Date of Birth', value: formatLongDate(profile?.dateOfBirth) },
+    { label: 'Gender', value: profile?.gender },
+    { label: 'Mobile', value: formatMobile(profile?.mobile) },
+    { label: 'Email', value: profile?.email, wide: true },
+    { label: 'Address', value: composeAddress(profile), wide: true },
+  ];
 
-  const employment = {
-    employeeId: 'POSP-2024-0142',
-    designation: 'Full-Stack Developer',
-    department: 'Technology',
-    joinedOn: 'January 15, 2024',
-    reportingManager: 'Priya Nair',
-    workLocation: 'Pune (Hybrid)',
-  };
+  const registration = [
+    { label: 'POSP Code', value: profile?.pospCode },
+    { label: 'Referral Code', value: profile?.referralCode },
+    /* The server's own wording, next to the verdict the app derived from it.
+       When they disagree, this is where it shows. */
+    { label: 'KYC Status', value: profile?.kycStatus ?? verdict.label },
+    { label: 'Record Status', value: profile?.status },
+  ];
 
-  const financials = {
-    bankName: 'HDFC Bank',
-    accountNo: 'XXXX XXXX 3210',
-    ifsc: 'HDFC0001234',
-    pan: 'ABCDE1234F',
-    salaryAccount: 'Savings',
-  };
+  const bank = [
+    { label: 'Bank Name', value: profile?.bankName },
+    { label: 'Branch', value: profile?.branchName },
+    { label: 'Account Number', value: maskAccount(profile?.accountNumber) },
+    { label: 'IFSC Code', value: profile?.ifscCode },
+    { label: 'Account Type', value: profile?.accountType },
+    { label: 'PAN', value: maskPan(profile?.pancardNumber) },
+  ];
 
   return (
     <div className="w-full bg-white rounded-2xl shadow-sm overflow-hidden border border-slate-200">
-      {/* ── Header: warm tint + title + actions ── */}
-      <div className="px-6 pt-6 pb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-100 bg-orange-50/40">
-        <div>
-          <h2 className="text-xl font-bold text-slate-800 leading-tight">
-            Personal &amp; Official Information
-          </h2>
-          <p className="mt-1 text-sm text-slate-500 font-medium">
-            Employee record and statutory details
-          </p>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <ActionButton icon={<DownloadIcon />} type="button">
-            Export
-          </ActionButton>
-          <ActionButton icon={<EditIcon />} primary type="button">
-            Edit
-          </ActionButton>
-        </div>
+      {/* ── Header: warm tint + title ── */}
+      <div className="px-6 pt-6 pb-5 border-b border-slate-100 bg-orange-50/40">
+        <h2 className="text-xl font-bold text-slate-800 leading-tight">
+          Personal &amp; Official Information
+        </h2>
+        <p className="mt-1 text-sm text-slate-500 font-medium">
+          Your registered POSP record and statutory details
+        </p>
       </div>
 
-      {/* ── Body: three sections divided by hairlines ── */}
+      {/* ── Body: sections divided by hairlines ── */}
       <div className="px-6 flex flex-col divide-y divide-slate-100">
-        <Section title="Identity">
-          <Field label="Full Name" value={identity.fullName} />
-          <Field label="Date of Birth" value={identity.dateOfBirth} />
-          <Field label="Gender" value={identity.gender} />
-          <Field label="Father's Name" value={identity.fatherName} />
-          <Field label="Marital Status" value={identity.maritalStatus} />
-          <Field label="Nationality" value={identity.nationality} />
-          <Field label="Email" value={identity.email} wide />
-          <Field label="Phone" value={identity.phone} />
-          <Field label="Address" value={identity.address} wide />
-        </Section>
-
-        <Section title="Employment">
-          <Field label="Employee ID" value={employment.employeeId} />
-          <Field label="Designation" value={employment.designation} />
-          <Field label="Department" value={employment.department} />
-          <Field label="Date of Joining" value={employment.joinedOn} />
-          <Field label="Reporting Manager" value={employment.reportingManager} />
-          <Field label="Work Location" value={employment.workLocation} />
-        </Section>
-
-        <Section title="Financials">
-          <Field label="Bank Name" value={financials.bankName} />
-          <Field label="Account Number" value={financials.accountNo} />
-          <Field label="IFSC Code" value={financials.ifsc} />
-          <Field label="PAN" value={financials.pan} />
-          <Field label="Account Type" value={financials.salaryAccount} />
-        </Section>
+        <Section title="Identity" rows={identity} />
+        <Section title="Registration" rows={registration} />
+        <Section title="Bank Account" rows={bank} />
       </div>
     </div>
   );

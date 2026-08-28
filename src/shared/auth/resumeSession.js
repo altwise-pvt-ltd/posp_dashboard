@@ -1,5 +1,5 @@
 import { AUTH_FLOW } from '@/features/auth/api/authApi';
-import { deriveVerification, isUnderTraining } from '@/features/profile/api/pospApi';
+import { describeFlow, verdictFrom } from '@/shared/status/pospStatus';
 import { completeOnboarding, resetOnboarding } from '@/shared/store/onboardingStore';
 import { refreshOnboardingStatus } from '@/shared/store/onboardingStatusStore';
 import {
@@ -73,35 +73,34 @@ export async function resumeSession(session = {}) {
      * the next line of the login handler, and a verdict applied after it would
      * route this POSP off a stale flag.
      */
-    applyVerificationVerdict(
-      deriveVerification({ overallStatus: session.overallStatus })
-    );
+    applyVerificationVerdict(verdictFrom({ overallStatus: session.overallStatus }));
+
+    const flow = describeFlow(session.overallStatus);
 
     /**
-     * `VERIFIED_UNDER_TRAINING` — cleared *and* already enrolled. The stage
-     * above is not merely passed, it is two steps behind them, and both of the
-     * flags that say so have to be set here.
-     *
-     * The acknowledgement first. Every verdict write clears it, deliberately —
-     * a fresh decision is one the POSP has not seen. But this decision is not
-     * fresh: the server is telling us they were approved, read it, pressed on,
-     * and enrolled, all before this sign-in. Leaving the flag down would send a
-     * POSP who is mid-course back to be congratulated on their approval, on
-     * every new tab. Set after the verdict, never before, since that is the call
-     * that clears it.
-     *
-     * Then the plan. This one is a no-op in the ordinary case — a plan that
-     * still has its `startedAt` is left exactly as it is — and only matters when
-     * the local copy lost the stamp but kept the choice. See `markEnrolled`.
-     *
-     * ⚠ What this still cannot do is recreate a plan that is gone entirely.
-     * `overallStatus` says *that* they are enrolled, not which line they picked
-     * or how many hours it carries, and no endpoint exposes it yet; a POSP whose
-     * localStorage was cleared is still asked to choose again. That is the
-     * remaining half of this bug and it needs a server answer, not a local one.
+     * Enrolled means they reached the programme through the approval screen, so
+     * the verdict they just read is not news. Every verdict write clears this
+     * flag, so it has to be set after — otherwise a POSP mid-course is sent back
+     * to be congratulated on their KYC on every new tab.
      */
-    if (isUnderTraining(session.overallStatus)) {
+    if (flow.enrolled) {
       acknowledgeVerification();
+    }
+
+    /**
+     * Fills a gap only — a plan that kept its `startedAt` is left alone. See
+     * `markEnrolled`.
+     *
+     * ⚠ Gated on `!hoursSettled` because the stamp it writes is *now*, which on a
+     * finished course invents a period that has barely begun. If `GET /lms/progress`
+     * then fails, `TrainingPage` falls through to this plan and hides the exam
+     * behind a fresh countdown.
+     *
+     * ⚠ Cannot recreate a plan that is gone entirely — `overallStatus` says they
+     * are enrolled, not which line or how many hours. That half needs a server
+     * answer.
+     */
+    if (flow.enrolled && !flow.hoursSettled) {
       markTrainingEnrolled();
     }
 
@@ -150,6 +149,22 @@ export async function resumeSession(session = {}) {
    * wizard complete for someone who never filled it in and strand them on a
    * waiting screen for a profile that does not exist. It also means an older
    * server that sends no `flow` at all behaves exactly as it did before.
+   *
+   * Cleared first, for the same reason CORRECTION clears it: `flow` is the
+   * server stating the application is still open, and `onboardingComplete` is a
+   * localStorage flag that outlives a sign-out on purpose. Left alone it can be
+   * true from something this session has nothing to do with — a "Skip for now"
+   * before the last sign-out, or a different POSP who finished on this browser —
+   * and `landingPath()` would then send someone whose wizard is open to
+   * `/verification`, a waiting screen for an application that is waiting on
+   * *them*.
+   *
+   * Safe to clear unconditionally because the call below puts it back: the
+   * status store syncs the flag *on* whenever the server reports the application
+   * complete. So the pair reads as "drop this browser's claim, take the
+   * server's" — and the only case that survives it is the one where the server
+   * agrees.
    */
+  resetOnboarding();
   await refreshOnboardingStatus();
 }

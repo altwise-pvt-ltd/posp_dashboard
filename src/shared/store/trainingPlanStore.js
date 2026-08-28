@@ -181,10 +181,35 @@ export const servedSeconds = (plan) => {
  * `hoursComplete` is checked first because zero is a real answer here and an
  * ambiguous one: a served programme and one the server has never heard from both
  * arrive as 0 remaining, and only the flag tells them apart.
+ *
+ * Two measures, and the smaller wins.
+ *
+ * The wall clock is the honest one in the ordinary case. But it is not the only
+ * way hours reach the record: "Skip timer" posts the outstanding balance
+ * straight to `update-progress`, and hours credited on another device land the
+ * same way. In both cases the server holds a count this browser's arithmetic
+ * knows nothing about, and reading `startedAt` alone put a POSP back at 29:56:41
+ * against a record already reading `completedHours: 30`.
+ *
+ * ⚠ Not the same as trusting `remainingHours` — that is the server's own
+ * subtraction and the note in `normalizeProgress` still stands. This is
+ * `completedHours`, the raw count, and taking the *minimum* is what makes the
+ * lag safe: between flushes the server is behind, which makes its figure the
+ * larger of the two and leaves the wall clock in charge. It only wins when it
+ * holds more hours than this tab can account for, which is exactly the case
+ * that was stuck.
+ *
+ * `hoursComplete` stays the separate check above it. That is the LMS declaring
+ * the period *settled*; this is only the count reaching the mandated figure, and
+ * the press that turns one into the other is still `complete-training`.
  */
 export const remainingSeconds = (plan) => {
   if (!plan?.startedAt) return 0;
   if (plan.hoursComplete) return 0;
 
-  return Math.max(requiredSeconds(plan) - servedSeconds(plan), 0);
+  const required = requiredSeconds(plan);
+  const byClock = required - servedSeconds(plan);
+  const byServer = required - (Number(plan.completedHours) || 0) * 60 * 60;
+
+  return Math.max(Math.min(byClock, byServer), 0);
 };
