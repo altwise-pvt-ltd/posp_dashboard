@@ -8,6 +8,20 @@ import { ENDPOINTS } from '@/shared/api/endpoints';
  * a line, consenting, starting the clock, reporting hours. Nothing here writes
  * anything, and nothing here is on the critical path of that lifecycle — the
  * hours run whether or not this call ever answers.
+ *
+ * This module normalizes and orders the reply. It no longer *cuts* it. What the
+ * LMS sends is what the page shows: every course, every module, every chapter,
+ * published file or not. Two filters used to live here — one dropping chapters
+ * without a PDF, one cutting the reply to the enrolled insurance type — and
+ * between them they turned a 2-course, 9-module, 38-chapter syllabus into a
+ * single module of two chapters. The syllabus is the server's to decide; the
+ * only honest way to show a chapter with no file yet is to show it as a chapter
+ * with no file yet.
+ *
+ * ⚠ That means scoping to the enrolled line is now the backend's job. It is
+ * currently not doing it — `insurnaceTypeId` is ignored and every request
+ * answers with both courses — so a POSP training in Life alone will see the
+ * general syllabus until the server honours the parameter.
  */
 
 /** Ascending `displayOrder`. The API already sends them ordered; this makes the
@@ -29,19 +43,23 @@ const formatSize = (bytes) => {
 /**
  * One chapter.
  *
- * `link` is null — never '#' — when there is no file, and a chapter with a null
- * link never reaches the page: `normalizeModule` drops it. The screen shows the
- * material the LMS published and nothing else, so a chapter the backend has no
- * file for is absent rather than rendered as a greyed-out promise. "Coming soon"
- * was this app's word, not the API's.
+ * `link` is null — never '#' — when the LMS has no file for it, and that null is
+ * the whole of the signal `ChapterCard` reads: a chapter with a link is an
+ * openable card, a chapter without one is a listed-but-unpublished row. Both
+ * reach the page.
  *
  * `hasPdf` and `pdfUrl` are both checked because they can disagree — a chapter
  * flagged as having a file but carrying no URL is not something to hand a
  * learner an empty link for.
+ *
+ * `type` is the line under the title, and it says which of the two states this
+ * is: the format and its weight when there is a file, and why there is nothing
+ * to open when there isn't.
  */
 const normalizeChapter = (entry = {}) => {
   const url = typeof entry.pdfUrl === 'string' ? entry.pdfUrl.trim() : '';
   const size = formatSize(Number(entry.pdfFileSizeBytes) || 0);
+  const link = entry.hasPdf && url ? url : null;
 
   return {
     id: entry.id ?? null,
@@ -49,11 +67,10 @@ const normalizeChapter = (entry = {}) => {
     description: entry.description || null,
     order: Number(entry.displayOrder) || 0,
 
-    link: entry.hasPdf && url ? url : null,
+    link,
     fileName: entry.pdfFileName || null,
 
-    /** The line under the title: the format and its weight, both the server's. */
-    type: ['PDF', size].filter(Boolean).join(' · '),
+    type: link ? ['PDF', size].filter(Boolean).join(' · ') : 'Material not published yet',
   };
 };
 
@@ -61,20 +78,13 @@ const normalizeChapter = (entry = {}) => {
  * One sub-module → the shape `SectionSyllabus` already speaks, which is why
  * `name` becomes `title`. The server calls these sub-modules; the page has
  * always called them modules, and the learner sees "Module".
- *
- * Only chapters with a file survive — see `normalizeChapter`. Most come back
- * `hasPdf: false` today, so this is the difference between a page of material
- * and a page of placeholders.
  */
 const normalizeModule = (entry = {}) => ({
   id: entry.id ?? null,
   title: entry.name ?? '',
   description: entry.description || null,
   order: Number(entry.displayOrder) || 0,
-  chapters: (entry.chapters ?? [])
-    .map(normalizeChapter)
-    .filter((chapter) => chapter.link)
-    .sort(byOrder),
+  chapters: (entry.chapters ?? []).map(normalizeChapter).sort(byOrder),
 });
 
 const normalizeCourse = (entry = {}) => ({
@@ -82,46 +92,19 @@ const normalizeCourse = (entry = {}) => ({
   name: entry.name ?? '',
   description: entry.description || null,
   /** The int from `/lms/insurance-types` — 1 Life, 2 General. Never 3: "Both"
-   *  is two courses, not a course of its own. */
+   *  is two courses, not a course of its own. Still carried because
+   *  `StudyMaterial` keys the section icon off it. */
   insuranceTypeId: Number(entry.insuranceTypeId) || null,
   order: Number(entry.displayOrder) || 0,
-  /* Modules left with no published chapter go with them — an empty heading
-     announces material that isn't there. */
-  modules: (entry.subModules ?? [])
-    .map(normalizeModule)
-    .filter((module) => module.chapters.length > 0)
-    .sort(byOrder),
+  modules: (entry.subModules ?? []).map(normalizeModule).sort(byOrder),
 });
 
 /**
- * Cut the reply to the line this POSP enrolled in.
+ * The full syllabus the LMS holds for this insurance type, ready to render.
  *
- * The server ought to be doing this — that is what `insurnaceTypeId` is for —
- * but it currently answers every request with every course (see the note on the
- * endpoint), so a POSP training in Life alone would otherwise be shown the whole
- * general syllabus and reasonably assume it was examinable.
- *
- * "Both" is id 3 and matches no course, which is exactly right: nothing matches,
- * so everything is kept. That is also the fallback for an id we don't recognise
- * — over-serving material beats silently hiding chapters someone is paying
- * fifteen hours to read, the same call `sectionIdsFor` makes in `trainingApi`.
- *
- * When the backend starts honouring the parameter this quietly becomes a no-op
- * rather than a second filter fighting the first.
- */
-const forInsuranceType = (courses, insuranceTypeId) => {
-  const id = Number(insuranceTypeId);
-  const mine = courses.filter((course) => course.insuranceTypeId === id);
-  return mine.length ? mine : courses;
-};
-
-/**
- * The material for one insurance type, ready to render.
- *
- * What survives is exactly what the LMS has published: chapters with a file,
- * the modules that still have one, and the courses that still have a module.
- * The page reads an empty array as "no material yet" and says so once, which is
- * a better answer than a screen of headings with nothing underneath.
+ * `insurnaceTypeId` is still sent — the server's spelling, see the endpoint note
+ * before touching it — so this narrows on its own the day the backend starts
+ * reading it. Nothing is dropped on the way through.
  *
  * Rejects on failure. The study material is the whole point of the screen, and
  * an empty list shown as "no chapters" would read as the LMS's answer rather
@@ -129,15 +112,10 @@ const forInsuranceType = (courses, insuranceTypeId) => {
  */
 export async function fetchCourseMaterial(insuranceTypeId) {
   const response = await api.get(ENDPOINTS.lms.course, {
-    // The server's spelling. See the endpoint note before touching it.
     params: { insurnaceTypeId: insuranceTypeId },
   });
   const data = unwrap(response);
   if (!Array.isArray(data)) return [];
 
-  const courses = data.map(normalizeCourse).sort(byOrder);
-
-  return forInsuranceType(courses, insuranceTypeId).filter(
-    (course) => course.modules.length > 0
-  );
+  return data.map(normalizeCourse).sort(byOrder);
 }

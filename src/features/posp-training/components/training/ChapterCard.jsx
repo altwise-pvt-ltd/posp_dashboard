@@ -1,28 +1,50 @@
-import { ExternalLink, FileText } from 'lucide-react';
+import { Clock3, ExternalLink, FileText } from 'lucide-react';
 
 /**
- * One chapter of the study material — always a published PDF.
+ * One chapter of the study material.
  *
- * One state, not two. Chapters the LMS has no file for are dropped upstream in
- * `courseApi`, so nothing here renders a greyed-out "Coming soon" row: this
- * screen shows the material the backend published and nothing this app imagined
- * around it. The guard below is for a chapter that somehow arrives without a
- * link — it renders nothing rather than an empty href.
+ * Two states, because the LMS has two. A chapter with a published file is a link
+ * — the whole row is the target rather than a trailing button, since the card
+ * carries no other action and a separate hit area only shrinks the one that
+ * matters. A chapter the LMS has listed but not yet published a file for is a
+ * flat, muted row: it is part of the syllabus a POSP is being examined on, so
+ * hiding it would understate what the programme covers, and making it look
+ * clickable would promise a file that isn't there.
  *
- * The card used to intercept its own click and pop a "Downloading..." notice
- * over a link to '#'. There is no such link left to intercept.
- *
- * The whole row is the target rather than a trailing button — the card carries
- * no other action, so a separate hit area only shrinks the one that matters.
+ * `courseApi` used to drop the second kind entirely. That turned a 38-chapter
+ * syllabus into two rows and read as "this is all there is".
  */
 function ChapterCard({ chapter }) {
-  if (!chapter.link) return null;
+  if (!chapter.link) {
+    return (
+      /* Dashed and unsaturated on purpose: the same visual grammar the page
+         already uses for "nothing here yet", so it reads as pending rather than
+         as a card that failed to load. Not focusable — there is nothing to do
+         with it — but the state is in the text, not only in the colour. */
+      <div className="flex items-center gap-3 rounded-xl border border-dashed border-slate-200 bg-slate-50/60 p-3">
+        <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-white text-slate-300">
+          <FileText className="size-4" strokeWidth={2} aria-hidden="true" />
+        </span>
+
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-sm font-semibold text-slate-500">
+            {chapter.title}
+          </span>
+          <span className="block text-xs text-slate-400">{chapter.type}</span>
+        </span>
+
+        <span className="grid size-8 shrink-0 place-items-center rounded-lg text-slate-300">
+          <Clock3 className="size-4" strokeWidth={2.25} aria-hidden="true" />
+        </span>
+      </div>
+    );
+  }
 
   return (
     /* Opens rather than downloads, and says so. `download` is ignored by every
-       browser on a cross-origin href — the PDFs live on the LMS's own host — so
-       an anchor carrying it would promise a save and deliver a tab. The viewer
-       it opens in has a save button of its own. */
+       browser on a cross-origin href — the PDFs are served by the API, not this
+       origin — so an anchor carrying it would promise a save and deliver a tab.
+       The viewer it opens in has a save button of its own. */
     <a
       href={chapter.link}
       target="_blank"

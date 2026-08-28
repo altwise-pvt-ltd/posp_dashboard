@@ -20,7 +20,8 @@ function SectionSyllabus({ title, icon: Icon, modules }) {
         <div className="min-w-0">
           <h2 className="text-base font-bold tracking-tight text-slate-900 sm:text-lg">{title}</h2>
           <p className="mt-0.5 text-xs text-slate-500">
-            {modules.length} {modules.length === 1 ? 'module' : 'modules'} · {chapterCount} chapters
+            {modules.length} {modules.length === 1 ? 'module' : 'modules'} · {chapterCount}{' '}
+            {chapterCount === 1 ? 'chapter' : 'chapters'}
           </p>
         </div>
       </header>

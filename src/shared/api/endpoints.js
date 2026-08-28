@@ -100,14 +100,22 @@ export const ENDPOINTS = {
      *
      * ⚠ And the server does not currently read it: ids 1, 2, 99 and the
      * parameter left off entirely all answer with *every* course. The id is sent
-     * anyway, so this starts working the day the backend honours it, and
-     * `fetchCourseMaterial` cuts the reply to the enrolled line itself — see the
-     * note there.
+     * anyway, so this starts working the day the backend honours it. Nothing on
+     * the app side narrows the reply any more — `fetchCourseMaterial` renders
+     * every course it is given, so until the server filters, a Life-only POSP
+     * sees the general syllabus too.
      *
-     * `pdfUrl` is absolute and points at a different host (`ibms.shrisoft...`,
-     * not `ibmsapi.shrisoft...`). It is public — no bearer token — so it can go
-     * straight into a link, which is the only reason the material needs no
-     * blob-fetch dance like `onboarding.getDocument` does.
+     * ⚠ Most chapters come back `hasPdf: false` with a null `pdfUrl`. They are
+     * still part of the syllabus and still rendered — as unpublished rows, not
+     * as links. See `normalizeChapter` in `posp-training/api/courseApi.js`.
+     *
+     * ⚠ `pdfUrl` is **relative and app-rooted** — `/api/lms/chapter/{id}/pdf`,
+     * served by this same API behind the bearer token. It used to be an absolute
+     * public URL on `ibms.shrisoft...`, and code written against that is now
+     * wrong twice over: dropped into an `href` it resolves against *this app's*
+     * origin, and even prefixed with the API host a plain anchor sends no
+     * Authorization header. It needs the same blob-fetch dance as
+     * `onboarding.getDocument`.
      */
     course: "/lms/course",
 
