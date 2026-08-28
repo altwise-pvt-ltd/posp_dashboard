@@ -10,9 +10,20 @@ import { create } from 'zustand';
  * filled it in?", this one "has a human checked it?", and training "are you
  * licensed?". Training and everything past it sit behind this.
  *
- * Two values in the store, because a rejection has to say *what* was wrong:
- *   status      — pending | verified | rejected
- *   rejections  — [{ id, reason }], the documents sent back and why
+ * Three values in the store, because a rejection has to say *what* was wrong
+ * and an approval has to be *seen* before the funnel moves on:
+ *   status       — pending | verified | rejected
+ *   rejections   — [{ id, reason }], the documents sent back and why
+ *   acknowledged — has the POSP read the approval and pressed on?
+ *
+ * `acknowledged` is what keeps a cleared profile on the verification screen
+ * instead of being swept past it. The verdict — good or bad — is the one thing
+ * this whole stage exists to deliver, and `landingPath()` walking straight to
+ * training the moment the flag flipped meant a POSP could be approved and never
+ * see it said. So the funnel treats this stage as clear only once both are
+ * true: the team said yes, *and* the user pressed Start POSP training. The
+ * route guard on `/posp-training` still asks only about `status`, so the button
+ * itself is never blocked by the flag it is about to set.
  *
  * They are kept in separate localStorage keys rather than one JSON blob so the
  * status stays a plain readable string — the thing you check first when the
@@ -20,6 +31,7 @@ import { create } from 'zustand';
  */
 const STATUS_KEY = 'profileVerification';
 const REJECTIONS_KEY = 'profileRejections';
+const ACK_KEY = 'profileVerificationSeen';
 
 export const VERIFICATION = {
   PENDING: 'pending',
@@ -69,10 +81,25 @@ const readRejections = () => {
   }
 };
 
+const readAcknowledged = () => {
+  try {
+    return localStorage.getItem(ACK_KEY) === 'true';
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * Every verdict write also clears the acknowledgement, including the approval
+ * itself: a fresh decision is by definition one the POSP hasn't seen yet, so it
+ * has to hold them on the screen that shows it. Only `acknowledgeVerification`
+ * sets the flag, and only from the button.
+ */
 const write = (status, rejections) => {
   try {
     localStorage.setItem(STATUS_KEY, status);
     localStorage.setItem(REJECTIONS_KEY, JSON.stringify(rejections));
+    localStorage.removeItem(ACK_KEY);
   } catch {
     // Ignore — the in-memory store state still updates below.
   }
@@ -82,16 +109,37 @@ export const useVerificationStore = create((set) => ({
   // Seed from localStorage so a decided profile isn't sent back to wait.
   status: readStatus(),
   rejections: readRejections(),
+  acknowledged: readAcknowledged(),
 
   /**
    * The team's approval. Stands in for the webhook / polled status call that
    * will replace it — nothing in the UI should care which one flipped the flag,
    * which is why the waiting screen subscribes to this store rather than
    * owning the state itself.
+   *
+   * Deliberately does *not* acknowledge: approving is the back office's act,
+   * acknowledging is the POSP's. A POSP sitting on the waiting screen when this
+   * lands watches it turn green and then chooses to go on.
    */
   approveVerification: () => {
     write(VERIFICATION.VERIFIED, []);
-    set({ status: VERIFICATION.VERIFIED, rejections: [] });
+    set({ status: VERIFICATION.VERIFIED, rejections: [], acknowledged: false });
+  },
+
+  /**
+   * The POSP has read the approval and pressed Start POSP training. Only from
+   * that button: this is the record that the verdict was actually delivered,
+   * and it's what lets `landingPath()` send them to training on every visit
+   * from here on instead of back through this screen.
+   */
+  acknowledgeVerification: () => {
+    try {
+      localStorage.setItem(ACK_KEY, 'true');
+    } catch {
+      // Ignore — in-memory still updates, so this session moves on regardless;
+      // only the "don't show me again" outlives the tab.
+    }
+    set({ acknowledged: true });
   },
 
   /**
@@ -102,7 +150,7 @@ export const useVerificationStore = create((set) => ({
    */
   rejectVerification: (rejections = DEMO_REJECTIONS) => {
     write(VERIFICATION.REJECTED, rejections);
-    set({ status: VERIFICATION.REJECTED, rejections });
+    set({ status: VERIFICATION.REJECTED, rejections, acknowledged: false });
   },
 
   /**
@@ -112,7 +160,7 @@ export const useVerificationStore = create((set) => ({
    */
   submitForReview: () => {
     write(VERIFICATION.PENDING, []);
-    set({ status: VERIFICATION.PENDING, rejections: [] });
+    set({ status: VERIFICATION.PENDING, rejections: [], acknowledged: false });
   },
 }));
 
@@ -124,8 +172,24 @@ export const useVerificationStore = create((set) => ({
  */
 export const isVerified = () =>
   useVerificationStore.getState().status === VERIFICATION.VERIFIED;
+
+/**
+ * What the *funnel* means by "this stage is behind you" — approved and read.
+ * `isVerified` alone answers "may they be in training?", which is what the
+ * route guard asks; this answers "is there still something on the verification
+ * screen for them?", which is what `landingPath()` asks. They differ for
+ * exactly one moment — an approval the POSP hasn't opened yet — and that moment
+ * is the whole point of the screen.
+ */
+export const isVerificationSeen = () => {
+  const { status, acknowledged } = useVerificationStore.getState();
+  return status === VERIFICATION.VERIFIED && acknowledged;
+};
+
 export const approveVerification = () =>
   useVerificationStore.getState().approveVerification();
+export const acknowledgeVerification = () =>
+  useVerificationStore.getState().acknowledgeVerification();
 export const rejectVerification = (rejections) =>
   useVerificationStore.getState().rejectVerification(rejections);
 export const submitForReview = () =>
@@ -143,7 +207,7 @@ export const resetVerification = submitForReview;
  * states immediately; no reload needed.
  *
  * `Pending()` exists because a verdict is persisted and therefore sticky: once
- * a profile is decided the entry redirect skips the waiting screen for good,
+ * a profile is approved *and* acknowledged the entry redirect skips this screen,
  * and without this the only way back to it would be `Denied()` in authStore,
  * which also drops the session and the onboarding flag — a full replay of the
  * funnel to look at one screen. This rewinds that single stage.

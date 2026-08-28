@@ -1,19 +1,22 @@
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Fingerprint, ShieldCheck, Upload } from "lucide-react";
+import { Fingerprint, Loader2, ShieldCheck, Upload } from "lucide-react";
 import Input from "@/shared/components/Input";
 import Button from "@/shared/components/Button";
 import FileUpload from "@/shared/components/FileUpload";
+import { fileField } from "@/shared/upload/schema";
 import { alertOnInvalid } from "@/shared/store/alertStore";
+import { reportFormError } from "@/shared/api/formErrors";
+import { submitAadhaarDetails } from "../api/onboardingApi";
 
 /* ── Schema ── */
 const aadhaarSchema = z.object({
   // Stored without spaces; the field formats display as XXXX XXXX XXXX.
   aadhaar:  z.string().refine((v) => /^[0-9]{12}$/.test(v.replace(/\s/g, "")), "Aadhaar must be 12 digits."),
   fullName: z.string().trim().min(1, "Name is required.").max(200),
-  aadhaarFrontImage: z.any().refine((f) => f instanceof File, "Please upload the front of your Aadhaar."),
-  aadhaarBackImage:  z.any().refine((f) => f instanceof File, "Please upload the back of your Aadhaar."),
+  aadhaarFrontImage: fileField({ message: "Please upload the front of your Aadhaar." }),
+  aadhaarBackImage:  fileField({ message: "Please upload the back of your Aadhaar." }),
 });
 
 const formatAadhaar = (digits) => digits.replace(/(.{4})/g, "$1 ").trim();
@@ -22,9 +25,10 @@ export default function AadhaarStep({ onNext, initialValues }) {
   const form = useForm({
     resolver: zodResolver(aadhaarSchema),
     defaultValues: {
-      aadhaar: "", fullName: "", aadhaarFrontImage: undefined, aadhaarBackImage: undefined,
+      fullName: "", aadhaarFrontImage: undefined, aadhaarBackImage: undefined,
       ...initialValues,
       // Saved value is bare 12 digits — re-format for the spaced display field.
+      // Covers the empty case too, which is why there is no earlier `aadhaar: ""`.
       aadhaar: initialValues?.aadhaar ? formatAadhaar(initialValues.aadhaar) : "",
     },
     mode: "onTouched",
@@ -37,8 +41,23 @@ export default function AadhaarStep({ onNext, initialValues }) {
     aadhaarField.onChange(e);
   };
 
-  const onSubmit = form.handleSubmit((data) => {
-    onNext?.({ ...data, aadhaar: data.aadhaar.replace(/\s/g, "") }); // pass clean 12 digits onward
+  /**
+   * Save to the server, then advance — in that order, and only on success, so
+   * a rejected upload leaves the user on the step with their files still
+   * attached rather than one screen past it.
+   *
+   * No `fallbackField`: a rejection could be about the number, the name or
+   * either image, and blaming one input for another's fault is worse than
+   * leaving the message in the toast. A server that names a field still gets it
+   * placed exactly.
+   */
+  const onSubmit = form.handleSubmit(async (data) => {
+    try {
+      await submitAadhaarDetails(data);
+      onNext?.({ ...data, aadhaar: data.aadhaar.replace(/\s/g, "") }); // pass clean 12 digits onward
+    } catch (error) {
+      reportFormError(form, error, "Couldn't save your Aadhaar details");
+    }
   }, alertOnInvalid);
 
   return (
@@ -86,10 +105,8 @@ export default function AadhaarStep({ onNext, initialValues }) {
         <Controller name="aadhaarFrontImage" control={form.control} render={({ field }) => (
           <FileUpload
             id="aadhaarFrontImage"
-            label="Aadhaar Front *"
+            label="Aadhaar Front"
             required
-            accept="image/*,application/pdf"
-            maxMB={10}
             error={form.formState.errors.aadhaarFrontImage?.message}
             hint="Front side showing your photo and name."
             onChange={field.onChange}
@@ -99,10 +116,8 @@ export default function AadhaarStep({ onNext, initialValues }) {
         <Controller name="aadhaarBackImage" control={form.control} render={({ field }) => (
           <FileUpload
             id="aadhaarBackImage"
-            label="Aadhaar Back *"
+            label="Aadhaar Back"
             required
-            accept="image/*,application/pdf"
-            maxMB={10}
             error={form.formState.errors.aadhaarBackImage?.message}
             hint="Back side showing your address."
             onChange={field.onChange}
@@ -110,8 +125,23 @@ export default function AadhaarStep({ onNext, initialValues }) {
         )} />
 
         <div className="flex gap-3 pt-1">
-          <Button type="submit" className="flex-1 flex items-center justify-center gap-2">
-            <Upload size={16} strokeWidth={2.5} /> Submit Aadhaar
+          {/* Disabled while the upload is out — two images make this the longest
+              round trip in the wizard, and the easiest to double-submit. */}
+          <Button
+            type="submit"
+            disabled={form.formState.isSubmitting}
+            className="flex-1 flex items-center justify-center gap-2"
+          >
+            {form.formState.isSubmitting ? (
+              <>
+                <Loader2 size={16} strokeWidth={2.5} className="animate-spin" />
+                Saving…
+              </>
+            ) : (
+              <>
+                <Upload size={16} strokeWidth={2.5} /> Submit Aadhaar
+              </>
+            )}
           </Button>
         </div>
       </form>

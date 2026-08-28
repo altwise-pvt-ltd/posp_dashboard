@@ -46,6 +46,7 @@ function ExamRunner({
   questions,
   answers,
   secondsLeft,
+  totalSeconds,
   toast,
   onDismissToast,
   onSelectOption,
@@ -121,6 +122,7 @@ function ExamRunner({
           questionCount={questions.length}
           answeredCount={answeredCount}
           secondsLeft={secondsLeft}
+          totalSeconds={totalSeconds}
           onSubmit={openSubmitDialog}
         />
 

@@ -1,5 +1,4 @@
-import React from 'react';
-import Button from '@/shared/components/Button';
+import { maskAadhaar, maskAccount, maskPan, verdictOf } from '../lib/profileFields';
 
 function CheckIcon({ className = 'w-4 h-4' }) {
   return (
@@ -26,26 +25,39 @@ function ShieldIcon({ className = 'w-4 h-4' }) {
   );
 }
 
-const STATUS = {
-  verified: {
-    label: 'Verified',
+/**
+ * ⚠ "On file", not "Verified".
+ *
+ * This is the whole point of the card's rewrite. `/posp/me` reports a single
+ * KYC verdict for the POSP — `kycStatus`, and the `verification` derived from
+ * it — and says nothing about individual documents. The old card printed
+ * `status: 'verified'` as a literal on every row, which stated four separate
+ * approvals the server had never given.
+ *
+ * What this app can honestly say per document is whether the record carries one.
+ * The verdict, singular, is the pill in the header.
+ */
+const PRESENCE = {
+  present: {
+    label: 'On file',
     pill: 'text-emerald-600 bg-emerald-50',
     icon: 'text-emerald-600 bg-emerald-50',
   },
-  pending: {
-    label: 'Pending',
+  missing: {
+    label: 'Not on file',
     pill: 'text-amber-600 bg-amber-50',
     icon: 'text-amber-600 bg-amber-50',
   },
 };
 
-function ChecklistRow({ label, value, status }) {
-  const s = STATUS[status] ?? STATUS.pending;
+function ChecklistRow({ label, value }) {
+  const state = value ? PRESENCE.present : PRESENCE.missing;
+
   return (
     /* negative horizontal margin + padding trick lets hover bg extend to card edges */
     <li className="flex items-center gap-3 -mx-2 px-2 py-2 rounded-xl hover:bg-orange-50/60 transition-colors duration-200 cursor-default">
-      <span className={`flex items-center justify-center w-9 h-9 rounded-lg shrink-0 ${s.icon}`}>
-        {status === 'verified' ? <CheckIcon /> : <ClockIcon />}
+      <span className={`flex items-center justify-center w-9 h-9 rounded-lg shrink-0 ${state.icon}`}>
+        {value ? <CheckIcon /> : <ClockIcon />}
       </span>
 
       <div className="min-w-0">
@@ -53,52 +65,60 @@ function ChecklistRow({ label, value, status }) {
           {label}
         </span>
         <span className="block text-xs text-slate-400 font-medium truncate">
-          {value}
+          {value || 'Awaiting upload'}
         </span>
       </div>
 
-      <span className={`ml-auto shrink-0 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide ${s.pill}`}>
-        {s.label}
+      <span className={`ml-auto shrink-0 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide ${state.pill}`}>
+        {state.label}
       </span>
     </li>
   );
 }
 
-const KycComplianceCard = () => {
-  // Example data — replace with the real KYC record later.
+/**
+ * KYC documents and the back office's verdict on them.
+ *
+ * The licence block that used to sit at the bottom — number
+ * `IRDAI-POSP-2024-88172`, issued March 2024, 284 days to renewal, with a
+ * progress bar and a "Renew License" button — was invented end to end. There is
+ * no licence endpoint, no issue or expiry date anywhere in the API, and nothing
+ * to renew against. It is replaced by the registration facts the record does
+ * carry.
+ */
+const KycComplianceCard = ({ profile }) => {
+  const verdict = verdictOf(profile);
+
   const documents = [
-    { label: 'PAN Card', value: 'ABCDE••••F', status: 'verified' },
-    { label: 'Aadhaar', value: 'XXXX XXXX 4521', status: 'verified' },
-    { label: 'Bank Account', value: 'HDFC ••••3210', status: 'verified' },
-    { label: 'Cancelled Cheque', value: 'Awaiting upload', status: 'pending' },
+    { label: 'PAN Card', value: maskPan(profile?.pancardNumber) },
+    { label: 'Aadhaar', value: maskAadhaar(profile?.aadhaarNumber) },
+    {
+      label: 'Bank Account',
+      value: (() => {
+        const account = maskAccount(profile?.accountNumber);
+        if (!account) return null;
+        return profile?.bankName ? `${profile.bankName} ${account}` : account;
+      })(),
+    },
+    { label: 'Photograph', value: profile?.profileImagePath ? 'Uploaded' : null },
   ];
 
-  const license = {
-    number: 'IRDAI-POSP-2024-88172',
-    issuedOn: 'Mar 12, 2024',
-    expiresOn: 'Mar 11, 2027',
-    daysLeft: 284,
-    totalDays: 1095,
-  };
-
-  const usedPct = Math.min(100, Math.round(((license.totalDays - license.daysLeft) / license.totalDays) * 100));
-  const verifiedCount = documents.filter((d) => d.status === 'verified').length;
-  const allVerified = verifiedCount === documents.length;
+  const onFile = documents.filter((doc) => doc.value).length;
 
   return (
     <div className="card-lift w-full bg-white rounded-2xl shadow-sm overflow-hidden border border-slate-200">
-      {/* ── Verification checklist ── */}
+      {/* ── Document checklist ── */}
       <div className="p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between gap-2 mb-4">
+          <div className="flex items-center gap-2 min-w-0">
             <div className="w-0.5 h-4 rounded-full bg-orange-400 shrink-0" />
-            <p className="text-xs font-bold uppercase tracking-widest text-orange-600">
+            <p className="text-xs font-bold uppercase tracking-widest text-orange-600 truncate">
               KYC &amp; Compliance
             </p>
           </div>
-          {/* verified count as a coloured pill */}
-          <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide ${allVerified ? 'text-emerald-600 bg-emerald-50' : 'text-amber-600 bg-amber-50'}`}>
-            {verifiedCount}/{documents.length} verified
+          {/* The one verdict the server actually gives, for the record as a whole. */}
+          <span className={`shrink-0 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide ${verdict.pill}`}>
+            {verdict.label}
           </span>
         </div>
 
@@ -107,53 +127,42 @@ const KycComplianceCard = () => {
             <ChecklistRow key={doc.label} {...doc} />
           ))}
         </ul>
+
+        <p className="mt-4 text-xs font-medium text-slate-400">
+          {onFile} of {documents.length} documents on file
+        </p>
       </div>
 
-      {/* ── License renewal ── */}
+      {/* ── Registration ── */}
       <div className="px-6 pb-6 pt-6 border-t border-slate-100">
         <div className="flex items-center gap-2 mb-4">
           <div className="w-0.5 h-4 rounded-full bg-orange-400 shrink-0" />
           <p className="text-xs font-bold uppercase tracking-widest text-orange-600">
-            POSP License
+            POSP Registration
           </p>
         </div>
 
-        {/* license number in a boxed chip */}
         <div className="flex items-center gap-3 bg-slate-50 rounded-xl px-3 py-2.5">
           <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-orange-50 text-orange-600 shrink-0">
             <ShieldIcon />
           </span>
           <div className="min-w-0">
             <span className="block text-[10px] uppercase tracking-wide text-slate-400 font-semibold">
-              License No.
+              POSP Code
             </span>
             <span className="block text-sm font-semibold text-slate-700 font-data-mono truncate">
-              {license.number}
+              {/* Allocated by the back office when the profile clears, so a POSP
+                  still in review genuinely has none yet. */}
+              {profile?.pospCode || 'Allocated once your KYC is approved'}
             </span>
           </div>
         </div>
 
-        {/* validity range */}
-        <div className="mt-4 flex items-center justify-between text-xs font-medium text-slate-500">
-          <span>Issued {license.issuedOn}</span>
-          <span>Expires {license.expiresOn}</span>
-        </div>
-
-        {/* progress bar */}
-        <div className="mt-2 h-2 w-full rounded-full bg-slate-100 overflow-hidden">
-          <div
-            className="progress-fill h-full rounded-full bg-linear-to-r from-orange-500 to-rose-500"
-            style={{ width: `${usedPct}%` }}
-          />
-        </div>
-
-        <p className="mt-2 text-xs font-semibold text-amber-600">
-          {license.daysLeft} days until renewal
-        </p>
-
-        <div className="mt-5">
-          <Button type="button">Renew License</Button>
-        </div>
+        {profile?.status ? (
+          <p className="mt-3 text-xs font-medium text-slate-500">
+            Record status: <span className="font-semibold text-slate-700">{profile.status}</span>
+          </p>
+        ) : null}
       </div>
     </div>
   );

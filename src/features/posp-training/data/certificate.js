@@ -10,8 +10,6 @@
  * the layout could quietly change what the certificate claims.
  */
 
-import demoPhoto from '@/assets/posp_certificate/posp_agent.png';
-
 /** The broker the certificate is issued by and under whose licence it stands. */
 export const ISSUER = {
   legalName: 'Altsure Insurance Brokers Private Limited',
@@ -23,29 +21,22 @@ export const ISSUER = {
   principalOfficer: 'Nikhil Nimbhorkar',
 };
 
-/**
- * The certificate holder.
+/*
+ * The certificate holder used to live here too — `DEMO_HOLDER`, a fictional
+ * name, PAN, Aadhaar and photograph carried over from the standalone mockup,
+ * which `CertificateScreen` printed as its default.
  *
- * Standing demo record, and the same one the mockup ships with — name, PAN,
- * Aadhaar and photograph all belong to one fictional person, so the document
- * reads as a coherent whole rather than a mix of placeholders.
+ * It is gone rather than kept as a fallback, and that is the point of this note.
+ * A placeholder is harmless on a dashboard tile; on a document that states at
+ * the bottom that it is electronically generated and verified, it is a
+ * convincing certificate issued to nobody — and a fallback is exactly the shape
+ * that gets printed on the day the real call fails.
  *
- * Onboarding already asks for every field here: `fullName` and `panNumber` in
- * the PAN step, `aadhaar` and a second `fullName` in the Aadhaar step, and the
- * photograph in the selfie step. None of it survives the wizard — it sits in
- * `OnboardingScreen`'s `formData` state and the submit handler only logs it —
- * so there is nothing yet for this screen to read. Once that payload is
- * persisted, pass a holder built from it into `CertificateScreen` and this
- * constant becomes the fallback rather than the source.
+ * The real thing comes from two places now, joined by `useCertificate`:
+ * `GET /certificates/me` for the certificate — its number and its dates — and
+ * `GET /posp/me` for the person holding it. When either is missing the screen
+ * says so instead of drawing a sheet.
  */
-export const DEMO_HOLDER = {
-  name: 'Ram Vinay Yadav',
-  pan: 'AIWPY9053H',
-  aadhaar: '3390 3781 1193',
-  /** Allocated by the back office when the pass is recorded — not derivable here. */
-  registrationNumber: 'ALT/POSP/2026/0125',
-  photo: demoPhoto,
-};
 
 /** `DD/MM/YYYY`, the form the certificate and the appointment letter both use. */
 export function formatCertificateDate(date) {

@@ -3,7 +3,7 @@ import { FUNNEL_STAGES, landingPath } from '@/app/funnel';
 import { useAuthStore } from '@/shared/store/authStore';
 import { useOnboardingStore } from '@/shared/store/onboardingStore';
 import { useVerificationStore, VERIFICATION } from '@/shared/store/verificationStore';
-import { useTrainingStore } from '@/shared/store/trainingStore';
+import { useCertificationStore } from '@/shared/store/certificationStore';
 
 /**
  * The one route guard, for every stage of the funnel.
@@ -20,8 +20,11 @@ import { useTrainingStore } from '@/shared/store/trainingStore';
  *                      verification, not bounced down one step at a time.
  *   forwardWhenClear — optional. If this stage is *already* clear the page has
  *                      nothing left to say, so send the user on to wherever
- *                      they actually belong. Used by the verification screen,
- *                      which a cleared POSP shouldn't be able to sit on.
+ *                      they actually belong. Currently unused: the verification
+ *                      screen was its one caller, and it now renders its own
+ *                      cleared state rather than being redirected off. Kept
+ *                      because it's the right answer for any stage page that
+ *                      genuinely has nothing to show once it's behind you.
  *
  * Subscribes to the stores rather than reading `isClear()` snapshots, so a
  * guard re-renders the moment a flag flips — a user watching the waiting screen
@@ -35,7 +38,7 @@ export default function RequireFunnel({ through, forwardWhenClear, children }) {
     auth: useAuthStore((s) => s.authenticated),
     onboarding: useOnboardingStore((s) => s.value),
     verification: useVerificationStore((s) => s.status === VERIFICATION.VERIFIED),
-    training: useTrainingStore((s) => s.value),
+    training: useCertificationStore((s) => s.value),
   };
 
   const upTo = FUNNEL_STAGES.findIndex((stage) => stage.id === through);

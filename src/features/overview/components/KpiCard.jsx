@@ -36,10 +36,12 @@ function KpiCard({
   const canNavigate = isRoutedPath(to);
   const canViewAll = isRoutedPath(viewAllTo);
 
+  // p-4 below `sm`: at two-up on a phone these cards are ~175px, and the page
+  // gutter would spend 48px of that before the number starts.
   const cardClasses = `${
     highlighted
-      ? 'bg-gradient-to-br from-primary-fixed/30 to-white rounded-xl border border-gray-200 p-gutter card-lift relative overflow-hidden'
-      : 'bg-white rounded-xl border border-gray-200 p-gutter card-lift relative'
+      ? 'bg-gradient-to-br from-primary-fixed/30 to-white rounded-xl border border-gray-200 p-4 sm:p-gutter card-lift relative overflow-hidden'
+      : 'bg-white rounded-xl border border-gray-200 p-4 sm:p-gutter card-lift relative'
   } ${canNavigate ? 'cursor-pointer' : ''}`;
 
   const handleCardClick = () => {

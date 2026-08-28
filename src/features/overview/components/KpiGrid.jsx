@@ -53,7 +53,7 @@ function KpiGrid() {
           countView={
             <>
               <p className="font-headline-lg text-headline-lg text-on-surface mb-1">124</p>
-              <div className="flex items-center justify-between gap-unit">
+              <div className="flex flex-wrap items-center justify-between gap-unit">
                 <Trend value="12%" color="emerald" />
                 <Sparkline points="0,15 10,12 20,14 30,8 40,9 50,4 60,2" color="text-emerald-500" />
               </div>
@@ -75,7 +75,7 @@ function KpiGrid() {
           countView={
             <>
               <p className="font-headline-lg text-headline-lg text-on-surface mb-1">86</p>
-              <div className="flex items-center justify-between gap-unit">
+              <div className="flex flex-wrap items-center justify-between gap-unit">
                 <span className="font-body-md text-body-md text-on-surface-variant">69% conv.</span>
                 <Sparkline points="0,10 10,12 20,8 30,11 40,7 50,9 60,6" color="text-violet-500" />
               </div>
@@ -98,7 +98,7 @@ function KpiGrid() {
           countView={
             <>
               <p className="font-headline-lg text-headline-lg text-primary mb-1">52</p>
-              <div className="flex items-center justify-between gap-unit">
+              <div className="flex flex-wrap items-center justify-between gap-unit">
                 <span className="font-body-md text-body-md text-on-surface">₹14.2L premium</span>
                 <Trend value="8%" color="emerald" />
               </div>

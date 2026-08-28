@@ -1,6 +1,6 @@
 import { Clock, GraduationCap, LogOut } from 'lucide-react';
 import { formatMinutesSeconds } from '../../lib/formatDuration';
-import { SECTION_SECONDS, URGENT_SECONDS } from './examTiming';
+import { URGENT_SECONDS } from './examTiming';
 
 /**
  * The countdown ring, in numbers rather than magic values scattered through the
@@ -36,12 +36,20 @@ function ExamHeader({
   questionCount,
   answeredCount,
   secondsLeft,
+  totalSeconds,
   onSubmit,
 }) {
   const isUrgent = secondsLeft <= URGENT_SECONDS;
   // Clamped because the ring is geometry: a fraction outside 0–1 would draw an
   // arc longer than the circle it sits on.
-  const timeLeftFraction = Math.min(1, Math.max(0, secondsLeft / SECTION_SECONDS));
+  //
+  // Measured against the paper's *own* duration, which the server sets per
+  // attempt (`durationMinutes`), rather than against a constant. The ring used
+  // to divide by a hardcoded 30 minutes, so an attempt the server had given any
+  // other length would have drawn an arc that was simply wrong — full for the
+  // first half of a 60-minute paper, or gone before the clock was.
+  const timeLeftFraction =
+    totalSeconds > 0 ? Math.min(1, Math.max(0, secondsLeft / totalSeconds)) : 0;
   const answeredPercent = Math.round((answeredCount / questionCount) * 100);
 
   return (

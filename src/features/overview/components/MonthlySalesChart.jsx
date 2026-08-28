@@ -88,7 +88,7 @@ function StackedBar({ data, kind, peak }) {
   const isB = kind === 'B';
   return (
     <div
-      className={`relative w-5 sm:w-7 flex flex-col-reverse rounded-t overflow-hidden bar-grow ${
+      className={`relative w-4 sm:w-7 flex flex-col-reverse rounded-t overflow-hidden bar-grow ${
         isB ? '' : 'opacity-60 ring-1 ring-gray-300/40'
       } ${peak ? `ring-1 ${isB ? 'ring-primary/40' : 'ring-primary/30'}` : ''}`}
       style={{ height: `${data.height}%`, animationDelay: data.delay }}
@@ -108,7 +108,7 @@ function MonthlySalesChart() {
   const { months, yLeft, yRight } = DATASETS[scope];
 
   return (
-    <section className="bg-surface-container-lowest rounded-xl border border-gray-200 p-gutter anim-fade-d4">
+    <section className="bg-surface-container-lowest rounded-xl border border-gray-200 p-4 sm:p-gutter anim-fade-d4">
       <div className="flex flex-wrap justify-between items-center gap-unit mb-gutter">
         <div>
           <h3 className="font-headline-md text-headline-md text-on-surface flex items-center gap-1.5">
@@ -163,17 +163,21 @@ function MonthlySalesChart() {
       </div>
 
       <div className="relative h-64 mb-unit">
-        <div className="absolute inset-y-0 left-0 w-10 flex flex-col justify-between pointer-events-none">
+        {/* Axis gutters narrow below `sm`. The plot area is the section width
+            minus both of them, and at the phone's ~326px the 10/8 desktop pair
+            left the six months 39px each — less than the 44px two bars and
+            their gap need. */}
+        <div className="absolute inset-y-0 left-0 w-8 sm:w-10 flex flex-col justify-between pointer-events-none">
           {yLeft.map((v) => (
             <span key={v} className="font-data-mono text-[11px] text-on-surface-variant/70 -translate-y-1.5">{v}</span>
           ))}
         </div>
-        <div className="absolute inset-y-0 right-0 w-8 flex flex-col justify-between pointer-events-none text-right">
+        <div className="absolute inset-y-0 right-0 w-6 sm:w-8 flex flex-col justify-between pointer-events-none text-right">
           {yRight.map((v) => (
             <span key={v} className="font-data-mono text-[11px] text-on-surface-variant/70 -translate-y-1.5">{v}</span>
           ))}
         </div>
-        <div className="absolute inset-y-0 left-10 right-8 flex flex-col justify-between pointer-events-none">
+        <div className="absolute inset-y-0 left-8 right-6 sm:left-10 sm:right-8 flex flex-col justify-between pointer-events-none">
           <div className="border-t border-dashed border-gray-200" />
           <div className="border-t border-dashed border-gray-200" />
           <div className="border-t border-dashed border-gray-200" />
@@ -181,7 +185,7 @@ function MonthlySalesChart() {
           <div className="border-t border-gray-300" />
         </div>
 
-        <div key={scope} className="relative h-full flex items-end justify-between gap-1 pl-10 pr-8">
+        <div key={scope} className="relative h-full flex items-end justify-between gap-1 pl-8 pr-6 sm:pl-10 sm:pr-8">
           {months.map((m) => (
             <div key={m.label} className="flex-1 flex flex-col items-center gap-1.5 group h-full justify-end">
               <div className="flex items-end gap-1 w-full justify-center h-full pt-4 relative">
@@ -201,7 +205,7 @@ function MonthlySalesChart() {
         </div>
       </div>
 
-      <div className="bg-gradient-to-r from-violet-50 to-sky-50 rounded-xl p-gutter flex items-start gap-gutter border border-gray-200">
+      <div className="bg-gradient-to-r from-violet-50 to-sky-50 rounded-xl p-4 sm:p-gutter flex items-start gap-4 sm:gap-gutter border border-gray-200">
         <div className="w-9 h-9 rounded-full bg-violet-100 flex items-center justify-center shrink-0">
           <span className="material-symbols-outlined text-violet-600 text-[20px]">auto_awesome</span>
         </div>

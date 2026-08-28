@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { showAlert } from "@/shared/store/alertStore";
 import { signIn } from "@/shared/store/authStore";
+import { resumeSession } from "@/shared/auth/resumeSession";
 import { landingPath } from "@/app/funnel";
 import LoginForm from "../components/LoginForm";
 import Header from "../components/landing/Header";
@@ -21,8 +22,33 @@ import OnboardingFooter from "@/features/onboarding/components/OnboardingFooter"
 export default function LoginPage() {
   const navigate = useNavigate();
 
-  const handleVerified = (mobile) => {
-    signIn(mobile);
+  /* `session` is the `{ token, flow, expiresAt, user, application, overallStatus }`
+     the verify call returned. signIn stores it whole — every request after this
+     one carries the token, and the onboarding calls quote `application.id`. */
+  const handleVerified = async (session) => {
+    signIn(session);
+
+    /* The token is in place now, so the call inside this carries it: ask the
+       server where this POSP actually stands before deciding where to drop
+       them. Which endpoint gets asked depends on `session.flow` — the wizard's
+       status for someone still filling it in, the POSP record for someone
+       already registered. See `shared/auth/resumeSession.js`.
+
+       Awaited rather than fired off, for two reasons. It sets the funnel flags
+       that `landingPath()` reads one line down, so a race here lands a POSP who
+       finished on another device back at step 1 of a wizard they've already
+       submitted. And on the onboarding path it seeds the wizard's step, so
+       awaiting means they arrive *on* the step they left rather than watching
+       the screen jump from step 1 to step 5 a moment after it paints.
+
+       The cost is that "Verify" spins for one more round trip — LoginForm
+       awaits this handler, so the button stays busy for the whole of it.
+
+       Failure is deliberately not fatal: resumeSession never rejects, and the
+       screen the user lands on retries and surfaces the error itself. A sign-in
+       that worked shouldn't be undone by a follow-up call that didn't. */
+    await resumeSession(session);
+
     showAlert({
       variant: "success",
       title: "Signed in",

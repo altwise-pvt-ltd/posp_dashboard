@@ -6,18 +6,24 @@ import SectionScoreCard from './SectionScoreCard';
 /**
  * The verdict.
  *
- * Every section has to be cleared on its own, so the overall result is only as
- * good as the weakest card below it — and the one way forward changes with it:
- * on to the certificate, or back through the training. The dashboard is a step
- * further on, behind the certificate, so a pass ends on the thing the learner
- * came for rather than on a redirect.
+ * `results` arrives already graded — one `{ section, score }`, scored by the
+ * server and passed straight through. This screen computes nothing: the paper
+ * carried no answer key, so `passed` here is `isPassed` off `/exam/submit` and
+ * not a percentage this app compared against a pass mark of its own.
  *
- * `results` arrives already scored, one `{ section, score }` per section sat:
- * the portal holds both the answers and the question bank, so it does the
- * scoring and this screen stays presentation, like every other exam screen.
+ * `message` is the server's own sentence about the score ("You scored 3.33%.
+ * Passing score is 50.00%."). Shown when it is there, because it states the
+ * result and the bar it was measured against in one line, in the words the
+ * server will also have used anywhere else this attempt is reported.
+ *
+ * The way forward changes with the verdict: on to the certificate, or back to
+ * the training page, where the material is still theirs and "Start exam" opens a
+ * fresh attempt. The dashboard is a step further on, behind the certificate, so
+ * a pass ends on the thing the learner came for rather than on a redirect.
  */
-function ExamResults({ results, onViewCertificate, onRetakeTraining }) {
+function ExamResults({ results, onViewCertificate, onExit }) {
   const passed = results.every((result) => result.score.passed);
+  const message = results[0]?.score?.message;
 
   return (
     <div
@@ -48,9 +54,18 @@ function ExamResults({ results, onViewCertificate, onRetakeTraining }) {
         </h2>
         <p className="mt-2 text-sm leading-relaxed text-slate-500">
           {passed
-            ? 'You cleared every section. Your POSP certificate is ready.'
-            : 'Every section has to be cleared on its own. Work back through the material and sit the exam again.'}
+            ? 'You cleared the certification exam. Your POSP certificate is ready.'
+            : 'The material is still yours to revise, and you can sit the exam again when you are ready.'}
         </p>
+
+        {/* The server's own sentence, when it sent one. It carries the score and
+            the pass mark together, which is the one thing the cards below can't
+            say on their own. */}
+        {message && (
+          <p className="mt-3 border-l-2 border-slate-200 pl-3 text-sm leading-relaxed text-slate-600">
+            {message}
+          </p>
+        )}
 
         {/* A single section has no second column to balance against, so it is
             left at a readable width instead of stretched across the page. */}
@@ -64,10 +79,10 @@ function ExamResults({ results, onViewCertificate, onRetakeTraining }) {
 
         <button
           type="button"
-          onClick={passed ? onViewCertificate : onRetakeTraining}
+          onClick={passed ? onViewCertificate : onExit}
           className="mt-8 flex w-full items-center justify-center gap-2 bg-primary py-3 text-sm font-semibold text-white transition-colors hover:bg-on-primary-fixed-variant focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
         >
-          {passed ? 'View Certificate' : 'Start Training Again'}
+          {passed ? 'View Certificate' : 'Back to training'}
           <ArrowRight size={16} strokeWidth={2} aria-hidden="true" />
         </button>
       </motion.div>

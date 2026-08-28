@@ -1,9 +1,6 @@
 import { motion } from 'framer-motion';
 import { Check } from 'lucide-react';
 
-/** A, B, C, … for the option at `index` — also the key that selects it. */
-const optionLetter = (index) => String.fromCharCode(65 + index);
-
 /**
  * One question and its options.
  *
@@ -53,7 +50,7 @@ function ExamQuestion({ question, questionNumber, questionCount, selectedOption,
               type="button"
               role="radio"
               aria-checked={isSelected}
-              aria-keyshortcuts={optionLetter(index)}
+              aria-keyshortcuts={option.letter}
               onClick={() => onSelect(index)}
               className={`group flex w-full items-center gap-4 border p-4 text-left transition-colors duration-150 focus-visible:ring-1 focus-visible:ring-primary focus-visible:outline-none md:gap-5 ${
                 isSelected
@@ -69,7 +66,7 @@ function ExamQuestion({ question, questionNumber, questionCount, selectedOption,
                 }`}
                 aria-hidden="true"
               >
-                {optionLetter(index)}
+                {option.letter}
               </span>
 
               <span
@@ -77,7 +74,7 @@ function ExamQuestion({ question, questionNumber, questionCount, selectedOption,
                   isSelected ? 'font-medium text-slate-900' : 'text-slate-700'
                 }`}
               >
-                {option}
+                {option.text}
               </span>
 
               {/* Kept in the layout at all times so the text column does not

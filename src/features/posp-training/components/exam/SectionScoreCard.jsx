@@ -9,12 +9,36 @@ function ScoreRow({ label, value }) {
 }
 
 /**
- * How one section went: the verdict in the header, then what it was built from.
+ * The percentage as the server wrote it — `3.33` stays `3.33`, `50` stays `50`.
+ *
+ * Rounding to whole numbers turned a 3.33% into "3%", which then disagreed with
+ * the server's own sentence on the screen above it. A learner reading two
+ * different scores for one paper has no way to know which is the real one.
+ */
+const formatPercentage = (value) => (Number.isInteger(value) ? String(value) : value.toFixed(2));
+
+/**
+ * How the paper went: the verdict in the header, then what it was built from.
  * The percentage is the figure the learner is looking for, so it gets the size —
  * but in weight and colour only, not in the confetti the screen used to wear.
+ *
+ * Every figure on this card comes from the grading reply. Nothing is counted
+ * here and nothing is compared here — the paper carried no answer key, so this
+ * app has no standing to score it or to decide what passes.
+ *
+ * There is no "questions attempted" row for that reason. It was the one number
+ * this browser was producing, and it could contradict the server outright: an
+ * answer taken back with Clear leaves the local tally, and stays on file at the
+ * server, so the card could report fewer attempts than the paper it is reporting
+ * on.
+ *
+ * The marks row is **marks**, not correct answers. The server grades in marks
+ * and a question is not obliged to be worth one — they happen to match on the
+ * current paper (30 questions, 30 marks), and a card that said "correct answers"
+ * would quietly start lying the day a question is worth two.
  */
 function SectionScoreCard({ title, score }) {
-  const { passed, attempted, correct, total, percentage } = score;
+  const { passed, obtainedMarks, totalMarks, percentage } = score;
 
   return (
     <div className="border border-slate-200 bg-white">
@@ -32,8 +56,7 @@ function SectionScoreCard({ title, score }) {
       </div>
 
       <div className="px-4 pb-4">
-        <ScoreRow label="Questions attempted" value={`${attempted} / ${total}`} />
-        <ScoreRow label="Correct answers" value={`${correct} / ${total}`} />
+        <ScoreRow label="Marks obtained" value={`${obtainedMarks} / ${totalMarks}`} />
 
         <div className="flex items-end justify-between pt-4">
           <span className="text-sm text-slate-500">Score</span>
@@ -42,7 +65,7 @@ function SectionScoreCard({ title, score }) {
               passed ? 'text-emerald-600' : 'text-error'
             }`}
           >
-            {percentage.toFixed(0)}%
+            {formatPercentage(percentage)}%
           </span>
         </div>
       </div>

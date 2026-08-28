@@ -139,7 +139,10 @@ function LearnGrowCard() {
         {LEARN_ITEMS.map((item) => (
           <li
             key={item.title}
-            className="bg-gray-50 p-gutter rounded-xl flex items-center gap-gutter hover:bg-gray-100 hover:translate-x-0.5 transition-all cursor-pointer border border-gray-200"
+            // p-4/gap-3 rather than the page gutter: in the 20rem rail this row
+            // has ~240px to work with, and 24px of padding on each side plus a
+            // 24px gap would spend a third of it before the title starts.
+            className="bg-gray-50 p-4 rounded-xl flex items-center gap-3 hover:bg-gray-100 hover:translate-x-0.5 transition-all cursor-pointer border border-gray-200"
           >
             <div className={`w-9 h-9 rounded-full ${item.iconBg} flex items-center justify-center shrink-0`}>
               <span className={`material-symbols-outlined ${item.iconText} text-[18px]`}>{item.icon}</span>
@@ -155,9 +158,17 @@ function LearnGrowCard() {
   );
 }
 
+/**
+ * A 20rem rail from `2xl` up (see the note in OverviewPage for why not `xl`).
+ * Below that it sits under the main column, where a single stack of four
+ * full-width cards would be a long scroll for very little information — so it
+ * pairs up from `sm` and only returns to one column once it is the narrow rail
+ * again. `items-start` keeps each card at its natural height instead of
+ * stretching the short ones to match their row.
+ */
 function RightRail() {
   return (
-    <div className="w-full xl:w-[320px] flex flex-col gap-gutter shrink-0">
+    <div className="w-full 2xl:w-80 shrink-0 grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-1 items-start gap-gutter">
       <DailyGoalCard />
       <ActivePoliciesCard />
       <SalesByDomainCard />

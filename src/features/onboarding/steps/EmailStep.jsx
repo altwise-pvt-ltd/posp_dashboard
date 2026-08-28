@@ -2,10 +2,12 @@ import { useState, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Mail, ShieldCheck, ArrowRight, CheckCircle2, RotateCcw } from "lucide-react";
+import { Mail, ShieldCheck, ArrowRight, CheckCircle2, RotateCcw, Loader2 } from "lucide-react";
 import Input from "@/shared/components/Input";
 import Button from "@/shared/components/Button";
-import { alertOnInvalid } from "@/shared/store/alertStore";
+import { showAlert, alertOnInvalid } from "@/shared/store/alertStore";
+import { reportFormError } from "@/shared/api/formErrors";
+import { sendEmailOtp, verifyEmailOtp } from "../api/onboardingApi";
 
 /* ── Schemas ── */
 const emailSchema = z.object({
@@ -43,8 +45,11 @@ export default function EmailStep({ onNext, initialValues }) {
 
   /* ── Resend cooldown ticker ── */
   const timerRef = useRef(null);
-  const startCooldown = () => {
-    setCooldown(RESEND_SECONDS);
+  /* `seconds` lets the server win. It is the one enforcing the throttle, so
+     when it sends a Retry-After the local guess is wrong by definition — and
+     wrong in the direction that offers a resend the server will refuse. */
+  const startCooldown = (seconds) => {
+    setCooldown(seconds > 0 ? Math.ceil(seconds) : RESEND_SECONDS);
     clearInterval(timerRef.current);
     timerRef.current = setInterval(() => {
       setCooldown((s) => {
@@ -55,17 +60,55 @@ export default function EmailStep({ onNext, initialValues }) {
   };
   useEffect(() => () => clearInterval(timerRef.current), []);
 
-  const sendCode = emailForm.handleSubmit((data) => {
-    // TODO: call API to dispatch the verification code
-    setSentTo(data.email.trim());
-    otpForm.reset({ otp: "" });
-    startCooldown();
+  /* `sentTo` is set only after the server confirms the dispatch, so a failed
+     send leaves the card on the email step rather than asking for a code that
+     was never sent. */
+  const sendCode = emailForm.handleSubmit(async (data) => {
+    const email = data.email.trim();
+    try {
+      await sendEmailOtp(email);
+      setSentTo(email);
+      otpForm.reset({ otp: "" });
+      // No argument: a successful send carries no throttle hint (its
+      // `expiresInSeconds` is the code's lifetime, not a resend delay), so the
+      // local 30s stands until the server objects with a 429.
+      startCooldown();
+      showAlert({
+        variant: "success",
+        title: "Verification code sent",
+        message: `We've sent a 6-digit code to ${email}.`,
+      });
+    } catch (error) {
+      // `fallbackField` is "email": this form has one input at this point, and
+      // a server that rejects the send is rejecting the address in it.
+      reportFormError(emailForm, error, "Couldn't send the code", "email");
+    }
   }, alertOnInvalid);
 
-  const resend = () => {
-    if (cooldown > 0) return;
-    // TODO: call API to resend the code
-    startCooldown();
+  const [resending, setResending] = useState(false);
+
+  const resend = async () => {
+    if (cooldown > 0 || resending) return;
+    setResending(true);
+    try {
+      await sendEmailOtp(sentTo);
+      startCooldown();
+      showAlert({
+        variant: "info",
+        title: "Code resent",
+        message: `A new code is on its way to ${sentTo}.`,
+      });
+    } catch (error) {
+      // A 429 here isn't a failure so much as the server's own throttle being
+      // stricter than ours — adopt its clock so the button stops offering a
+      // resend that would be refused again.
+      if (error.status === 429 && error.retryAfter) {
+        startCooldown(error.retryAfter);
+      }
+      reportFormError(otpForm, error, "Couldn't resend the code");
+    } finally {
+      setResending(false);
+    }
   };
 
   const otpField = otpForm.register("otp");
@@ -74,13 +117,27 @@ export default function EmailStep({ onNext, initialValues }) {
     otpField.onChange(e);
   };
 
-  const verify = otpForm.handleSubmit(() => {
-    // TODO: verify the code with the API
-    onNext?.({ email: sentTo });
+  /**
+   * Verify, then advance — in that order, and only on success. Calling `onNext`
+   * first would tick the stepper and move the wizard on over an address the
+   * server never confirmed.
+   *
+   * The code is blamed on failure ("otp"): by this point the address has
+   * already been accepted for dispatch, so a rejection here is about the six
+   * digits the user just typed — and that message ("Invalid OTP. 3 attempt(s)
+   * remaining.") is the one they need under the field they're retyping.
+   */
+  const verify = otpForm.handleSubmit(async (data) => {
+    try {
+      await verifyEmailOtp(sentTo, data.otp.trim());
+      onNext?.({ email: sentTo });
+    } catch (error) {
+      reportFormError(otpForm, error, "Couldn't verify the code", "otp");
+    }
   }, alertOnInvalid);
 
   return (
-    <div className="w-full max-w-[310px] sm:max-w-[360px] lg:max-w-[390px] xl:max-w-[390px] mx-auto lg:mx-0 rounded-2xl border border-slate-100 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04),0_20px_48px_rgba(222,123,61,0.08)] overflow-hidden">
+    <div className="w-full max-w-77.5 sm:max-w-90 lg:max-w-97.5 xl:max-w-97.5 mx-auto lg:mx-0 rounded-2xl border border-slate-100 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04),0_20px_48px_rgba(222,123,61,0.08)] overflow-hidden">
 
       {/* Header — padding and type scale with breakpoints */}
       <div className="px-4 sm:px-5 lg:px-6 pt-5 pb-4 bg-linear-to-br from-orange-50/60 to-white border-b border-orange-100/60">
@@ -113,8 +170,21 @@ export default function EmailStep({ onNext, initialValues }) {
 
           {!codeSent && (
             <div className="flex gap-3 pt-1">
-              <Button type="submit" className="flex-1 flex items-center justify-center gap-2">
-                Send Code <ArrowRight size={16} strokeWidth={2.5} />
+              <Button
+                type="submit"
+                disabled={emailForm.formState.isSubmitting}
+                className="flex-1 flex items-center justify-center gap-2"
+              >
+                {emailForm.formState.isSubmitting ? (
+                  <>
+                    <Loader2 size={16} strokeWidth={2.5} className="animate-spin" />
+                    Sending code…
+                  </>
+                ) : (
+                  <>
+                    Send Code <ArrowRight size={16} strokeWidth={2.5} />
+                  </>
+                )}
               </Button>
             </div>
           )}
@@ -144,17 +214,38 @@ export default function EmailStep({ onNext, initialValues }) {
               <button
                 type="button"
                 onClick={resend}
-                disabled={cooldown > 0}
+                disabled={cooldown > 0 || resending}
                 className="inline-flex items-center gap-1.5 font-semibold text-orange-500 hover:text-orange-600 disabled:text-slate-400 disabled:cursor-not-allowed transition-colors"
               >
-                <RotateCcw size={13} strokeWidth={2.5} />
-                {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend code"}
+                <RotateCcw
+                  size={13}
+                  strokeWidth={2.5}
+                  className={resending ? "animate-spin" : undefined}
+                />
+                {resending
+                  ? "Resending…"
+                  : cooldown > 0
+                    ? `Resend in ${cooldown}s`
+                    : "Resend code"}
               </button>
             </div>
 
             <div className="flex gap-3 pt-1">
-              <Button type="submit" className="flex-1 flex items-center justify-center gap-2">
-                <CheckCircle2 size={16} strokeWidth={2.5} /> Verify Email
+              <Button
+                type="submit"
+                disabled={otpForm.formState.isSubmitting}
+                className="flex-1 flex items-center justify-center gap-2"
+              >
+                {otpForm.formState.isSubmitting ? (
+                  <>
+                    <Loader2 size={16} strokeWidth={2.5} className="animate-spin" />
+                    Verifying…
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 size={16} strokeWidth={2.5} /> Verify Email
+                  </>
+                )}
               </Button>
             </div>
           </form>
