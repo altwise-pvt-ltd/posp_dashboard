@@ -15,6 +15,9 @@ dist-ssr
 #Html KT notes
 Kt.html
 
+# Project documentation — local reference only, not shared through the repo
+documentation/
+
 # Local env files
 .env
 .env.*

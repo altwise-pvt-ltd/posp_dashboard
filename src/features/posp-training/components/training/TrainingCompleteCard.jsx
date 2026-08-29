@@ -1,30 +1,19 @@
-import { ArrowRight, BadgeCheck, Check, Loader2, Lock, TriangleAlert } from 'lucide-react';
+import {
+  ArrowRight,
+  BadgeCheck,
+  Check,
+  Loader2,
+  Lock,
+  TriangleAlert,
+} from "lucide-react";
 
-/**
- * The "your hours are done, the exam is open" panel.
- *
- * Shaped as a rail card rather than a full-page one, because a rail card is what
- * it replaces: when the clock runs out the syllabus stays exactly where it is
- * and only the countdown beside it is swapped for this.
- *
- * It used to take over the whole page. That read "complete" as "finished with
- * you" — a POSP who enrolled, went away for a week and came back found the
- * material they had paid the hours for simply gone, at the one moment they most
- * wanted to revise it, with an exam still to sit. The hours running out ends the
- * countdown, not the access.
- *
- * Deliberately the same frame as `TrainingProgressRail`: same radius, border and
- * shadow, same label-plus-icon head, same slate note at the foot. The swap
- * should read as the panel changing its mind, not as the page rearranging
- * itself.
- *
- * The button is not a pure navigation any more. Pressing it closes the mandated
- * period with the LMS (`POST /lms/complete-training`) before the portal opens,
- * so it carries the same busy and failed states the start card does — a press
- * that reaches the server and comes back refused has to say so here, rather than
- * dropping the POSP into an exam their record has not been cleared for.
- */
-function TrainingCompleteCard({ requiredHours, starting = false, error = null, onStartExam }) {
+function TrainingCompleteCard({
+  requiredHours,
+  starting = false,
+  error = null,
+  blockedReason = null,
+  onStartExam,
+}) {
   return (
     <div className="anim-fade rounded-2xl border border-slate-200/80 bg-white p-5 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.45)] sm:p-6">
       <div className="flex items-center justify-between">
@@ -43,12 +32,14 @@ function TrainingCompleteCard({ requiredHours, starting = false, error = null, o
         Your {requiredHours} hours are served
       </p>
       <p className="mt-2 text-xs leading-5 text-slate-500">
-        The certification exam is open. Sit it whenever you're ready.
+        {blockedReason
+          ? "Your hours are served, but the exam is not open to you right now."
+          : "The certification exam is open. Sit it whenever you're ready."}
       </p>
 
       <button
         type="button"
-        disabled={starting}
+        disabled={starting || Boolean(blockedReason)}
         aria-busy={starting}
         onClick={onStartExam}
         className="group mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-orange-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-orange-600/20 transition-all duration-200 hover:bg-orange-700 hover:shadow-orange-700/30 focus:outline-none focus-visible:ring-4 focus-visible:ring-orange-500/30 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none disabled:active:scale-100"
@@ -65,18 +56,34 @@ function TrainingCompleteCard({ requiredHours, starting = false, error = null, o
           </>
         ) : (
           <>
-            {error ? 'Try again' : 'Start exam'}
-            <ArrowRight
-              className="size-4 transition-transform duration-200 group-hover:translate-x-0.5"
-              aria-hidden="true"
-            />
+            {/* No arrow on a refusal — it points at a door that won't open. */}
+            {blockedReason ? (
+              <>
+                <Lock className="size-4" aria-hidden="true" />
+                Exam unavailable
+              </>
+            ) : (
+              <>
+                {error ? "Try again" : "Start exam"}
+                <ArrowRight
+                  className="size-4 transition-transform duration-200 group-hover:translate-x-0.5"
+                  aria-hidden="true"
+                />
+              </>
+            )}
           </>
         )}
       </button>
 
-      {/* One slot, two readings — the reassurance the press usually deserves,
-          or the reason it didn't work. */}
-      {error ? (
+      {blockedReason ? (
+        <p
+          role="status"
+          className="mt-3 inline-flex items-start gap-1.5 text-[0.6875rem] leading-4 text-amber-700"
+        >
+          <TriangleAlert className="mt-px size-3 shrink-0" aria-hidden="true" />
+          {blockedReason}
+        </p>
+      ) : error ? (
         <p
           role="status"
           className="mt-3 inline-flex items-start gap-1.5 text-[0.6875rem] leading-4 text-rose-600"
@@ -100,7 +107,8 @@ function TrainingCompleteCard({ requiredHours, starting = false, error = null, o
           aria-hidden="true"
         />
         <p className="text-xs leading-5 text-slate-500">
-          Your study material stays available. Revise anything you need before you sit the exam.
+          Your study material stays available. Revise anything you need before
+          you sit the exam.
         </p>
       </div>
     </div>

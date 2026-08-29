@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Loader2, TriangleAlert } from 'lucide-react';
 import FunnelLayout from '@/shared/layouts/FunnelLayout';
@@ -13,6 +13,7 @@ import {
 } from '@/shared/store/trainingPlanStore';
 import { useCountdown } from '../hooks/useCountdown';
 import { useCourseMaterial } from '../hooks/useCourseMaterial';
+import { useExamEligibility } from '../hooks/useExamEligibility';
 import { useInsuranceTypes } from '../hooks/useInsuranceTypes';
 import { useTrainingClock } from '../hooks/useTrainingClock';
 import { useTrainingRecord } from '../hooks/useTrainingRecord';
@@ -151,15 +152,14 @@ function TrainingProgramme() {
   const navigate = useNavigate();
   const [isExamOpen, setIsExamOpen] = useState(false);
   /**
-   * The line this POSP is already certified in, once `/exam/eligibility` has
-   * said so — and the whole of the certificate screen's state.
+   * The pass `handleStartExam` heard about — a POSP who cleared the paper while
+   * this page sat open, which the check on mount could not have known.
    *
-   * A section rather than a boolean because that is what `CertificateScreen`
-   * prints: `describeSections` reads `label` off it to say which paper was
-   * passed. Built at the moment the server answers rather than at render time,
-   * so the document names the line the *server* holds the pass against.
+   * Only ever the *press* path's answer. The mount path contributes through
+   * `examEligibility` instead, and `certifiedSection` further down is where the
+   * two meet — see there for why this half is state and that half is not.
    */
-  const [certifiedSection, setCertifiedSection] = useState(null);
+  const [certifiedByPress, setCertifiedByPress] = useState(null);
   /**
    * The caution between the settled record and the paper — see
    * `ExamCautionDialog`. Its own state rather than a stage, because the page
@@ -226,6 +226,84 @@ function TrainingProgramme() {
    * others.
    */
   const material = useCourseMaterial(plan?.id ?? null);
+
+  /**
+   * The examiner's verdict, asked once on the way in — `GET /exam/eligibility`.
+   *
+   * Two of this page's screens depend on an answer only the exam service holds:
+   * a POSP who passed on another device is owed their certificate rather than a
+   * syllabus, and one the server will refuse is owed the reason before they
+   * accept a caution about spending an attempt. Both used to wait for a press.
+   *
+   * Unconditional, like every other hook here, so it does not run on some
+   * renders and not others — a POSP with no plan yet simply gets a "not
+   * enrolled" verdict this page has nothing to do with, and a failure changes
+   * nothing at all. See the hook.
+   */
+  const examEligibility = useExamEligibility();
+
+  /**
+   * The line this POSP is already certified in — and the whole of the
+   * certificate screen's state.
+   *
+   * Two sources answer the same question and this is where they meet: the mount
+   * check just above, and `handleStartExam` for a pass recorded while this page
+   * sat open. The press half is state because it is news arriving in a callback;
+   * the mount half is derived, because storing it would mean setting state from
+   * an effect the instant the fetch resolved — a second render pass for a value
+   * that is a pure function of a reply already in hand.
+   *
+   * The press wins when both have an answer. It is the later of the two, and the
+   * only one that can have changed since the page loaded.
+   *
+   * A section rather than a boolean because that is what `CertificateScreen`
+   * prints: `describeSections` reads `label` off it to say which paper was
+   * passed. The line is the server's own `insuranceTypeName` falling back to the
+   * plan the LMS record carries — both name the same enrolment, and the
+   * eligibility reply is simply the fresher of the two.
+   */
+  const certifiedSection = useMemo(() => {
+    if (certifiedByPress) return certifiedByPress;
+    if (!examEligibility.eligibility?.alreadyPassed) return null;
+
+    const line = examEligibility.eligibility.insuranceTypeName || plan?.name || '';
+    return { id: 'posp-certificate', label: line, title: line };
+  }, [certifiedByPress, examEligibility.eligibility, plan?.name]);
+
+  /**
+   * Unlock the dashboard that the certificate screen's "Go to Dashboard" button
+   * navigates to.
+   *
+   * An effect because it is a write to a store outside React, and it now covers
+   * both routes to a pass at once rather than being a line each call site has to
+   * remember. `ExamPortal` flips the same flag before moving to its own
+   * certificate stage; otherwise it is only ever set by sitting the paper in
+   * *this* browser — which a POSP who passed on another device never did.
+   */
+  useEffect(() => {
+    if (certifiedSection) markCertified();
+  }, [certifiedSection]);
+
+  /**
+   * Why the exam is shut, in the examiner's own words — or null while it is
+   * open.
+   *
+   * Held apart from `submitError`, which belongs to whichever press last failed
+   * (choosing a line, starting the hours, opening the paper). This is a standing
+   * condition rather than a failed action, and folding it into that one slot
+   * would make a refusal read as a button that did not work.
+   *
+   * `alreadyPassed` is excluded because it is not a refusal — that POSP is on
+   * their way to the certificate screen, and "you can't sit this" is the wrong
+   * sentence for having already cleared it.
+   */
+  const examBlockedReason =
+    examEligibility.eligibility &&
+    !examEligibility.eligibility.eligible &&
+    !examEligibility.eligibility.alreadyPassed
+      ? examEligibility.eligibility.reason ||
+        "You can't sit the exam right now. Please contact support."
+      : null;
 
   /**
    * *This browser's* countdown having reached zero. Deliberately not called
@@ -527,23 +605,13 @@ function TrainingProgramme() {
        * document itself, and this is the one reply that can prove they are
        * entitled to it.
        *
-       * `markCertified` first, for the same reason `ExamPortal` flips it before
-       * moving to its certificate stage: it unlocks the dashboard the "Go to
-       * Dashboard" button on that screen navigates to, and the flag is otherwise
-       * only ever set by sitting the paper in *this* browser — which a POSP who
-       * passed on another device never did.
-       *
-       * The line is the server's own `insuranceTypeName`, falling back to the
-       * plan the LMS record carries. Both name the same enrolment; the
-       * eligibility reply is simply the fresher of the two.
+       * The mount check usually gets here first now — this path is what catches
+       * a pass recorded on another device *while* this page sat open. Both hand
+       * off to the same helper so they cannot drift.
        */
       if (eligibility?.alreadyPassed) {
-        markCertified();
-        setCertifiedSection({
-          id: 'posp-certificate',
-          label: eligibility.insuranceTypeName || plan.name,
-          title: eligibility.insuranceTypeName || plan.name,
-        });
+        const line = eligibility.insuranceTypeName || plan.name;
+        setCertifiedByPress({ id: 'posp-certificate', label: line, title: line });
         return;
       }
 
@@ -687,6 +755,7 @@ function TrainingProgramme() {
               requiredHours={plan.requiredHours}
               starting={submitting}
               error={submitError}
+              blockedReason={examBlockedReason}
               onStartExam={handleStartExam}
             />
           ) : (

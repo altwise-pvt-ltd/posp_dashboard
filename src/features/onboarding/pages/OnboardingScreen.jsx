@@ -322,14 +322,26 @@ export default function OnboardingScreen() {
           </div>
 
           {/* Form + Sidebar — single column on mobile, two columns from lg up.
-              Form track is fluid (it grows with the viewport); the sidebar track
-              is a roomy fixed-ish width. Review spans the whole width instead. */}
+              Both tracks are pinned rather than content-sized: the form track is
+              exactly the step card's own max-width (28rem = max-w-112), so the
+              grid measures the same on every step and the illustration beside it
+              keeps one fixed size and position instead of sliding sideways each
+              time a step's content happens to be intrinsically narrower — which
+              is what an `auto` form track was doing (the Selfie step, with the
+              least text in it, pulled the whole centred grid in with it).
+
+              The sidebar track is `minmax(0, …)` rather than a flat width so the
+              pair can still fit a 1024px window: at that size it gives back a
+              few pixels instead of overflowing the shell. Above ~1055px it sits
+              at its full 27.5rem / 30.5rem and never moves.
+
+              Review spans the whole width instead — no sidebar there. */}
           <div
             className={
               "mx-auto w-full grid grid-cols-1 gap-12 items-start justify-center " +
               (isReview
                 ? "max-w-4xl xl:max-w-7xl"
-                : "lg:grid-cols-[auto_27.5rem] xl:grid-cols-[auto_30.5rem] lg:max-w-max")
+                : "lg:grid-cols-[28rem_minmax(0,27.5rem)] xl:grid-cols-[28rem_minmax(0,30.5rem)] lg:max-w-max")
             }
           >
             <div className="anim-fade-d2 min-w-0 w-full">

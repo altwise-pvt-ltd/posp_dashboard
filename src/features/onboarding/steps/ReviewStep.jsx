@@ -639,7 +639,7 @@ export default function ReviewStep({ onSubmit }) {
     const section = SECTIONS.find((s) => s.key === editing);
     const { Editor } = section;
     return (
-      <div className="w-full max-w-77.5 sm:max-w-90 lg:max-w-97.5 xl:max-w-97.5 mx-auto lg:mx-0 flex flex-col items-center gap-2">
+      <div className="w-full max-w-89 sm:max-w-103.5 lg:max-w-112 xl:max-w-112 mx-auto lg:mx-0 flex flex-col items-center gap-2">
         <div className="w-full flex justify-end">
           <button
             type="button"

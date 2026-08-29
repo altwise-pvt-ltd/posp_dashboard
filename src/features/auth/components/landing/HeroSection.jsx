@@ -16,13 +16,6 @@ const CHECKLIST = [
 export default function HeroSection({ loginForm }) {
   return (
     <Section padding="tight">
-      {/* items-start, not items-center: the login card changes height when the OTP
-          step opens. Centring would re-centre the other two columns against the
-          taller row and visibly drag them down, so every column is top-pinned and
-          the card grows on its own. */}
-      {/* The login track is sized to the card's own max-w-90, not wider: any extra
-          width would sit as dead space on the card's left, since the card is
-          right-pinned and can't grow into it. */}
       <div className="grid grid-cols-1 items-start gap-x-10 gap-y-0 lg:grid-cols-[1fr_auto_minmax(0,362px)] lg:gap-6">
         {/* ── Left: content ── */}
         {/* Mobile keeps only the headline and the zero-investment line, centred;
@@ -41,7 +34,7 @@ export default function HeroSection({ loginForm }) {
               is the 5% the headline is pulled back from the step. */}
           <h1 className="text-balance text-[calc(var(--text-4xl)*0.95)] font-bold leading-[1.15] tracking-tight lg:text-[calc(var(--text-5xl)*0.95)]">
             <span className="text-gray-900 lg:block">Become a</span>{" "}
-            <Highlight className="lg:block">Letsinsurance</Highlight>{" "}
+            <Highlight className="lg:block">LetsInsurance</Highlight>{" "}
             <span className="text-gray-900 lg:block">POSP Advisor</span>
           </h1>
 
