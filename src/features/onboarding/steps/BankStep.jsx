@@ -215,35 +215,34 @@ export default function BankStep({ onNext, initialValues }) {
           {...form.register("accountHolder")}
         />
 
-        {/* Account number + confirm — side by side on larger screens, stacked on mobile. */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
-          <Input
-            id="accountNumber"
-            label="Account Number *"
-            placeholder="Account number"
-            inputMode="numeric"
-            autoComplete="off"
-            maxLength={18}
-            className="font-mono tracking-wide"
-            error={form.formState.errors.accountNumber?.message}
-            {...acctField}
-            onChange={digitsOnly(acctField, 18)}
-          />
+        {/* Account number + confirm — stacked at every width: an 18-digit
+            number needs the card's full width to stay readable. */}
+        <Input
+          id="accountNumber"
+          label="Account Number *"
+          placeholder="Account number"
+          inputMode="numeric"
+          autoComplete="off"
+          maxLength={18}
+          className="font-mono tracking-wide"
+          error={form.formState.errors.accountNumber?.message}
+          {...acctField}
+          onChange={digitsOnly(acctField, 18)}
+        />
 
-          <Input
-            id="confirmAccountNumber"
-            label="Confirm Account Number *"
-            placeholder="Re-enter to confirm"
-            inputMode="numeric"
-            autoComplete="off"
-            maxLength={18}
-            onPaste={(e) => e.preventDefault()} /* force a manual re-type */
-            className="font-mono tracking-wide"
-            error={form.formState.errors.confirmAccountNumber?.message}
-            {...confirmField}
-            onChange={digitsOnly(confirmField, 18)}
-          />
-        </div>
+        <Input
+          id="confirmAccountNumber"
+          label="Confirm Account Number *"
+          placeholder="Re-enter to confirm"
+          inputMode="numeric"
+          autoComplete="off"
+          maxLength={18}
+          onPaste={(e) => e.preventDefault()} /* force a manual re-type */
+          className="font-mono tracking-wide"
+          error={form.formState.errors.confirmAccountNumber?.message}
+          {...confirmField}
+          onChange={digitsOnly(confirmField, 18)}
+        />
 
         {/* IFSC — full width now that Bank Name lives at the top. */}
         <Input

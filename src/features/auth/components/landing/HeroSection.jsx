@@ -74,6 +74,8 @@ export default function HeroSection({ loginForm }) {
             alt="POSP Advisor with the Letsinsurance advisor app"
             width={571}
             height={545}
+            fetchPriority="high"
+            decoding="async"
             className="h-90 w-auto object-contain sm:h-90 lg:h-155"
           />
         </div>

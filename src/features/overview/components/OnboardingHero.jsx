@@ -1,9 +1,9 @@
 import AppLink from '@/shared/components/AppLink';
-import healthImg from '@/assets/products/Health.png';
-import motorImg from '@/assets/products/Motor.png';
-import termLifeImg from '@/assets/products/TermLife.png';
-import businessImg from '@/assets/products/Business.png';
-import commercialImg from '@/assets/products/Commercial.png';
+import healthImg from '@/assets/products/Health.webp';
+import motorImg from '@/assets/products/Motor.webp';
+import termLifeImg from '@/assets/products/TermLife.webp';
+import businessImg from '@/assets/products/Business.webp';
+import commercialImg from '@/assets/products/Commercial.webp';
 
 const PRODUCTS = [
   {

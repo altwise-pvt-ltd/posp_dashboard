@@ -2,13 +2,13 @@ import { NavLink } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { isRoutedPath } from '@/app/routes';
 import logo from "@/assets/let'sInsuranceLogo.svg";
-import iconHome from '@/assets/sidebar/OverviewScreen.png';
-import iconCustomers from '@/assets/sidebar/Customer.png';
-import iconPolicies from '@/assets/sidebar/Policies.png';
-import iconReports from '@/assets/sidebar/Reports.png';
-import renewal from '@/assets/sidebar/renewal.png';
-import Profile from '@/assets/sidebar/profile.png';
-import iconTraining from '@/assets/sidebar/iconTraining.png';
+import iconHome from '@/assets/sidebar/OverviewScreen.webp';
+import iconCustomers from '@/assets/sidebar/Customer.webp';
+import iconPolicies from '@/assets/sidebar/Policies.webp';
+import iconReports from '@/assets/sidebar/Reports.webp';
+import renewal from '@/assets/sidebar/renewal.webp';
+import Profile from '@/assets/sidebar/profile.webp';
+import iconTraining from '@/assets/sidebar/iconTraining.webp';
 
 // `to` is the route path each link navigates to. 'Home', 'Profile' and
 // 'POSP Training' map to real pages (/overview, /profile, /posp-training);
