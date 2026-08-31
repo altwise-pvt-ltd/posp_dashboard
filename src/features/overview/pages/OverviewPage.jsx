@@ -7,18 +7,17 @@ import MonthlySalesChart from '@/features/overview/components/MonthlySalesChart'
 import RightRail from '@/features/overview/components/RightRail';
 
 /**
- * The rail pulls out of the flow at `2xl`, not `xl` — later than TrainingPage's
- * `lg` split for the same content-plus-rail shape, because this page also pays
- * for a 256px sidebar that training doesn't have. At `xl` (1280px) the left
- * column would be 1280 − 256 sidebar − 48 shell − 344 rail-and-gutter ≈ 630px,
- * and the hero inside it would be laying five product cards across ~95px each.
- * Splitting at `2xl` gives the left column the full width until there is
- * genuinely room for both.
+ * The rail pulls out of the flow at `md` — every screen above a phone gets the
+ * two-column view. That costs the left column 280px it used to keep until
+ * `2xl`, so the grids inside it (hero products, KPI cards) each carry their own
+ * later breakpoints to stay above their minimum card width. The rail itself is
+ * 16rem until `2xl` for the same reason; it only reaches 20rem once the shell
+ * is wide enough to give it away.
  */
 function OverviewPage() {
   return (
     <DashboardLayout>
-      <div className="flex flex-col 2xl:flex-row gap-gutter">
+      <div className="dashboard-scale flex flex-col md:flex-row gap-gutter">
         <div className="flex-1 flex flex-col gap-gutter min-w-0">
           <GreetingHeader />
           <OnboardingHero />

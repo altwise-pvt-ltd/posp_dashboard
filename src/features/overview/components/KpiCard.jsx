@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { isRoutedPath } from '@/app/routes';
+import AppLink from '@/shared/components/AppLink';
 
 const THEMES = {
   sky:     { iconBg: 'bg-sky-50',     iconText: 'text-sky-600',     iconHover: 'hover:bg-sky-100',     listLink: 'text-sky-600' },
@@ -24,7 +25,6 @@ function KpiCard({
   theme = 'sky',
   countView,
   listItems = [],
-  viewAllTo,
 }) {
   const [showList, setShowList] = useState(false);
   const navigate = useNavigate();
@@ -34,7 +34,6 @@ function KpiCard({
   // they do the card is inert: no pointer cursor, no link role, no navigation.
   // The toggle button still works, so the card isn't dead — just not a link.
   const canNavigate = isRoutedPath(to);
-  const canViewAll = isRoutedPath(viewAllTo);
 
   // p-4 below `sm`: at two-up on a phone these cards are ~175px, and the page
   // gutter would spend 48px of that before the number starts.
@@ -48,6 +47,13 @@ function KpiCard({
     if (canNavigate) navigate(to);
   };
 
+  const handleKeyDown = (e) => {
+    if (canNavigate && (e.key === 'Enter' || e.key === ' ')) {
+      e.preventDefault();
+      navigate(to);
+    }
+  };
+
   const handleToggle = (e) => {
     e.stopPropagation();
     setShowList((v) => !v);
@@ -59,12 +65,7 @@ function KpiCard({
       onClick={handleCardClick}
       role={canNavigate ? 'link' : undefined}
       tabIndex={canNavigate ? 0 : undefined}
-      onKeyDown={(e) => {
-        if (canNavigate && (e.key === 'Enter' || e.key === ' ')) {
-          e.preventDefault();
-          navigate(to);
-        }
-      }}
+      onKeyDown={handleKeyDown}
     >
       {highlighted && (
         <div className="absolute -bottom-6 -right-6 w-24 h-24 bg-primary-container/15 rounded-full blur-xl pointer-events-none" />
@@ -105,26 +106,9 @@ function KpiCard({
               </span>
             </div>
           ))}
-          {viewAllTo &&
-            (canViewAll ? (
-              <a
-                href={viewAllTo}
-                onClick={(e) => {
-                  e.preventDefault();
-                  navigate(viewAllTo);
-                }}
-                className={`font-data-mono text-data-mono hover:underline mt-1 ${t.listLink}`}
-              >
-                View all →
-              </a>
-            ) : (
-              <span
-                aria-disabled="true"
-                className={`font-data-mono text-data-mono mt-1 cursor-default ${t.listLink}`}
-              >
-                View all →
-              </span>
-            ))}
+          <AppLink to={to} className={`font-data-mono text-data-mono hover:underline mt-1 ${t.listLink}`}>
+            View all →
+          </AppLink>
         </div>
       )}
     </div>

@@ -39,11 +39,11 @@ function ActivePoliciesCard() {
   return (
     <div className="bg-surface-container-lowest rounded-xl border border-gray-200 p-gutter card-lift anim-fade-d2">
       <div className="flex items-center justify-between mb-gutter">
-        <h4 className="font-headline-md text-headline-md text-on-surface flex items-center gap-1.5">
+        <h4 className="font-headline-md text-headline-md text-on-surface flex items-center gap-1.5 min-w-0">
           <span className="material-symbols-outlined text-primary text-[20px]">folder_special</span>
           Active Policies
         </h4>
-        <span className="font-data-mono text-data-mono text-on-surface-variant">304 total</span>
+        <span className="font-data-mono text-data-mono text-on-surface-variant shrink-0 whitespace-nowrap">304 total</span>
       </div>
       <ul className="flex flex-col gap-gutter">
         {POLICY_TYPES.map((p) => (
@@ -71,11 +71,21 @@ function ActivePoliciesCard() {
 }
 
 const DOMAIN_SALES = [
-  { name: 'Health', value: '₹4.5L', pct: '37.5%', dot: 'bg-amber-500' },
-  { name: 'Motor',  value: '₹3.5L', pct: '29.2%', dot: 'bg-sky-500' },
-  { name: 'Term',   value: '₹2.5L', pct: '20.8%', dot: 'bg-emerald-500' },
-  { name: 'Life',   value: '₹1.5L', pct: '12.5%', dot: 'bg-violet-500' },
+  { name: 'Health', value: '₹4.5L', pct: 37.5, color: '#f59e0b' },
+  { name: 'Motor',  value: '₹3.5L', pct: 29.2, color: '#0ea5e9' },
+  { name: 'Term',   value: '₹2.5L', pct: 20.8, color: '#10b981' },
+  { name: 'Life',   value: '₹1.5L', pct: 12.5, color: '#8b5cf6' },
 ];
+
+const DOMAIN_GRADIENT = (() => {
+  let deg = 0;
+  const stops = DOMAIN_SALES.map((d) => {
+    const start = deg;
+    deg += d.pct * 3.6;
+    return `${d.color} ${start}deg ${deg}deg`;
+  });
+  return `conic-gradient(${stops.join(', ')})`;
+})();
 
 function SalesByDomainCard() {
   return (
@@ -88,14 +98,12 @@ function SalesByDomainCard() {
         <span className="font-label-caps text-label-caps text-on-surface-variant">This month</span>
       </div>
 
-      <div className="relative w-[160px] h-[160px] mx-auto mb-gutter group">
+      <div className="relative w-40 h-40 mx-auto mb-gutter group">
         <div
           className="absolute inset-0 rounded-full transition-transform group-hover:scale-105 shadow-[0_4px_16px_-8px_rgba(0,0,0,.15)]"
-          style={{
-            background: 'conic-gradient(#f59e0b 0deg 135deg, #0ea5e9 135deg 240deg, #10b981 240deg 315deg, #8b5cf6 315deg 360deg)',
-          }}
+          style={{ background: DOMAIN_GRADIENT }}
         />
-        <div className="absolute inset-[20px] rounded-full bg-white flex flex-col items-center justify-center">
+        <div className="absolute inset-5 rounded-full bg-white flex flex-col items-center justify-center">
           <span className="font-data-currency text-data-currency text-on-surface text-[22px]">₹12L</span>
           <span className="font-label-caps text-label-caps text-on-surface-variant mt-0.5">TOTAL SALES</span>
         </div>
@@ -108,12 +116,12 @@ function SalesByDomainCard() {
             className="flex items-center justify-between gap-unit py-1 hover:bg-gray-50 px-1.5 -mx-1.5 rounded transition-colors"
           >
             <span className="flex items-center gap-unit min-w-0">
-              <span className={`w-2.5 h-2.5 rounded-sm ${d.dot} shrink-0`} />
+              <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: d.color }} />
               <span className="font-body-md text-body-md text-on-surface truncate">{d.name}</span>
             </span>
             <span className="flex items-center gap-unit shrink-0">
               <span className="font-data-currency text-data-currency text-on-surface">{d.value}</span>
-              <span className="font-data-mono text-data-mono text-on-surface-variant w-9 text-right">{d.pct}</span>
+              <span className="font-data-mono text-data-mono text-on-surface-variant w-9 text-right">{d.pct}%</span>
             </span>
           </li>
         ))}
@@ -159,16 +167,18 @@ function LearnGrowCard() {
 }
 
 /**
- * A 20rem rail from `2xl` up (see the note in OverviewPage for why not `xl`).
- * Below that it sits under the main column, where a single stack of four
+ * A 16rem rail from `md`, widening to 20rem at `2xl`. It stays narrow through
+ * the middle widths on purpose: those 64px are worth more to the main column,
+ * which is fitting three product cards across, than they are here.
+ * Below `md` it sits under the main column, where a single stack of four
  * full-width cards would be a long scroll for very little information — so it
- * pairs up from `sm` and only returns to one column once it is the narrow rail
- * again. `items-start` keeps each card at its natural height instead of
- * stretching the short ones to match their row.
+ * pairs up from `sm` and returns to one column once it is the rail again.
+ * `items-start` keeps each card at its natural height instead of stretching the
+ * short ones to match their row.
  */
 function RightRail() {
   return (
-    <div className="w-full 2xl:w-80 shrink-0 grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-1 items-start gap-gutter">
+    <div className="w-full md:w-64 2xl:w-80 shrink-0 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 items-start content-start gap-gutter">
       <DailyGoalCard />
       <ActivePoliciesCard />
       <SalesByDomainCard />

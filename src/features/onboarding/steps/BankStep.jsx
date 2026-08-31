@@ -7,9 +7,12 @@ import Input from "@/shared/components/Input";
 import Button from "@/shared/components/Button";
 import FileUpload from "@/shared/components/FileUpload";
 import { fileField } from "@/shared/upload/schema";
+import { bankNameField, personNameField } from "@/shared/validation/nameField";
+import { digitMask, maskedField, upperAlnumMask } from "@/shared/validation/inputMask";
 import { alertOnInvalid } from "@/shared/store/alertStore";
 import { reportFormError } from "@/shared/api/formErrors";
 import { useMasterOptions } from "../hooks/useMasterOptions";
+import { useDocumentFiles } from "../hooks/useDocumentFiles";
 import OptionsUnavailable from "../components/OptionsUnavailable";
 import {
   fetchAccountTypes,
@@ -29,12 +32,14 @@ const bankSchema = z
      * else; this rule exists to catch "nothing chosen".
      */
     accountType: z.string().min(1, "Choose an account type."),
-    accountHolder: z.string().trim().min(1, "Account holder name is required.").max(200),
+    accountHolder: personNameField({ label: "Account holder name" }),
     accountNumber: z.string().regex(/^[0-9]{9,18}$/, "Enter a valid account number (9–18 digits)."),
     confirmAccountNumber: z.string().min(1, "Please re-enter the account number."),
     // Real IFSC shape: 4 bank letters, a 0, then 6 branch alphanumerics.
     ifsc: z.string().regex(/^[A-Z]{4}0[A-Z0-9]{6}$/, "Enter a valid 11-character IFSC code."),
-    bankName: z.string().trim().min(1, "Bank name is required.").max(200),
+    bankName: bankNameField({ label: "Bank name" }),
+    /* Optional, matching the server. */
+    branchName: bankNameField({ label: "Branch name", required: false }),
     passbookImage: fileField({ message: "Please upload your passbook photo." }),
     chequeImage: fileField({ message: "Please upload a cancelled cheque." }),
   })
@@ -61,9 +66,27 @@ export default function BankStep({ onNext, initialValues }) {
       // The confirm mirror isn't persisted — pre-satisfy it when editing.
       // Covers the empty case too, hence no earlier `confirmAccountNumber: ""`.
       confirmAccountNumber: initialValues?.accountNumber ?? "",
+      // Persists as null on a record saved before the field existed.
+      branchName: initialValues?.branchName ?? "",
     },
     mode: "onTouched",
   });
+
+  /**
+   * Passbook and cheque, fetched back from the record.
+   *
+   * This step is the reason the restore re-sends the bytes rather than omitting
+   * them: `POST /onboarding/bank/save` has no "keep what's on file" mode, so an
+   * edit that only corrected the IFSC would previously be rejected for two
+   * images the server was already holding.
+   */
+  const storedFiles = useDocumentFiles(
+    {
+      passbookImage: initialValues?.passbookImageKey,
+      chequeImage: initialValues?.chequeImageKey,
+    },
+    { form }
+  );
 
   const {
     options: accountTypes,
@@ -89,22 +112,6 @@ export default function BankStep({ onNext, initialValues }) {
       matchMasterValue(current, accountTypes) ?? accountTypes[0].value
     );
   }, [accountTypes, form]);
-
-  // Account numbers → digits only.
-  const digitsOnly = (field, max) => (e) => {
-    e.target.value = e.target.value.replace(/[^0-9]/g, "").slice(0, max);
-    field.onChange(e);
-  };
-
-  // IFSC → uppercase alphanumerics, max 11.
-  const ifscField = form.register("ifsc");
-  const handleIfscChange = (e) => {
-    e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 11);
-    ifscField.onChange(e);
-  };
-
-  const acctField = form.register("accountNumber");
-  const confirmField = form.register("confirmAccountNumber");
 
   /**
    * Save to the server, then advance — only on success.
@@ -226,8 +233,7 @@ export default function BankStep({ onNext, initialValues }) {
           maxLength={18}
           className="font-mono tracking-wide"
           error={form.formState.errors.accountNumber?.message}
-          {...acctField}
-          onChange={digitsOnly(acctField, 18)}
+          {...maskedField(form, "accountNumber", digitMask(18))}
         />
 
         <Input
@@ -240,8 +246,7 @@ export default function BankStep({ onNext, initialValues }) {
           onPaste={(e) => e.preventDefault()} /* force a manual re-type */
           className="font-mono tracking-wide"
           error={form.formState.errors.confirmAccountNumber?.message}
-          {...confirmField}
-          onChange={digitsOnly(confirmField, 18)}
+          {...maskedField(form, "confirmAccountNumber", digitMask(18))}
         />
 
         {/* IFSC — full width now that Bank Name lives at the top. */}
@@ -253,8 +258,16 @@ export default function BankStep({ onNext, initialValues }) {
           maxLength={11}
           className="font-mono tracking-[0.15em] uppercase"
           error={form.formState.errors.ifsc?.message}
-          {...ifscField}
-          onChange={handleIfscChange}
+          {...maskedField(form, "ifsc", upperAlnumMask(11))}
+        />
+
+        <Input
+          id="branchName"
+          label="Branch Name"
+          placeholder="e.g. Shivaji Nagar"
+          maxLength={200}
+          error={form.formState.errors.branchName?.message}
+          {...form.register("branchName")}
         />
 
         <Controller name="passbookImage" control={form.control} render={({ field }) => (
@@ -262,6 +275,7 @@ export default function BankStep({ onNext, initialValues }) {
             id="passbookImage"
             label="Passbook Photo"
             required
+            initialFile={storedFiles.passbookImage}
             error={form.formState.errors.passbookImage?.message}
             hint="First page showing your name, account number and IFSC."
             onChange={field.onChange}
@@ -273,6 +287,7 @@ export default function BankStep({ onNext, initialValues }) {
             id="chequeImage"
             label="Cancelled Cheque"
             required
+            initialFile={storedFiles.chequeImage}
             error={form.formState.errors.chequeImage?.message}
             hint="A cheque with 'CANCELLED' written across it."
             onChange={field.onChange}

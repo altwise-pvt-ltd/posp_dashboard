@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { ensurePospProfile } from '@/shared/store/pospProfileStore';
 import Sidebar from './dashboard/Sidebar';
 import Topbar from './dashboard/Topbar';
 
@@ -29,6 +30,24 @@ function DashboardLayout({ children }) {
   // useful mobile answer; being off-canvas entirely is.
   const [collapsed, setCollapsed] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+
+  /**
+   * The POSP record, for the bar above every dashboard page.
+   *
+   * `UserMenu` reads the profile but deliberately never fetches it — it also
+   * renders inside `BrandTopbar` on the onboarding side of the funnel, where
+   * there is no POSP row to ask for. So the fetch belongs to the layout that is
+   * only ever mounted after registration, which is this one. Without it the
+   * dashboard's own bar had no name and no photograph to draw: the store was
+   * only ever filled by /profile and /verification, so landing on the dashboard
+   * first showed the mobile number and a plain initial.
+   *
+   * `ensureLoaded`, not `refresh` — the sign-in path has usually fetched it
+   * already, and this resolves instantly when it has.
+   */
+  useEffect(() => {
+    ensurePospProfile();
+  }, []);
 
   useEffect(() => {
     if (!drawerOpen) return;

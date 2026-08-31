@@ -18,7 +18,7 @@ import StoreBadges from "./landing/ui/StoreBadges";
 import Highlight from "./landing/ui/Highlight";
 
 /* ── Schemas ── */
-// Indian mobile: 10 digits, starts 6-9. (POSP flow already collects PAN/Aadhaar.)
+// Indian mobile: 10 digits, starts 6-9.
 const mobileSchema = z.object({
   mobile: z
     .string()
@@ -176,7 +176,10 @@ export default function LoginForm({ onVerified }) {
   }, alertOnInvalid);
 
   return (
-    <div id="login-form" className="w-full max-w-[380px] rounded-2xl border border-slate-100 bg-white px-6 py-8 shadow-brand-card sm:px-8">
+    <div
+      id="login-form"
+      className="w-full max-w-[380px] rounded-2xl border border-slate-100 bg-white px-6 py-8 shadow-brand-card sm:px-8"
+    >
       {/* ── Card heading ── */}
       <h2 className="text-center text-[26px] font-bold tracking-tight text-slate-900">
         Login or <Highlight>Register</Highlight>

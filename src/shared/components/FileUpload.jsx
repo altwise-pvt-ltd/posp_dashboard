@@ -8,6 +8,7 @@ export default function FileUpload({
   label,
   required = false,
   profile = DOCUMENT,
+  initialFile = null,
   onChange,
   onError,
   error,
@@ -20,12 +21,10 @@ export default function FileUpload({
   const [busy, setBusy] = useState(false);
   const [rejection, setRejection] = useState(null);
 
-
   const selectionRef = useRef(0);
   const mountedRef = useRef(true);
-
-
   const previewRef = useRef(null);
+
   const showPreview = useCallback((url) => {
     if (previewRef.current) URL.revokeObjectURL(previewRef.current);
     previewRef.current = url;
@@ -33,13 +32,29 @@ export default function FileUpload({
   }, []);
 
   useEffect(() => {
-
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
       if (previewRef.current) URL.revokeObjectURL(previewRef.current);
     };
   }, []);
+
+  /**
+   * Adopt a document already on file — see `useDocumentFiles`.
+   *
+   * Guarded on `selectionRef` still being untouched, so this can only ever fill
+   * an empty zone. Once the user has picked a file or cleared the field, the
+   * counter has moved and the restored copy stays out: re-adopting it would put
+   * back a document they had just replaced or deliberately removed.
+   *
+   * The bytes are not re-run through `prepareFile` — they came from the server,
+   * which means they already passed it on the way up.
+   */
+  useEffect(() => {
+    if (!initialFile || selectionRef.current !== 0) return;
+    setFile(initialFile);
+    showPreview(URL.createObjectURL(initialFile));
+  }, [initialFile, showPreview]);
 
   const processFile = useCallback(
     async (candidate) => {

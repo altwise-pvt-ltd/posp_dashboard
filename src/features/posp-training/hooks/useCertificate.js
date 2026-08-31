@@ -2,21 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { fetchDocumentBlob } from '@/features/onboarding/api/onboardingApi';
 import { ensurePospProfile, usePospProfileStore } from '@/shared/store/pospProfileStore';
 import { ApiError } from '@/shared/api/ApiError';
+import { formatAadhaar } from '@/shared/validation/aadhaarField';
 import { fetchMyCertificate } from '../api/certificateApi';
-
-/**
- * Aadhaar in the grouping the document prints — `3390 3781 1193`.
- *
- * Only applied to a value that is actually twelve digits. `/posp/me` may hand
- * back a masked number (`XXXX XXXX 1193`) or a shorter reference, and regrouping
- * those would be reformatting something this app does not understand — so
- * anything else is printed exactly as the server sent it.
- */
-const formatAadhaar = (value) => {
-  const digits = String(value ?? '').replace(/\D/g, '');
-  if (digits.length !== 12) return value ?? '';
-  return digits.replace(/(\d{4})(\d{4})(\d{4})/, '$1 $2 $3');
-};
 
 /**
  * The certificate, ready to print — both halves of it.

@@ -148,7 +148,6 @@ export default function Stepper({ steps = [], activeIndex = 0 }) {
         "--stepper-track":     "#e2e8f0",
         "--stepper-title":     "#1e293b",
         "--stepper-caption":   "#94a3b8",
-        fontFamily: "'Plus Jakarta Sans', system-ui, -apple-system, sans-serif",
       }}
     >
       {/* min-w-min so steps never wrap while scrolling on small screens;

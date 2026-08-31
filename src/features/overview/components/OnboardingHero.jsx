@@ -97,13 +97,12 @@ function OnboardingHero() {
       </div>
 
       {/*
-        Five across only from `xl`, where the rail is still stacked below and
-        this column has the shell's full width (~163px per card). It used to go
-        five-up at the same breakpoint the rail pulled out at, so the row gained
-        two columns in the same frame it lost 344px — which is what sliced
-        "Commercial" in half.
+        Column counts are set by what the rail leaves behind, not by the
+        viewport: two-up while the column is ~448px (`md`), three-up at ~488px
+        (`lg`), five-up from `xl` where it reaches ~696px and keeps the whole
+        row on one line — the shape this hero was drawn for.
       */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-unit sm:gap-gutter mb-gutter relative z-10">
+      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-unit sm:gap-gutter mb-gutter relative z-10">
         {PRODUCTS.map((p) => (
           <AppLink
             key={p.key}

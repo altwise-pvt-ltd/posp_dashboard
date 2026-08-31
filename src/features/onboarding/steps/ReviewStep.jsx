@@ -4,7 +4,9 @@ import {
   Pencil, X, FileText, CheckCircle2, ShieldCheck, Send, AlertCircle, RotateCcw, Loader2,
 } from "lucide-react";
 import Button from "@/shared/components/Button";
-import { fetchReviewDetails, fetchDocumentBlob } from "../api/onboardingApi";
+import { formatAadhaar } from "@/shared/validation/aadhaarField";
+import { maskAccount } from "@/features/profile/lib/profileFields";
+import { fetchReviewDetails, fetchDocumentBlob, hasDocumentKey } from "../api/onboardingApi";
 import PanStep from "./PanStep";
 import EmailStep from "./EmailStep";
 import AadhaarStep from "./AadhaarStep";
@@ -12,10 +14,6 @@ import SelfieStep from "./SelfieStep";
 import BankStep from "./BankStep";
 import EducationStep from "./EducationStep";
 import BusinessStep from "./BusinessStep";
-
-/* Display helpers — keep the saved (clean) values, format only for reading. */
-const formatAadhaar = (digits = "") => digits.replace(/(.{4})/g, "$1 ").trim();
-const maskAccount = (n = "") => (n.length > 4 ? `•••• •••• ${n.slice(-4)}` : n);
 
 /**
  * A masters value → something readable. `POST_GRADUATE` → "Post Graduate".
@@ -68,8 +66,7 @@ const SECTIONS = [
       ["Full Name", d.fullName],
       ["Date of Birth", d.dateOfBirth || "—"],
     ],
-    /* The back is listed only when one exists — no step uploads it, so for most
-       applications there is nothing there to show. */
+    /* The back is optional in the step, so it's listed only when one exists. */
     files: (d) => [
       ["PAN Card", d.panFrontImageKey],
       ...(d.panBackImageKey ? [["PAN Card (Back)", d.panBackImageKey]] : []),
@@ -87,10 +84,9 @@ const SECTIONS = [
     title: "Aadhaar Details",
     Icon: Fingerprint,
     Editor: AadhaarStep,
-    /* DOB / gender / address are on the record but collected by no step, so
-       they are listed only when the server actually holds them — otherwise
-       every applicant gets three permanent "—" rows for fields we never ask
-       for. */
+    /* DOB / gender / address are optional in the step, so they are listed only
+       when the server actually holds them — an applicant who skipped all three
+       shouldn't get three permanent "—" rows. */
     rows: (d) => [
       ["Aadhaar Number", formatAadhaar(d.aadhaar)],
       ["Name", d.fullName],
@@ -122,6 +118,8 @@ const SECTIONS = [
       ["Account Number", maskAccount(d.accountNumber)],
       ["IFSC Code", d.ifsc],
       ["Bank Name", d.bankName],
+      /* Optional in the step, so listed only when it's actually on file. */
+      ...(d.branchName ? [["Branch Name", d.branchName]] : []),
     ],
     files: (d) => [
       ["Passbook", d.passbookImageKey],
@@ -202,9 +200,6 @@ function EditPill({ onClick }) {
   );
 }
 
-/** True for a document key from the review response — the only source there is. */
-const hasDocument = (key) => typeof key === "string" && key.length > 0;
-
 /**
  * A displayable URL for a document key.
  *
@@ -231,7 +226,7 @@ function useDocumentUrl(key) {
   const [loaded, setLoaded] = useState({ key: null, blob: null });
 
   useEffect(() => {
-    if (!hasDocument(key)) return;
+    if (!hasDocumentKey(key)) return;
     let cancelled = false;
 
     fetchDocumentBlob(key)
@@ -277,7 +272,7 @@ function useDocumentUrl(key) {
  * and it beats captioning every document on the screen with the same word.
  */
 const documentName = (key) => {
-  const extension = hasDocument(key) && key.match(/\.([a-z0-9]{2,4})$/i)?.[1];
+  const extension = hasDocumentKey(key) && key.match(/\.([a-z0-9]{2,4})$/i)?.[1];
   return extension ? `${extension.toUpperCase()} file` : "Uploaded";
 };
 
@@ -306,7 +301,7 @@ function FilePreview({ label, documentKey }) {
 function SummaryCard({ section, data, onEdit }) {
   const { title, Icon } = section;
   const rows = section.rows(data);
-  const files = (section.files?.(data) || []).filter(([, key]) => hasDocument(key));
+  const files = (section.files?.(data) || []).filter(([, key]) => hasDocumentKey(key));
 
   return (
     <div className="rounded-2xl border border-slate-100 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)] overflow-hidden">
@@ -508,7 +503,7 @@ function DocumentRow({ doc, onEdit }) {
 function DocumentsRail({ sections, onEdit }) {
   const docs = SECTIONS.flatMap((s) =>
     (s.files?.(sections[s.key] || {}) || [])
-      .filter(([, key]) => hasDocument(key))
+      .filter(([, key]) => hasDocumentKey(key))
       .map(([label, documentKey]) => ({ sectionKey: s.key, label, documentKey }))
   );
 

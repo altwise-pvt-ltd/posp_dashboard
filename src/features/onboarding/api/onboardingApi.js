@@ -162,21 +162,23 @@ function toApiDate(value) {
  * ASP.NET and binds case-insensitively, so `fullName` would very likely bind
  * too — matching the proven request exactly is the cheaper bet either way.)
  *
- * DOB is optional in the form and omitted here when blank. If the server turns
- * out to require it, the fix is in `panSchema`, not here — a required field
- * should be enforced where the user can still see the input.
+ * DOB is optional to the server and required by `panSchema` — the form is the
+ * stricter of the two on purpose, so it is still guarded here rather than
+ * assumed present. `panBackImage` is optional on both sides.
  */
 export async function submitPanDetails({
   panNumber,
   fullName,
   dateOfBirth,
   panFrontImage,
+  panBackImage,
 } = {}) {
   const body = new FormData();
   body.append('panNumber', panNumber);
   body.append('fullname', fullName);
   if (dateOfBirth) body.append('dateOfBirth', toApiDate(dateOfBirth));
   if (panFrontImage) body.append('panFrontImage', panFrontImage, panFrontImage.name);
+  if (panBackImage) body.append('panBackImage', panBackImage, panBackImage.name);
 
   const response = await api.post(
     ENDPOINTS.onboarding.submitPanDetails,
@@ -248,20 +250,26 @@ export async function verifyEmailOtp(email, otp) {
  * work, not a second convention. (Swagger gives `fullName` for both; PAN's
  * spelling binds only because ASP.NET is case-insensitive.)
  *
- * The server also accepts `dateOfBirth`, `gender` and `address` here, all
- * optional and none of them collected by the step. If they're ever wanted, they
- * belong in `aadhaarSchema` first — a field the user can't see is a field they
- * can't fix when the server rejects it.
+ * `dateOfBirth`, `gender` and `address` are optional, and each is omitted when
+ * blank rather than sent empty, so "not provided" stays distinct from
+ * "cleared". `dateOfBirth` takes the same `dd/mm/yyyy` → `yyyy/MM/dd` turn as
+ * PAN's — the two endpoints want the same order.
  */
 export async function submitAadhaarDetails({
   aadhaar,
   fullName,
+  dateOfBirth,
+  gender,
+  address,
   aadhaarFrontImage,
   aadhaarBackImage,
 } = {}) {
   const body = new FormData();
   body.append('aadhaarNumber', String(aadhaar ?? '').replace(/\s/g, ''));
   body.append('fullName', fullName);
+  if (dateOfBirth) body.append('dateOfBirth', toApiDate(dateOfBirth));
+  if (gender) body.append('gender', gender);
+  if (address) body.append('address', address);
   if (aadhaarFrontImage) body.append('aadhaarFrontImage', aadhaarFrontImage, aadhaarFrontImage.name);
   // Optional to the server, required by the step's schema — so this is a guard
   // against a caller that skipped validation, not an expected absence.
@@ -302,30 +310,62 @@ export async function uploadSelfie(selfieImage, { onProgress } = {}) {
 
 /* ── Step 5 · Bank ─────────────────────────────────────────────────────── */
 
+/**
+ * Save step 5.
+ *
+ * Three field names change at this boundary — `accountHolder` →
+ * `accountHolderName`, `ifsc` → `ifscCode`, `chequeImage` →
+ * `cancelledChequeImage` — and `confirmAccountNumber` never leaves the browser,
+ * since re-typing the number is a check on the user, not a fact about them.
+ *
+ * `accountType` must be a `value` from `fetchAccountTypes` — `SAVINGS`, not
+ * `Savings` and not `savings`.
+ *
+ * There is no "keep what's on file" mode: an edit that changes only the IFSC
+ * still has to re-send both images, which is why `useDocumentFiles` fetches the
+ * stored bytes back rather than leaving the fields empty.
+ */
+export async function saveBankDetails({
+  accountNumber,
+  accountHolder,
+  ifsc,
+  bankName,
+  branchName,
+  accountType,
+  passbookImage,
+  chequeImage,
+} = {}) {
+  const body = new FormData();
+  body.append('accountNumber', accountNumber);
+  body.append('accountHolderName', accountHolder);
+  body.append('ifscCode', ifsc);
+  body.append('bankName', bankName);
+  if (branchName) body.append('branchName', branchName);
+  if (accountType) body.append('accountType', accountType);
+  if (passbookImage) body.append('passbookImage', passbookImage, passbookImage.name);
+  if (chequeImage) body.append('cancelledChequeImage', chequeImage, chequeImage.name);
+
+  const response = await api.post(
+    ENDPOINTS.onboarding.saveBankDetails,
+    body,
+    uploadConfig()
+  );
+  return unwrap(response) ?? null;
+}
+
 /* ── Masters ───────────────────────────────────────────────────────────── */
 
 /**
- * The server's dropdown lists, as `[{ value, label }]`.
+ * A masters/geography payload → `[{ value, label }]`.
  *
- * These are requests rather than constants for one reason: `value` and `label`
- * are not the same string. The server stores `SAVINGS` and displays `Savings`;
- * it stores `POST_GRADUATE` and displays `Post Graduate`. A step that submitted
- * what it rendered would send the label, and one that hardcoded its own guess
- * at the stored form would send something like `PostGraduate` — which is what
- * this step did before, and what the server has no row for.
- *
- * There is no local fallback list, deliberately — see the note in
- * `useMasterOptions`. A malformed payload yields an empty array, which the
- * steps treat the same as a failed request: say so and offer a retry, rather
- * than proceed on a list this file invented.
- *
- * Entries missing a `value` are dropped rather than passed through: the value
- * is the only part that gets submitted, so an option without one is a button
- * that cannot be answered with.
+ * `value` and `label` are not the same string — the server stores `SAVINGS` and
+ * displays `Savings` — so a step that submitted what it rendered would send the
+ * label. Entries with no `value` are dropped: the value is the only part that
+ * gets submitted, so an option without one is a button that cannot be answered
+ * with. A malformed payload yields `[]`, which the steps treat exactly as they
+ * treat a failed request.
  */
-async function fetchMasterOptions(endpoint) {
-  const response = await api.get(endpoint);
-  const raw = unwrap(response);
+function toOptions(raw) {
   if (!Array.isArray(raw)) return [];
 
   return raw
@@ -334,6 +374,12 @@ async function fetchMasterOptions(endpoint) {
       label: option?.label ?? option?.value ?? '',
     }))
     .filter((option) => option.value);
+}
+
+/** There is deliberately no local fallback list — see `useMasterOptions`. */
+async function fetchMasterOptions(endpoint, config) {
+  const response = await api.get(endpoint, config);
+  return toOptions(unwrap(response));
 }
 
 /** Account types for the bank step. */
@@ -347,6 +393,23 @@ export const fetchQualifications = () =>
 /** Business types for the business step. */
 export const fetchBusinessTypes = () =>
   fetchMasterOptions(ENDPOINTS.onboarding.getBusinessTypes);
+
+/**
+ * Match a value already held by a form to one of a masters list's `value`s.
+ *
+ * Comparison ignores case *and* punctuation: `PostGraduate` and `POST_GRADUATE`
+ * differ by an underscore as well as a case, so a `toLowerCase()` match would
+ * fail on exactly the option most likely to have been hardcoded wrong. Returns
+ * the server's spelling, so what a form submits is always the server's value.
+ */
+const loosely = (value) =>
+  String(value ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+export function matchMasterValue(saved, options) {
+  const target = loosely(saved);
+  if (!target) return null;
+  return options.find((option) => loosely(option.value) === target)?.value ?? null;
+}
 
 /* ── Geography ─────────────────────────────────────────────────────────── */
 
@@ -364,28 +427,16 @@ export const fetchStates = () => fetchMasterOptions(ENDPOINTS.geography.states);
  *
  * Takes the state's exact name from `fetchStates` — the server matches on it
  * literally and answers a misspelling with an empty list rather than an error,
- * so "no districts" and "no such state" arrive looking identical. The step
- * avoids ever asking the question: the state field commits only a value picked
- * or matched against the fetched list, so anything reaching here is a name the
- * server supplied.
+ * so "no districts" and "no such state" arrive looking identical. The state
+ * field only ever commits a value picked or matched against the fetched list,
+ * so anything reaching here is a name the server supplied.
  *
- * An empty or absent state short-circuits without a request. The district field
- * is disabled until a state is chosen, so this is the belt to that braces —
- * without it, a cleared state would fire a `?state=` call whose empty result is
- * then indistinguishable from a real one.
+ * An empty state short-circuits without a request, so a cleared state cannot
+ * fire a `?state=` call whose empty result is indistinguishable from a real one.
  */
 export async function fetchDistricts(state) {
   if (!state) return [];
-  const response = await api.get(ENDPOINTS.geography.districts, { params: { state } });
-  const raw = unwrap(response);
-  if (!Array.isArray(raw)) return [];
-
-  return raw
-    .map((option) => ({
-      value: option?.value ?? '',
-      label: option?.label ?? option?.value ?? '',
-    }))
-    .filter((option) => option.value);
+  return fetchMasterOptions(ENDPOINTS.geography.districts, { params: { state } });
 }
 
 /**
@@ -414,67 +465,6 @@ export async function fetchPincodeDetails(pincode) {
      *  neither requires one nor stores the list. */
     areas: Array.isArray(data.areas) ? data.areas.filter(Boolean) : [],
   };
-}
-
-/**
- * Match a value already held by a form to one of a masters list's `value`s.
- *
- * Comparison ignores case *and* punctuation, which is what makes it worth
- * having: `PostGraduate` and `POST_GRADUATE` differ by an underscore as well as
- * a case, so a `toLowerCase()` match would quietly fail on exactly the option
- * most likely to have been hardcoded wrong. Returns the server's spelling, so
- * whatever a form was holding, what it submits is the server's own value.
- */
-const loosely = (value) =>
-  String(value ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
-
-export function matchMasterValue(saved, options) {
-  const target = loosely(saved);
-  if (!target) return null;
-  return options.find((option) => loosely(option.value) === target)?.value ?? null;
-}
-
-/**
- * Save step 5.
- *
- * Three field names change at this boundary — `accountHolder` →
- * `accountHolderName`, `ifsc` → `ifscCode`, `chequeImage` →
- * `cancelledChequeImage` — and `confirmAccountNumber` never leaves the browser,
- * since re-typing the number is a check on the user, not a fact about them.
- *
- * `branchName` is accepted by the server and optional; no input collects it
- * yet, so it is omitted in practice. Kept in the signature so adding that field
- * to the step is a change to the step alone.
- *
- * `accountType` must be a `value` from `fetchAccountTypes` — `SAVINGS`, not
- * `Savings` and not `savings`.
- */
-export async function saveBankDetails({
-  accountNumber,
-  accountHolder,
-  ifsc,
-  bankName,
-  branchName,
-  accountType,
-  passbookImage,
-  chequeImage,
-} = {}) {
-  const body = new FormData();
-  body.append('accountNumber', accountNumber);
-  body.append('accountHolderName', accountHolder);
-  body.append('ifscCode', ifsc);
-  body.append('bankName', bankName);
-  if (branchName) body.append('branchName', branchName);
-  if (accountType) body.append('accountType', accountType);
-  if (passbookImage) body.append('passbookImage', passbookImage, passbookImage.name);
-  if (chequeImage) body.append('cancelledChequeImage', chequeImage, chequeImage.name);
-
-  const response = await api.post(
-    ENDPOINTS.onboarding.saveBankDetails,
-    body,
-    uploadConfig()
-  );
-  return unwrap(response) ?? null;
 }
 
 /* ── Step 6 · Education ────────────────────────────────────────────────── */
@@ -665,8 +655,7 @@ export function normalizeReview(data = {}) {
         fullName: pan.fullName ?? '',
         dateOfBirth: toDisplayDate(pan.dateOfBirth) ?? '',
         panFrontImageKey: pan.frontDocumentKey ?? null,
-        /** The save endpoint accepts a PAN back image and the view returns one;
-         *  no step collects it yet, so this is display-only for now. */
+        /** Optional on both sides — a PAN with nothing on the back has none. */
         panBackImageKey: pan.backDocumentKey ?? null,
       },
 
@@ -677,15 +666,8 @@ export function normalizeReview(data = {}) {
       aadhaar: {
         aadhaar: aadhaar.aadhaarNumber ?? '',
         fullName: aadhaar.fullName ?? '',
-        /**
-         * Carried, though `AadhaarStep` collects none of the three and so never
-         * sends them — they arrive null on any application this app created.
-         * They are mapped anyway because the record is not this app's alone: a
-         * value entered through another channel would otherwise be dropped
-         * silently on the one screen meant to show everything on file. The
-         * review rows render them only when present, so an all-null trio costs
-         * nothing on screen.
-         */
+        /** Optional in `AadhaarStep`, so absent on an application saved before
+         *  the step asked for them. The review rows render only what's here. */
         dateOfBirth: toDisplayDate(aadhaar.dateOfBirth) ?? '',
         gender: aadhaar.gender ?? '',
         address: aadhaar.address ?? '',
@@ -773,6 +755,9 @@ export async function fetchReviewDetails() {
  * is exactly what a first render is — share one request instead of racing.
  */
 const documentBlobRequests = new Map();
+
+/** True for a usable document key from the review response. */
+export const hasDocumentKey = (key) => typeof key === 'string' && key.length > 0;
 
 /**
  * The bytes behind a document key.

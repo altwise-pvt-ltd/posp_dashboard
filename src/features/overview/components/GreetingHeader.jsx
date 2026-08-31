@@ -3,7 +3,7 @@ function GreetingHeader({ name = 'Rohan', dateLabel = "Tuesday, 26 May" }) {
     <div className="flex flex-wrap items-end justify-between gap-unit anim-fade">
       <div>
         <h1 className="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface">
-          Good morning, {name} 
+          Good morning, {name}
         </h1>
         <p className="font-body-md text-body-md text-on-surface-variant mt-1">
           {dateLabel} · Here's what's happening today.

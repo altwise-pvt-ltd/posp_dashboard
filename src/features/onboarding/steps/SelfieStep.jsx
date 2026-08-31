@@ -1,10 +1,11 @@
-import { useRef, useState, useEffect, useCallback } from "react";
+import { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import { Camera, ShieldCheck, Upload, RotateCcw, Check, UserRound, AlertCircle, Loader2 } from "lucide-react";
 import Button from "@/shared/components/Button";
 import { SELFIE, acceptAttribute } from "@/shared/upload/policy";
 import { prepareFile } from "@/shared/upload/validate";
 import { showAlert } from "@/shared/store/alertStore";
 import { uploadSelfie } from "../api/onboardingApi";
+import { useDocumentFiles } from "../hooks/useDocumentFiles";
 
 /**
  * SelfieStep — capture a selfie live or upload one from the device.
@@ -18,13 +19,36 @@ export default function SelfieStep({ onNext, initialValues }) {
   const streamRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  // Seed from a previously captured selfie (e.g. when editing from Review).
-  const [photo, setPhoto] = useState(() =>
-    initialValues?.selfie
-      ? { url: URL.createObjectURL(initialValues.selfie), file: initialValues.selfie }
-      : null
-  ); // { url, file }
+  /** This sitting's photo, captured or uploaded. `{ url, file }` or null. */
+  const [capturedPhoto, setCapturedPhoto] = useState(null);
   const [live, setLive] = useState(false);  // camera preview running
+
+  /**
+   * The selfie already on file, so editing this step from Review doesn't make
+   * the applicant re-take a photo the server is already holding.
+   *
+   * Derived into `photo` below rather than copied into state on arrival, which
+   * would be a cascading render and would need a guard for a fetch landing
+   * *after* a new photo was taken. The precedence says it outright instead:
+   * whatever this sitting produced wins, and `retakenSinceStored` carries the
+   * one thing precedence can't express — that the stored one was thrown away.
+   */
+  const storedFiles = useDocumentFiles({ selfie: initialValues?.selfieKey });
+  const [retakenSinceStored, setRetakenSinceStored] = useState(false);
+
+  const storedSelfie = storedFiles.selfie;
+  const storedPhoto = useMemo(
+    () => (storedSelfie ? { url: URL.createObjectURL(storedSelfie), file: storedSelfie } : null),
+    [storedSelfie]
+  );
+
+  useEffect(() => {
+    if (!storedPhoto) return undefined;
+    return () => URL.revokeObjectURL(storedPhoto.url);
+  }, [storedPhoto]);
+
+  const photo = capturedPhoto ?? (retakenSinceStored ? null : storedPhoto);
+
   const [preparing, setPreparing] = useState(false); // validating / transcoding an upload
   const [error, setError] = useState(null);
 
@@ -75,7 +99,7 @@ export default function SelfieStep({ onNext, initialValues }) {
     canvas.toBlob((blob) => {
       if (!blob) return;
       const file = new File([blob], "selfie.jpg", { type: "image/jpeg" });
-      setPhoto({ url: URL.createObjectURL(blob), file });
+      setCapturedPhoto({ url: URL.createObjectURL(blob), file });
       stopCamera();
     }, "image/jpeg", 0.92);
   };
@@ -108,15 +132,20 @@ export default function SelfieStep({ onNext, initialValues }) {
     }
 
     stopCamera();
-    setPhoto((previous) => {
+    setCapturedPhoto((previous) => {
       if (previous?.url) URL.revokeObjectURL(previous.url);
       return { url: URL.createObjectURL(result.file), file: result.file };
     });
   };
 
+  /* Clears both halves: dropping only the captured photo would fall straight
+     back to the stored one, so "Retake" would appear to do nothing for anyone
+     editing a selfie they had already uploaded. The stored object URL is owned
+     by the memo above and revoked there, not here. */
   const retake = () => {
-    if (photo?.url) URL.revokeObjectURL(photo.url);
-    setPhoto(null);
+    if (capturedPhoto?.url) URL.revokeObjectURL(capturedPhoto.url);
+    setCapturedPhoto(null);
+    setRetakenSinceStored(true);
     setError(null);
   };
 

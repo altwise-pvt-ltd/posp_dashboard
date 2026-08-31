@@ -1,19 +1,15 @@
 import AppLink from '@/shared/components/AppLink';
 import KpiCard from './KpiCard';
 
-function Trend({ value, color = 'emerald', arrow = '↑' }) {
-  const palette = {
-    emerald: 'bg-emerald-50 text-emerald-700',
-    rose: 'bg-rose-50 text-rose-700',
-  };
+function Trend({ value }) {
   return (
-    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full font-label-caps text-label-caps ${palette[color]}`}>
-      <span>{arrow}</span> {value}
+    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full font-label-caps text-label-caps bg-emerald-50 text-emerald-700">
+      <span>↑</span> {value}
     </span>
   );
 }
 
-function Sparkline({ points, color = 'text-emerald-500' }) {
+function Sparkline({ points, color }) {
   return (
     <svg viewBox="0 0 60 20" className={`w-16 h-5 ${color}`}>
       <polyline
@@ -25,6 +21,22 @@ function Sparkline({ points, color = 'text-emerald-500' }) {
         strokeLinecap="round"
       />
     </svg>
+  );
+}
+
+function Count({ value, highlighted = false }) {
+  return (
+    <p className={`font-headline-lg text-headline-lg mb-1 ${highlighted ? 'text-primary' : 'text-on-surface'}`}>
+      {value}
+    </p>
+  );
+}
+
+function Note({ dot, children }) {
+  return (
+    <p className="font-body-md text-body-md text-on-surface-variant flex items-center gap-1">
+      <span className={`w-1.5 h-1.5 rounded-full ${dot}`} /> {children}
+    </p>
   );
 }
 
@@ -44,7 +56,7 @@ function KpiGrid() {
         </AppLink>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-unit md:gap-gutter">
+      <div className="grid grid-cols-2 xl:grid-cols-3 gap-unit md:gap-gutter">
         <KpiCard
           label="Leads"
           to="/leads"
@@ -52,9 +64,9 @@ function KpiGrid() {
           toggleIcon="groups"
           countView={
             <>
-              <p className="font-headline-lg text-headline-lg text-on-surface mb-1">124</p>
+              <Count value="124" />
               <div className="flex flex-wrap items-center justify-between gap-unit">
-                <Trend value="12%" color="emerald" />
+                <Trend value="12%" />
                 <Sparkline points="0,15 10,12 20,14 30,8 40,9 50,4 60,2" color="text-emerald-500" />
               </div>
             </>
@@ -64,7 +76,6 @@ function KpiGrid() {
             { title: 'P. Singh · Motor', meta: '5h' },
             { title: 'A. Roy · Term', meta: '1d' },
           ]}
-          viewAllTo="/leads"
         />
 
         <KpiCard
@@ -74,7 +85,7 @@ function KpiGrid() {
           toggleIcon="request_quote"
           countView={
             <>
-              <p className="font-headline-lg text-headline-lg text-on-surface mb-1">86</p>
+              <Count value="86" />
               <div className="flex flex-wrap items-center justify-between gap-unit">
                 <span className="font-body-md text-body-md text-on-surface-variant">69% conv.</span>
                 <Sparkline points="0,10 10,12 20,8 30,11 40,7 50,9 60,6" color="text-violet-500" />
@@ -86,7 +97,6 @@ function KpiGrid() {
             { title: 'M. Khan · Term', meta: '₹24.0K', metaColor: 'text-on-surface' },
             { title: 'S. Verma · Health', meta: '₹31.5K', metaColor: 'text-on-surface' },
           ]}
-          viewAllTo="/quotations"
         />
 
         <KpiCard
@@ -97,10 +107,10 @@ function KpiGrid() {
           toggleIcon="workspace_premium"
           countView={
             <>
-              <p className="font-headline-lg text-headline-lg text-primary mb-1">52</p>
+              <Count value="52" highlighted />
               <div className="flex flex-wrap items-center justify-between gap-unit">
                 <span className="font-body-md text-body-md text-on-surface">₹14.2L premium</span>
-                <Trend value="8%" color="emerald" />
+                <Trend value="8%" />
               </div>
             </>
           }
@@ -109,7 +119,6 @@ function KpiGrid() {
             { title: 'MTR-1942 · Bose', meta: '3h', mono: true },
             { title: 'TRM-0884 · Pillai', meta: '1d', mono: true },
           ]}
-          viewAllTo="/policies"
         />
 
         <KpiCard
@@ -119,10 +128,8 @@ function KpiGrid() {
           toggleIcon="autorenew"
           countView={
             <>
-              <p className="font-headline-lg text-headline-lg text-on-surface mb-1">18</p>
-              <p className="font-body-md text-body-md text-on-surface-variant flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-500" /> 2 pending this week
-              </p>
+              <Count value="18" />
+              <Note dot="bg-amber-500">2 pending this week</Note>
             </>
           }
           listItems={[
@@ -130,7 +137,6 @@ function KpiGrid() {
             { title: 'J. Reddy · MTR-1856', meta: '3d' },
             { title: 'V. Nair · LFE-0492', meta: '5d' },
           ]}
-          viewAllTo="/renewals"
         />
 
         <KpiCard
@@ -140,10 +146,8 @@ function KpiGrid() {
           toggleIcon="receipt_long"
           countView={
             <>
-              <p className="font-headline-lg text-headline-lg text-on-surface mb-1">7</p>
-              <p className="font-body-md text-body-md text-on-surface-variant flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-rose-500" /> 3 require attention
-              </p>
+              <Count value="7" />
+              <Note dot="bg-rose-500">3 require attention</Note>
             </>
           }
           listItems={[
@@ -151,7 +155,6 @@ function KpiGrid() {
             { title: 'CLM-0179 · Banerjee', meta: 'docs', mono: true, metaColor: 'text-amber-600' },
             { title: 'CLM-0172 · Pillai', meta: 'open', mono: true },
           ]}
-          viewAllTo="/claims"
         />
 
         <KpiCard
@@ -161,18 +164,15 @@ function KpiGrid() {
           toggleIcon="support_agent"
           countView={
             <>
-              <p className="font-headline-lg text-headline-lg text-on-surface mb-1">3</p>
-              <p className="font-body-md text-body-md text-on-surface-variant flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> All assigned
-              </p>
+              <Count value="3" />
+              <Note dot="bg-emerald-500">All assigned</Note>
             </>
           }
           listItems={[
             { title: '#3294 · S. Iyer', meta: 'done', mono: true, metaColor: 'text-emerald-600' },
             { title: '#3291 · M. Khan', meta: 'esc', mono: true, metaColor: 'text-rose-600' },
-            { title: '#3287 · R. Patel', meta: 'wip', mono: true, metaColor: 'text-amber-600' },
+            { title: '#3287 · R. Patel', meta: 'wip', mono: true },
           ]}
-          viewAllTo="/tickets"
         />
       </div>
     </section>

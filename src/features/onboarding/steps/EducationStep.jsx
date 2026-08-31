@@ -7,9 +7,11 @@ import Input from "@/shared/components/Input";
 import Button from "@/shared/components/Button";
 import FileUpload from "@/shared/components/FileUpload";
 import { fileField } from "@/shared/upload/schema";
+import { digitMask, maskedField } from "@/shared/validation/inputMask";
 import { alertOnInvalid } from "@/shared/store/alertStore";
 import { reportFormError } from "@/shared/api/formErrors";
 import { useMasterOptions } from "../hooks/useMasterOptions";
+import { useDocumentFiles } from "../hooks/useDocumentFiles";
 import OptionsUnavailable from "../components/OptionsUnavailable";
 import {
   fetchQualifications,
@@ -67,6 +69,13 @@ export default function EducationStep({ onNext, initialValues }) {
     mode: "onTouched",
   });
 
+  /* The certificate already on file, so an edit to the qualification doesn't
+     silently drop a document the applicant uploaded weeks ago. */
+  const storedFiles = useDocumentFiles(
+    { certificateImage: initialValues?.certificateImageKey },
+    { form }
+  );
+
   const {
     options: qualifications,
     loading,
@@ -88,13 +97,6 @@ export default function EducationStep({ onNext, initialValues }) {
     if (!current) return;
     form.setValue("highestQualification", matchMasterValue(current, qualifications) ?? "");
   }, [qualifications, form]);
-
-  // Passing year → digits only, max 4.
-  const yearField = form.register("passingYear");
-  const handleYearChange = (e) => {
-    e.target.value = e.target.value.replace(/[^0-9]/g, "").slice(0, 4);
-    yearField.onChange(e);
-  };
 
   /**
    * Save, then advance — only on success.
@@ -219,8 +221,7 @@ export default function EducationStep({ onNext, initialValues }) {
             maxLength={4}
             className="font-mono tracking-wide"
             error={form.formState.errors.passingYear?.message}
-            {...yearField}
-            onChange={handleYearChange}
+            {...maskedField(form, "passingYear", digitMask(4))}
           />
         </div>
 
@@ -228,6 +229,7 @@ export default function EducationStep({ onNext, initialValues }) {
           <FileUpload
             id="certificateImage"
             label="Certificate / Degree"
+            initialFile={storedFiles.certificateImage}
             error={form.formState.errors.certificateImage?.message}
             hint="Optional — your highest degree or certificate."
             onChange={field.onChange}

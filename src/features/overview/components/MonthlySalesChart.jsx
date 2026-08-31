@@ -1,10 +1,10 @@
 import { useState } from 'react';
 
 const SEGMENTS = [
-  { key: 'amber',   bg: 'bg-amber-500' },
-  { key: 'sky',     bg: 'bg-sky-500' },
-  { key: 'emerald', bg: 'bg-emerald-500' },
-  { key: 'violet',  bg: 'bg-violet-500' },
+  { name: 'Health', bg: 'bg-amber-500' },
+  { name: 'Motor',  bg: 'bg-sky-500' },
+  { name: 'Term',   bg: 'bg-emerald-500' },
+  { name: 'Life',   bg: 'bg-violet-500' },
 ];
 
 const DATASETS = {
@@ -88,13 +88,13 @@ function StackedBar({ data, kind, peak }) {
   const isB = kind === 'B';
   return (
     <div
-      className={`relative w-4 sm:w-7 flex flex-col-reverse rounded-t overflow-hidden bar-grow ${
+      className={`relative w-4 lg:w-7 flex flex-col-reverse rounded-t overflow-hidden bar-grow ${
         isB ? '' : 'opacity-60 ring-1 ring-gray-300/40'
       } ${peak ? `ring-1 ${isB ? 'ring-primary/40' : 'ring-primary/30'}` : ''}`}
       style={{ height: `${data.height}%`, animationDelay: data.delay }}
     >
       {SEGMENTS.map((s, i) => (
-        <div key={s.key} className={s.bg} style={{ height: `${data.parts[i]}%` }} />
+        <div key={s.name} className={s.bg} style={{ height: `${data.parts[i]}%` }} />
       ))}
       <div className="opacity-0 group-hover:opacity-100 absolute -top-9 left-1/2 -translate-x-1/2 bg-inverse-surface text-inverse-on-surface text-[11px] py-1 px-2 rounded pointer-events-none transition-opacity font-data-mono whitespace-nowrap shadow-lg">
         {kind} · {data.tooltip}
@@ -139,18 +139,11 @@ function MonthlySalesChart() {
 
       <div className="flex flex-wrap items-center gap-gutter mb-unit">
         <div className="flex items-center gap-unit flex-wrap">
-          <span className="inline-flex items-center gap-1.5 font-body-md text-body-md text-on-surface-variant">
-            <span className="w-2.5 h-2.5 rounded-sm bg-amber-500" /> Health
-          </span>
-          <span className="inline-flex items-center gap-1.5 font-body-md text-body-md text-on-surface-variant">
-            <span className="w-2.5 h-2.5 rounded-sm bg-sky-500" /> Motor
-          </span>
-          <span className="inline-flex items-center gap-1.5 font-body-md text-body-md text-on-surface-variant">
-            <span className="w-2.5 h-2.5 rounded-sm bg-emerald-500" /> Term
-          </span>
-          <span className="inline-flex items-center gap-1.5 font-body-md text-body-md text-on-surface-variant">
-            <span className="w-2.5 h-2.5 rounded-sm bg-violet-500" /> Life
-          </span>
+          {SEGMENTS.map((s) => (
+            <span key={s.name} className="inline-flex items-center gap-1.5 font-body-md text-body-md text-on-surface-variant">
+              <span className={`w-2.5 h-2.5 rounded-sm ${s.bg}`} /> {s.name}
+            </span>
+          ))}
         </div>
         <div className="ml-auto flex items-center gap-unit font-data-mono text-[11px] text-on-surface-variant">
           <span className="inline-flex items-center gap-1">

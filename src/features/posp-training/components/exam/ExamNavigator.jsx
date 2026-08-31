@@ -71,7 +71,15 @@ function ExamNavigator({
           Question Map
         </p>
 
-        <div className="grid grid-cols-5 gap-1.5">
+        {/* Auto-fill below `lg`, a fixed five across at `lg` and up.
+            The panel is only a 20rem side rail from `lg`; below it, it is a
+            full-width block under the question — and a flat `grid-cols-5` there
+            divided the whole window between five tiles, so a half-screen browser
+            drew five ~180px squares. Auto-fill sizes the columns from the space
+            actually available instead, keeping every tile around 2.75rem and
+            letting the count grow with the width. The `lg:` override keeps the
+            side rail's five-across map exactly as it was. */}
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(2.75rem,1fr))] gap-1.5 lg:grid-cols-5">
           {questions.map((question, index) => {
             const isAttempted = answers[question.id] !== undefined;
             const isCurrent = index === currentIndex;

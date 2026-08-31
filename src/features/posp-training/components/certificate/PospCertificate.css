@@ -11,6 +11,8 @@
  * Ported from `src/assets/posp_certificate/certificate.html`.
  */
 
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;800&family=Playfair+Display:ital,wght@0,500;0,700;1,400&family=Montserrat:wght@400;500;600;700&display=swap');
+
 .cert-doc {
   --cert-navy: #0b1b3d;
   --cert-gold: #c5a059;

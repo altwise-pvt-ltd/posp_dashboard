@@ -3,23 +3,54 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Fingerprint, Loader2, ShieldCheck, Upload } from "lucide-react";
 import Input from "@/shared/components/Input";
+import Select from "@/shared/components/Select";
 import Button from "@/shared/components/Button";
 import FileUpload from "@/shared/components/FileUpload";
 import { fileField } from "@/shared/upload/schema";
+import { personNameField } from "@/shared/validation/nameField";
+import { dateOfBirthField, formatDobInput } from "@/shared/validation/dateOfBirthField";
+import {
+  aadhaarField,
+  formatAadhaar,
+  formatAadhaarInput,
+  stripAadhaar,
+} from "@/shared/validation/aadhaarField";
+import { maskedField } from "@/shared/validation/inputMask";
 import { alertOnInvalid } from "@/shared/store/alertStore";
 import { reportFormError } from "@/shared/api/formErrors";
 import { submitAadhaarDetails } from "../api/onboardingApi";
+import { useDocumentFiles } from "../hooks/useDocumentFiles";
+
+/**
+ * The genders the field offers.
+ *
+ * A plain local list rather than a masters fetch, because there is no masters
+ * endpoint for it — `gender` is a free `string` on `AadhaarSaveRequest` with no
+ * enum behind it, so these are the app's own words and the server stores them
+ * verbatim. `value` and `label` are deliberately identical for that reason:
+ * there is no server spelling to match, so inventing a divergent code would be
+ * this form making up a vocabulary nothing else speaks.
+ */
+const GENDERS = [
+  { value: "Male", label: "Male" },
+  { value: "Female", label: "Female" },
+  { value: "Other", label: "Other" },
+];
 
 /* ── Schema ── */
 const aadhaarSchema = z.object({
   // Stored without spaces; the field formats display as XXXX XXXX XXXX.
-  aadhaar:  z.string().refine((v) => /^[0-9]{12}$/.test(v.replace(/\s/g, "")), "Aadhaar must be 12 digits."),
-  fullName: z.string().trim().min(1, "Name is required.").max(200),
+  aadhaar: aadhaarField(),
+  fullName: personNameField({ label: "Name" }),
+  /* Optional here as they are on the server — an application saved before this
+     step asked for them must still be editable without suddenly failing on
+     details it never held. */
+  dateOfBirth: dateOfBirthField({ required: false, label: "Date of birth" }),
+  gender: z.string().trim().optional(),
+  address: z.string().trim().max(500, "Address must be under 500 characters.").optional(),
   aadhaarFrontImage: fileField({ message: "Please upload the front of your Aadhaar." }),
   aadhaarBackImage:  fileField({ message: "Please upload the back of your Aadhaar." }),
 });
-
-const formatAadhaar = (digits) => digits.replace(/(.{4})/g, "$1 ").trim();
 
 export default function AadhaarStep({ onNext, initialValues }) {
   const form = useForm({
@@ -29,17 +60,24 @@ export default function AadhaarStep({ onNext, initialValues }) {
       ...initialValues,
       // Saved value is bare 12 digits — re-format for the spaced display field.
       // Covers the empty case too, which is why there is no earlier `aadhaar: ""`.
-      aadhaar: initialValues?.aadhaar ? formatAadhaar(initialValues.aadhaar) : "",
+      aadhaar: formatAadhaar(initialValues?.aadhaar),
+      // Optionals persist as null from the record — coerce to controlled strings.
+      dateOfBirth: initialValues?.dateOfBirth ?? "",
+      gender: initialValues?.gender ?? "",
+      address: initialValues?.address ?? "",
     },
     mode: "onTouched",
   });
 
-  const aadhaarField = form.register("aadhaar");
-  const handleAadhaarChange = (e) => {
-    const digits = e.target.value.replace(/[^0-9]/g, "").slice(0, 12);
-    e.target.value = formatAadhaar(digits); // RHF reads this formatted value; schema strips spaces
-    aadhaarField.onChange(e);
-  };
+  /* Both Aadhaar images, fetched back from the record so an edit to a text
+     field doesn't force the applicant to re-pick them. */
+  const storedFiles = useDocumentFiles(
+    {
+      aadhaarFrontImage: initialValues?.aadhaarFrontImageKey,
+      aadhaarBackImage: initialValues?.aadhaarBackImageKey,
+    },
+    { form }
+  );
 
   /**
    * Save to the server, then advance — in that order, and only on success, so
@@ -54,7 +92,7 @@ export default function AadhaarStep({ onNext, initialValues }) {
   const onSubmit = form.handleSubmit(async (data) => {
     try {
       await submitAadhaarDetails(data);
-      onNext?.({ ...data, aadhaar: data.aadhaar.replace(/\s/g, "") }); // pass clean 12 digits onward
+      onNext?.({ ...data, aadhaar: stripAadhaar(data.aadhaar) }); // pass clean 12 digits onward
     } catch (error) {
       reportFormError(form, error, "Couldn't save your Aadhaar details");
     }
@@ -89,17 +127,45 @@ export default function AadhaarStep({ onNext, initialValues }) {
           maxLength={14}
           error={form.formState.errors.aadhaar?.message}
           className="font-mono tracking-[0.2em] text-sm sm:text-base"
-          {...aadhaarField}
-          onChange={handleAadhaarChange}
+          {...maskedField(form, "aadhaar", formatAadhaarInput)}
         />
 
         <Input
           id="fullName"
-          label="Name (as on Aadhaar) *"
+          label="Name (as per Aadhaar) *"
           placeholder="Your full name"
           maxLength={200}
           error={form.formState.errors.fullName?.message}
           {...form.register("fullName")}
+        />
+
+        <Input
+          id="aadhaarDateOfBirth"
+          label="Date of Birth"
+          placeholder="dd/mm/yyyy"
+          inputMode="numeric"
+          autoComplete="off"
+          maxLength={10}
+          error={form.formState.errors.dateOfBirth?.message}
+          {...maskedField(form, "dateOfBirth", formatDobInput)}
+        />
+
+        <Select
+          id="gender"
+          label="Gender"
+          options={GENDERS}
+          placeholder="Select gender"
+          error={form.formState.errors.gender?.message}
+          {...form.register("gender")}
+        />
+
+        <Input
+          id="address"
+          label="Address (as per Aadhaar)"
+          placeholder="Address printed on the back of your Aadhaar"
+          maxLength={500}
+          error={form.formState.errors.address?.message}
+          {...form.register("address")}
         />
 
         <Controller name="aadhaarFrontImage" control={form.control} render={({ field }) => (
@@ -107,6 +173,7 @@ export default function AadhaarStep({ onNext, initialValues }) {
             id="aadhaarFrontImage"
             label="Aadhaar Front"
             required
+            initialFile={storedFiles.aadhaarFrontImage}
             error={form.formState.errors.aadhaarFrontImage?.message}
             hint="Front side showing your photo and name."
             onChange={field.onChange}
@@ -118,6 +185,7 @@ export default function AadhaarStep({ onNext, initialValues }) {
             id="aadhaarBackImage"
             label="Aadhaar Back"
             required
+            initialFile={storedFiles.aadhaarBackImage}
             error={form.formState.errors.aadhaarBackImage?.message}
             hint="Back side showing your address."
             onChange={field.onChange}

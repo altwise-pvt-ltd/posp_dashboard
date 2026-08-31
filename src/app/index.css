@@ -1,18 +1,21 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: 'Inter', sans-serif;
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
 
   /* Font families (used as font-headline-lg, font-body-md, etc.) */
-  --font-headline-lg: 'Manrope', sans-serif;
-  --font-headline-lg-mobile: 'Manrope', sans-serif;
-  --font-headline-md: 'Manrope', sans-serif;
-  --font-body-lg: 'Inter', sans-serif;
-  --font-body-md: 'Inter', sans-serif;
-  --font-data-currency: 'Inter', sans-serif;
-  --font-data-mono: 'JetBrains Mono', monospace;
-  --font-mono: 'JetBrains Mono', monospace;
-  --font-label-caps: 'Inter', sans-serif;
+  --font-headline-lg: var(--font-sans);
+  --font-headline-lg-mobile: var(--font-sans);
+  --font-headline-md: var(--font-sans);
+  --font-body-lg: var(--font-sans);
+  --font-body-md: var(--font-sans);
+  --font-data-currency: var(--font-sans);
+  --font-data-currency--font-feature-settings: 'tnum';
+  --font-data-mono: var(--font-sans);
+  --font-data-mono--font-feature-settings: 'tnum';
+  --font-mono: var(--font-sans);
+  --font-mono--font-feature-settings: 'tnum';
+  --font-label-caps: var(--font-sans);
 
   /* Type scale */
   --text-headline-lg: 30px;
@@ -216,6 +219,57 @@
     --radius-2xl: 0.75rem;
     --radius-3xl: 1.125rem;
   }
+}
+
+/* ── Dashboard display scale ────────────────────────────────────────────────
+   Same mechanism as the two scales above, at 85% and ungated by width — the
+   Overview grid is drawn a size too large once the rail sits beside it rather
+   than under it.
+
+   Unlike those two, this one restates the *custom* type tokens, and each needs
+   both halves: `--text-body-md` is the size, `--text-body-md--line-height` the
+   leading, and this project writes its leading in px rather than as a unitless
+   ratio, so it does not follow the size on its own.
+
+   The same literal-vs-utility rule applies here: `h-32` is
+   calc(var(--spacing) * 32) and scales, `text-[22px]` does not. */
+.dashboard-scale {
+  /* 0.25rem × 0.85 — drives every p / m / gap / w / h / inset utility */
+  --spacing: 0.2125rem;
+
+  --spacing-unit: 6.8px;
+  --spacing-gutter: 20.4px;
+  --spacing-margin-mobile: 13.6px;
+  --spacing-margin-desktop: 34px;
+
+  --text-headline-lg: 25.5px;
+  --text-headline-lg--line-height: 32.3px;
+
+  --text-headline-lg-mobile: 20.4px;
+  --text-headline-lg-mobile--line-height: 27.2px;
+
+  --text-headline-md: 17px;
+  --text-headline-md--line-height: 23.8px;
+
+  --text-body-lg: 13.6px;
+  --text-body-lg--line-height: 20.4px;
+
+  --text-body-md: 11.9px;
+  --text-body-md--line-height: 17px;
+
+  --text-data-currency: 13.6px;
+  --text-data-currency--line-height: 17px;
+
+  --text-data-mono: 11.05px;
+  --text-data-mono--line-height: 15.3px;
+
+  --text-label-caps: 10.2px;
+  --text-label-caps--line-height: 13.6px;
+
+  /* Radii × 0.85 to keep the rounding proportional to the boxes it cuts */
+  --radius-lg: 0.425rem;
+  --radius-xl: 0.6375rem;
+  --radius-2xl: 0.85rem;
 }
 
 /* Custom animations + utilities ported from the HTML mockup */

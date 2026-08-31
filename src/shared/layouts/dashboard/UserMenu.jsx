@@ -1,6 +1,7 @@
 import { UserRound } from 'lucide-react';
 import { useAuthStore } from '@/shared/store/authStore';
 import { usePospProfileStore } from '@/shared/store/pospProfileStore';
+import { useProfilePhoto } from '@/features/profile/hooks/useProfilePhoto';
 
 /**
  * The signed-in POSP, as the bar shows them.
@@ -8,19 +9,26 @@ import { usePospProfileStore } from '@/shared/store/pospProfileStore';
  * Two sources, in order: `GET /posp/me` if a screen has already fetched it, the
  * verify-otp reply otherwise. Never fetched from here — this renders inside a
  * bar that also sits on the onboarding side of the funnel, where there is no
- * POSP record to ask for yet.
+ * POSP record to ask for yet. `DashboardLayout` owns the fetch for the pages
+ * that do have one.
+ *
+ * `photoKey` is a document key, not a URL — `useProfilePhoto` is what turns it
+ * into something an `<img src>` can take. It is null on the funnel side, where
+ * there is no profile, and the hook makes no request for it.
  */
-function useAccountName() {
+function useAccount() {
   const profileName = usePospProfileStore((s) => s.profile?.fullName);
+  const photoKey = usePospProfileStore((s) => s.profile?.profileImagePath);
   const user = useAuthStore((s) => s.user);
   const mobile = useAuthStore((s) => s.mobile);
 
   const name = profileName || user?.fullName || null;
-  return { name, mobile: mobile || user?.mobile || null };
+  return { name, mobile: mobile || user?.mobile || null, photoKey };
 }
 
 function UserMenu({ isOpen, onToggle }) {
-  const { name, mobile } = useAccountName();
+  const { name, mobile, photoKey } = useAccount();
+  const photo = useProfilePhoto(photoKey);
 
   // Falls back to the number, then to a generic label — the bar renders before
   // any of it is guaranteed to have arrived.
@@ -34,8 +42,15 @@ function UserMenu({ isOpen, onToggle }) {
         onClick={onToggle}
         className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500/30"
       >
-        <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-white text-sm font-bold">
-          {initial ?? <UserRound className="h-4 w-4" aria-hidden="true" />}
+        {/* The selfie uploaded during onboarding, when there is one. Initials
+            (then a generic glyph) stand in while it loads and for anyone whose
+            record carries no photograph. */}
+        <div className="w-8 h-8 rounded-full bg-orange-500 overflow-hidden flex items-center justify-center text-white text-sm font-bold">
+          {photo ? (
+            <img src={photo} alt="" className="h-full w-full object-cover" />
+          ) : (
+            initial ?? <UserRound className="h-4 w-4" aria-hidden="true" />
+          )}
         </div>
         <span className="text-sm font-medium text-slate-700 hidden sm:block">
           {label}
