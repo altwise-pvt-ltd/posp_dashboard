@@ -69,7 +69,7 @@ function ChecklistRow({ label, value }) {
         </span>
       </div>
 
-      <span className={`ml-auto shrink-0 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide ${state.pill}`}>
+      <span className={`ml-auto shrink-0 px-2.5 py-1 rounded-full text-status-pill font-bold uppercase tracking-wide ${state.pill}`}>
         {state.label}
       </span>
     </li>
@@ -117,7 +117,7 @@ const KycComplianceCard = ({ profile }) => {
             </p>
           </div>
           {/* The one verdict the server actually gives, for the record as a whole. */}
-          <span className={`shrink-0 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide ${verdict.pill}`}>
+          <span className={`shrink-0 px-2.5 py-1 rounded-full text-status-pill font-bold uppercase tracking-wide ${verdict.pill}`}>
             {verdict.label}
           </span>
         </div>
@@ -147,7 +147,7 @@ const KycComplianceCard = ({ profile }) => {
             <ShieldIcon />
           </span>
           <div className="min-w-0">
-            <span className="block text-[10px] uppercase tracking-wide text-slate-400 font-semibold">
+            <span className="block text-field-label uppercase tracking-wide text-slate-400 font-semibold">
               POSP Code
             </span>
             <span className="block text-sm font-semibold text-slate-700 font-data-mono truncate">

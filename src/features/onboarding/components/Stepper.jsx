@@ -53,40 +53,60 @@ function DotGrid({ color }) {
   for (let r = 0; r < 3; r++) {
     for (let c = 0; c < 3; c++) {
       dots.push(
-        <circle key={`${r}-${c}`} cx={4 + c * 5} cy={4 + r * 5} r={1.4} fill={color} />
+        <circle
+          key={`${r}-${c}`}
+          cx={4 + c * 5}
+          cy={4 + r * 5}
+          r={1.4}
+          fill={color}
+        />,
       );
     }
   }
   return (
-    <svg className="h-3 w-3 sm:h-3.5 sm:w-3.5 lg:h-[18px] lg:w-[18px]" viewBox="0 0 18 18" aria-hidden="true">
+    <svg
+      className="h-[11.5px] w-[11.5px] sm:h-3 sm:w-3 lg:h-3.5 lg:w-3.5"
+      viewBox="0 0 18 18"
+      aria-hidden="true"
+    >
       {dots}
     </svg>
   );
 }
 
 function StepCircle({ status }) {
-  const isCompleted  = status === "completed";
+  const isCompleted = status === "completed";
   const isInProgress = status === "in_progress";
 
   const ring = STATUS[status]?.ring ?? STATUS.pending.ring;
-  const bg   = STATUS[status]?.bg   ?? STATUS.pending.bg;
+  const bg = STATUS[status]?.bg ?? STATUS.pending.bg;
 
   const halo = isCompleted
-    ? "0 0 0 4px rgba(16,185,129,0.15)"
+    ? "0 0 0 3px rgba(16,185,129,0.15)"
     : isInProgress
-    ? "0 0 0 4px rgba(249,115,22,0.15)"
-    : "none";
+      ? "0 0 0 3px rgba(249,115,22,0.15)"
+      : "none";
 
   return (
     <div
-      className="flex h-4.5 w-4.5 sm:h-5 sm:w-5 lg:h-6.25 lg:w-6.25 flex-[0_0_auto] items-center justify-center rounded-full box-border transition-all duration-250"
+      className="flex h-6 w-6 sm:h-4.5 sm:w-4.5 lg:h-7 lg:w-7 flex-[0_0_auto] items-center justify-center rounded-full box-border transition-all duration-250"
       style={{ background: bg, border: `1px solid ${ring}`, boxShadow: halo }}
     >
-      {isCompleted  && <Check className="h-2.5 w-2.5 sm:h-3 sm:w-3 lg:h-4 lg:w-4" strokeWidth={3}   color="#fff" />}
-      {isInProgress && <Lock  className="h-2 w-2 sm:h-2.5 sm:w-2.5 lg:h-3.5 lg:w-3.5" strokeWidth={2.5} color="#fff" />}
-      {!isCompleted && !isInProgress && (
-        <DotGrid color="var(--stepper-gray)" />
+      {isCompleted && (
+        <Check
+          className="h-[11.5px] w-[11.5px] sm:h-3 sm:w-3 lg:h-3.5 lg:w-3.5"
+          strokeWidth={3}
+          color="#fff"
+        />
       )}
+      {isInProgress && (
+        <Lock
+          className="h-[9.5px] w-[9.5px] sm:h-2.5 sm:w-2.5 lg:h-3 lg:w-3"
+          strokeWidth={2.5}
+          color="#fff"
+        />
+      )}
+      {!isCompleted && !isInProgress && <DotGrid color="var(--stepper-gray)" />}
     </div>
   );
 }
@@ -94,10 +114,13 @@ function StepCircle({ status }) {
 // Connector line between two steps — `fill` 0..1 controls coloured portion.
 function Connector({ fill = 0, color = "var(--stepper-green)" }) {
   return (
-    <div className="relative mx-1.5 h-1 min-w-[12px] sm:min-w-[18px] lg:min-w-[24px] flex-1 overflow-hidden rounded-sm bg-(--stepper-track)">
+    <div className="relative mx-1.5 h-0.75 min-w-2.5 sm:min-w-3.5 lg:min-w-5 flex-1 overflow-hidden rounded-sm bg-(--stepper-track)">
       <div
         className="absolute bottom-0 left-0 top-0 rounded-sm transition-[width] duration-350"
-        style={{ width: `${Math.max(0, Math.min(1, fill)) * 100}%`, background: color }}
+        style={{
+          width: `${Math.max(0, Math.min(1, fill)) * 100}%`,
+          background: color,
+        }}
       />
     </div>
   );
@@ -113,12 +136,12 @@ export default function Stepper({ steps = [], activeIndex = 0 }) {
      On desktop the row fits with no overflow, so scrollTo is a harmless no-op. */
   useEffect(() => {
     const container = containerRef.current;
-    const activeEl  = stepRefs.current[activeIndex];
+    const activeEl = stepRefs.current[activeIndex];
     if (!container || !activeEl) return;
 
     const containerW = container.offsetWidth;
-    const elLeft     = activeEl.offsetLeft;
-    const elW        = activeEl.offsetWidth;
+    const elLeft = activeEl.offsetLeft;
+    const elW = activeEl.offsetWidth;
 
     // Target scrollLeft that puts the active step in the centre of the viewport
     const target = elLeft - containerW / 2 + elW / 2;
@@ -128,8 +151,10 @@ export default function Stepper({ steps = [], activeIndex = 0 }) {
 
   const connectorFor = (index) => {
     const current = steps[index]?.status;
-    if (current === "completed")  return { fill: 1,    color: "var(--stepper-green)"  };
-    if (current === "in_progress") return { fill: 0.45, color: "var(--stepper-orange)" };
+    if (current === "completed")
+      return { fill: 1, color: "var(--stepper-green)" };
+    if (current === "in_progress")
+      return { fill: 0.45, color: "var(--stepper-orange)" };
     return { fill: 0, color: "var(--stepper-track)" };
   };
 
@@ -141,21 +166,21 @@ export default function Stepper({ steps = [], activeIndex = 0 }) {
       className="no-scrollbar box-border w-full overflow-x-auto pb-1 lg:overflow-x-visible"
       style={{
         /* ── CSS custom properties consumed by the inline styles below ── */
-        "--stepper-green":     "#10b981",
-        "--stepper-orange":    "#f97316",
-        "--stepper-gray":      "#cbd5e1",
+        "--stepper-green": "#10b981",
+        "--stepper-orange": "#f97316",
+        "--stepper-gray": "#cbd5e1",
         "--stepper-gray-text": "#94a3b8",
-        "--stepper-track":     "#e2e8f0",
-        "--stepper-title":     "#1e293b",
-        "--stepper-caption":   "#94a3b8",
+        "--stepper-track": "#e2e8f0",
+        "--stepper-title": "#1e293b",
+        "--stepper-caption": "#94a3b8",
       }}
     >
       {/* min-w-min so steps never wrap while scrolling on small screens;
           lg:min-w-full lets them flex to fill the row on desktop. */}
       <div className="flex min-w-min lg:min-w-full items-start px-1.5 pt-1.5">
         {steps.map((step, i) => {
-          const cfg    = STATUS[step.status] ?? STATUS.pending;
-          const conn   = connectorFor(i);
+          const cfg = STATUS[step.status] ?? STATUS.pending;
+          const conn = connectorFor(i);
           const isLast = i === steps.length - 1;
 
           return (
@@ -164,7 +189,7 @@ export default function Stepper({ steps = [], activeIndex = 0 }) {
               ref={(el) => (stepRefs.current[i] = el)}
               /* Fixed-ish min-width forces overflow→scroll on small screens;
                  lg:min-w-0 lets the flex children shrink to fit on desktop. */
-              className="flex min-w-[6.5rem] sm:min-w-[7.5rem] lg:min-w-0 flex-[1_1_0] flex-col items-start"
+              className="flex min-w-22 sm:min-w-26 lg:min-w-0 flex-[1_1_0] flex-col items-start"
             >
               {/* Circle + trailing connector in one row */}
               <div className="flex w-full items-center">
@@ -172,20 +197,20 @@ export default function Stepper({ steps = [], activeIndex = 0 }) {
                 {!isLast && <Connector fill={conn.fill} color={conn.color} />}
               </div>
 
-               {/* Caption */}
-              <div className="mt-2 lg:mt-4 text-[0.625rem] sm:text-[0.6875rem] font-bold uppercase tracking-[0.06em] text-(--stepper-caption)">
+              {/* Caption */}
+              <div className="mt-1.5 lg:mt-3 text-[0.5625rem] sm:text-[0.625rem] font-bold uppercase tracking-[0.06em] text-(--stepper-caption)">
                 {step.label}
               </div>
- 
+
               {/* Title — nowrap while scrolling on mobile; allowed to wrap on
                   desktop where the columns are narrower. Scales up on xl. */}
-              <div className="mt-0.5 lg:mt-1 whitespace-nowrap lg:whitespace-normal text-[11px] sm:text-[0.8125rem] md:text-[0.9375rem] xl:text-base font-bold text-(--stepper-title)">
+              <div className="mt-0.5 whitespace-nowrap lg:whitespace-normal text-[10px] sm:text-[0.75rem] md:text-[0.8125rem] xl:text-[0.875rem] font-bold text-(--stepper-title)">
                 {step.title}
               </div>
- 
+
               {/* Status pill — hidden on mobile to limit stepper height to 80px, colors are status-driven */}
               <div
-                className="hidden lg:block mt-2.5 whitespace-nowrap rounded-full px-2 py-0.5 sm:px-3 sm:py-0.75 text-[0.6875rem] sm:text-[0.75rem] font-semibold"
+                className="hidden lg:block mt-2 whitespace-nowrap rounded-full px-1.5 py-0.5 sm:px-2.5 text-[0.5625rem] sm:text-[0.625rem] font-semibold"
                 style={{
                   background: cfg.pill.bg,
                   color: cfg.pill.text,
@@ -193,8 +218,8 @@ export default function Stepper({ steps = [], activeIndex = 0 }) {
                     step.status === "pending"
                       ? "1px solid var(--stepper-track)"
                       : step.status === "in_progress"
-                      ? "1px solid var(--stepper-orange)"
-                      : "none",
+                        ? "1px solid var(--stepper-orange)"
+                        : "none",
                 }}
               >
                 {cfg.badge}

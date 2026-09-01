@@ -178,7 +178,7 @@ export default function LoginForm({ onVerified }) {
   return (
     <div
       id="login-form"
-      className="w-full max-w-[380px] rounded-2xl border border-slate-100 bg-white px-6 py-8 shadow-brand-card sm:px-8"
+      className="w-full max-w-95 rounded-2xl border border-slate-100 bg-white px-6 py-8 shadow-brand-card sm:px-8"
     >
       {/* ── Card heading ── */}
       <h2 className="text-center text-[26px] font-bold tracking-tight text-slate-900">

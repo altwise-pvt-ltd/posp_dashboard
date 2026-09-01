@@ -387,10 +387,16 @@ export const ENDPOINTS = {
      * `fetchMyCertificate` — it turns that one status into `null` so the screen
      * can say "being prepared" rather than "something went wrong".
      *
-     * `certificateUrl` is the server's own rendering of the document. The app
-     * draws its own sheet from the fields above instead — see `PospCertificate`
-     * — so this is unused for now, and is the field to reach for if the printed
-     * copy should ever come from the backend rather than from CSS.
+     * `certificateUrl` is the server's own rendering of the document, and it is
+     * *the* document — the app no longer draws a sheet of its own. See
+     * `fetchCertificateFile`, which resolves it either way: an absolute URL goes
+     * straight to the browser, anything else is fetched through the API client
+     * because the route behind it is authenticated.
+     *
+     * ⚠ Its form is not in the swagger — `CertificateResponse` is referenced but
+     * its properties are not published — so both readings are handled rather
+     * than assumed. An empty value is treated as "not rendered yet", which is
+     * also what a POSP sees if the backend never populates it.
      */
     me: "/certificates/me",
   },

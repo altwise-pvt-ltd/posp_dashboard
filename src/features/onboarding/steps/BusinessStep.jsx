@@ -409,7 +409,7 @@ export default function BusinessStep({ onNext, onSkip, initialValues }) {
        typeaheads drop a suggestion list below their field, and a clipped
        dropdown is worse than the squared header corner this would otherwise
        hide. The header rounds its own top instead. */
-    <div className="w-full max-w-89 sm:max-w-103.5 lg:max-w-112 xl:max-w-112 mx-auto lg:mx-0 rounded-2xl border border-slate-100 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04),0_20px_48px_rgba(222,123,61,0.08)]">
+    <div className="w-full rounded-2xl border border-slate-100 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04),0_20px_48px_rgba(222,123,61,0.08)]">
 
       {/* Header — padding and type scale with breakpoints */}
       <div className="rounded-t-2xl px-4 sm:px-5 lg:px-6 pt-5 pb-4 bg-linear-to-br from-orange-50/60 to-white border-b border-orange-100/60">
@@ -419,7 +419,7 @@ export default function BusinessStep({ onNext, onSkip, initialValues }) {
               <Building2 size={13} strokeWidth={2.5} />
               Step 7 · Business
             </span>
-            <h2 className="text-lg sm:text-xl lg:text-2xl font-extrabold text-slate-800 tracking-tight">
+            <h2 className="text-base sm:text-lg lg:text-[1.375rem] font-extrabold text-slate-800 tracking-tight">
               {hasBusiness === false ? "Your address" : "Your business details"}
             </h2>
           </div>
@@ -436,7 +436,7 @@ export default function BusinessStep({ onNext, onSkip, initialValues }) {
           )}
         </div>
 
-        <p className="flex items-center gap-1.5 text-xs sm:text-sm text-slate-500 mt-1 lg:mt-2">
+        <p className="flex items-center gap-1.5 text-[0.625rem] sm:text-xs text-slate-500 mt-1 lg:mt-2">
           <ShieldCheck size={14} className="text-emerald-500 shrink-0" />
           {hasBusiness === false
             ? "No business, no problem — we just need your address."

@@ -32,10 +32,16 @@ const normalizeCertificate = (data = {}) => ({
   issuedAt: data.issuedDate ? Date.parse(data.issuedDate) : null,
   expiresAt: data.expiryDate ? Date.parse(data.expiryDate) : null,
 
-  /** The server's own rendering of the sheet, and its QR. Unused — the app
-   *  draws the document itself; see the note on the endpoint. */
-  fileUrl: data.certificateUrl ?? null,
-  qrCodeUrl: data.qrCodeUrl ?? null,
+  /**
+   * The server's own rendering of the sheet, and its QR.
+   *
+   * `fileUrl` is now the document — the app no longer draws one. An issued
+   * certificate whose `certificateUrl` is empty is a real state and not a
+   * failure: the record exists and the file has not been rendered yet, which
+   * the screen reports as "being prepared" rather than framing a blank.
+   */
+  fileUrl: data.certificateUrl || null,
+  qrCodeUrl: data.qrCodeUrl || null,
 
   active: Boolean(data.isActive),
   expired: Boolean(data.isExpired),
@@ -69,4 +75,55 @@ export async function fetchMyCertificate() {
     if (error?.status === 404) return null;
     throw error;
   }
+}
+
+const ABSOLUTE_URL = /^https?:\/\//i;
+
+const KIND_BY_EXTENSION = {
+  pdf: 'pdf',
+  png: 'image',
+  jpg: 'image',
+  jpeg: 'image',
+  webp: 'image',
+};
+
+/** Query strings and fragments are stripped first — a SAS-signed blob URL ends
+ *  in its signature, not in `.pdf`. */
+const kindFromPath = (value) => {
+  const extension = value.split(/[?#]/)[0].split('.').pop()?.toLowerCase();
+  return KIND_BY_EXTENSION[extension] ?? 'pdf';
+};
+
+/**
+ * The certificate document itself, ready to put in a frame.
+ *
+ * `certificateUrl` arrives in one of two forms and the swagger describes
+ * neither, so both are handled rather than assumed:
+ *
+ *   absolute  — object storage, already signed or already public. Handed to the
+ *               browser as-is; fetching it through the API client would send
+ *               this app's bearer token to a host that is not the API.
+ *   otherwise — a path on the API, which is authenticated. The browser attaches
+ *               no Authorization header to a `src`, so the bytes come through
+ *               the axios client and become an object URL — the same dance
+ *               `fetchDocumentBlob` does for onboarding thumbnails.
+ *
+ * The caller owns `revoke` and must call it when the source is replaced or the
+ * screen goes away; an object URL pins the blob in memory until it does. It is
+ * null for the absolute case, where there is nothing to release.
+ */
+export async function fetchCertificateFile(fileUrl) {
+  if (ABSOLUTE_URL.test(fileUrl)) {
+    return { src: fileUrl, kind: kindFromPath(fileUrl), revoke: null };
+  }
+
+  const response = await api.get(fileUrl, { responseType: 'blob' });
+  const blob = response.data;
+  const src = URL.createObjectURL(blob);
+
+  return {
+    src,
+    kind: blob.type?.startsWith('image/') ? 'image' : kindFromPath(fileUrl),
+    revoke: () => URL.revokeObjectURL(src),
+  };
 }

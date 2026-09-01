@@ -10,8 +10,8 @@ import {
 /* Boxed label/value chip — the bg + rounding makes fields visually scannable. */
 function Field({ label, value, wide = false }) {
   return (
-    <div className={`bg-slate-50 rounded-xl px-3 py-2.5 ${wide ? 'sm:col-span-2' : ''}`}>
-      <span className="block text-[10px] uppercase tracking-wide text-slate-400 font-semibold mb-1">
+    <div className={`bg-slate-50 rounded-xl px-3 py-2.5 ${wide ? '@lg:col-span-2' : ''}`}>
+      <span className="block text-field-label uppercase tracking-wide text-slate-400 font-semibold mb-1">
         {label}
       </span>
       <span className="block text-sm font-semibold text-slate-700 wrap-break-word">
@@ -40,7 +40,7 @@ function Section({ title, rows }) {
           {title}
         </p>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 @lg:grid-cols-2 gap-3">
         {present.map((row) => (
           <Field key={row.label} {...row} />
         ))}
@@ -94,7 +94,7 @@ const PersonalInfoCard = ({ profile }) => {
   ];
 
   return (
-    <div className="w-full bg-white rounded-2xl shadow-sm overflow-hidden border border-slate-200">
+    <div className="@container w-full bg-white rounded-2xl shadow-sm overflow-hidden border border-slate-200">
       {/* ── Header: warm tint + title ── */}
       <div className="px-6 pt-6 pb-5 border-b border-slate-100 bg-orange-50/40">
         <h2 className="text-xl font-bold text-slate-800 leading-tight">

@@ -7,7 +7,7 @@ const HEADER_H = 64;
 
 /**
  * Topbar — auto-hiding header for the onboarding flow.
- * Shows the brand logo. (Breadcrumb now lives below the stepper, in OnboardingScreen.)
+ * Shows the brand logo.
  *
  * Stays sticky, but slides out of the way once the user scrolls down past the
  * header's own height, and slides back in the moment they scroll up. On long

@@ -31,7 +31,7 @@ function ContactRow({ label, value, href }) {
         {href?.startsWith('tel:') ? <PhoneIcon /> : <MailIcon />}
       </span>
       <div className="min-w-0">
-        <span className="block text-[10px] uppercase tracking-wide text-slate-400 font-semibold">
+        <span className="block text-field-label uppercase tracking-wide text-slate-400 font-semibold">
           {label}
         </span>
         {href ? (

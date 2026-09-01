@@ -56,7 +56,7 @@ const ProfileCard = ({ profile }) => {
                 <span className="block text-sm font-bold text-slate-700 font-data-mono truncate">
                   {profile.pospCode}
                 </span>
-                <span className="text-[10px] uppercase text-slate-400 font-semibold tracking-wide">
+                <span className="text-field-label uppercase text-slate-400 font-semibold tracking-wide">
                   POSP Code
                 </span>
               </div>
@@ -65,10 +65,10 @@ const ProfileCard = ({ profile }) => {
           ) : null}
 
           <div className="text-center min-w-0">
-            <span className={`inline-block px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide ${verdict.pill}`}>
+            <span className={`inline-block px-2.5 py-1 rounded-full text-status-pill font-bold uppercase tracking-wide ${verdict.pill}`}>
               {verdict.label}
             </span>
-            <span className="mt-1 block text-[10px] uppercase text-slate-400 font-semibold tracking-wide">
+            <span className="mt-1 block text-field-label uppercase text-slate-400 font-semibold tracking-wide">
               KYC Status
             </span>
           </div>

@@ -52,6 +52,9 @@
   --text-label-caps--letter-spacing: 0.05em;
   --text-label-caps--font-weight: 600;
 
+  --text-field-label: 10px;
+  --text-status-pill: 11px;
+
   /* Spacing tokens (enable p-gutter, gap-unit, etc.) */
   --spacing-unit: 8px;
   --spacing-gutter: 24px;
@@ -270,6 +273,43 @@
   --radius-lg: 0.425rem;
   --radius-xl: 0.6375rem;
   --radius-2xl: 0.85rem;
+}
+
+@media (width >= 40rem) {
+  .profile-scale {
+    --spacing: 0.2125rem;
+
+    --spacing-unit: 6.8px;
+    --spacing-gutter: 20.4px;
+    --spacing-margin-mobile: 13.6px;
+    --spacing-margin-desktop: 34px;
+
+    --text-xs: 0.6375rem;
+    --text-sm: 0.74375rem;
+    --text-base: 0.85rem;
+    --text-lg: 0.95625rem;
+    --text-xl: 1.0625rem;
+    --text-2xl: 1.275rem;
+    --text-3xl: 1.59375rem;
+    --text-4xl: 1.9125rem;
+    --text-5xl: 2.55rem;
+
+    --text-field-label: 8.5px;
+    --text-status-pill: 9.35px;
+
+    --container-xs: 17rem;
+    --container-sm: 20.4rem;
+    --container-md: 23.8rem;
+    --container-lg: 27.2rem;
+    --container-xl: 30.6rem;
+    --container-2xl: 35.7rem;
+    --container-3xl: 40.8rem;
+    --container-4xl: 47.6rem;
+
+    --radius-lg: 0.425rem;
+    --radius-xl: 0.6375rem;
+    --radius-2xl: 0.85rem;
+  }
 }
 
 /* Custom animations + utilities ported from the HTML mockup */

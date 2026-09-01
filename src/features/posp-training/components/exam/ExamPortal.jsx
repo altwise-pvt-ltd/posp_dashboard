@@ -385,9 +385,7 @@ function ExamPortal({ exam, planName, onExit, onFullBleedChange }) {
   // Only ever reached from a pass, so the certificate cannot be opened on a
   // failed attempt. Nothing routes here yet — see the note above.
   if (stage === STAGE.CERTIFICATE) {
-    return (
-      <CertificateScreen sections={[section]} onGoToDashboard={() => navigate('/overview')} />
-    );
+    return <CertificateScreen onAction={() => navigate('/overview')} />;
   }
 
   return (

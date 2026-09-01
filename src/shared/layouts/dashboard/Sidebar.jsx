@@ -1,9 +1,11 @@
-import { NavLink } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { useState } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
+import { ChevronDown } from 'lucide-react';
 import { isRoutedPath } from '@/app/routes';
 import logo from "@/assets/let'sInsuranceLogo.svg";
 import iconHome from '@/assets/sidebar/OverviewScreen.webp';
-import iconCustomers from '@/assets/sidebar/Customer.webp';
+import iconCustomer from '@/assets/sidebar/Customer.webp';
 import iconPolicies from '@/assets/sidebar/Policies.webp';
 import iconReports from '@/assets/sidebar/Reports.webp';
 import renewal from '@/assets/sidebar/renewal.webp';
@@ -14,9 +16,19 @@ import iconTraining from '@/assets/sidebar/iconTraining.webp';
 // 'POSP Training' map to real pages (/overview, /profile, /posp-training);
 // the others have no page yet, so `isRoutedPath` renders them inert — they
 // stay visible and styled but clicking them does nothing.
+//
+// An item with `children` never navigates itself: it toggles its group open.
 const NAV_ITEMS = [
   { label: 'Home', to: '/overview', icon: iconHome },
-  { label: 'Customers', to: '/customers', icon: iconCustomers },
+  {
+    label: 'Offline Quotation',
+    to: '/offline-quotation',
+    icon: iconCustomer,
+    children: [
+      { label: 'Create Quotation', to: '/offline-quotation/create' },
+      { label: 'View Quotations', to: '/offline-quotation/view' },
+    ],
+  },
   { label: 'Policies', to: '/policies', icon: iconPolicies },
   { label: 'Reports', to: '/reports', icon: iconReports },
   { label: 'Renewal', to: '/renewal', icon: renewal },
@@ -24,11 +36,42 @@ const NAV_ITEMS = [
   { label: 'POSP Training', to: '/posp-training', icon: iconTraining },
 ];
 
+const isUnder = (pathname, to) =>
+  pathname === to || pathname.startsWith(`${to}/`);
+
 // `onNavigate` fires when a real nav item is clicked. DashboardLayout uses it to
 // dismiss the mobile drawer, which would otherwise stay parked over the page it
 // just opened. It hangs off the click rather than off the route changing so that
 // tapping the item you are already on closes the drawer too.
-function Sidebar({ collapsed = false, onNavigate }) {
+//
+// `onRequestExpand` un-collapses the desktop rail. A submenu has nowhere to open
+// into at 5rem wide, so a parent tapped on the narrow rail widens it first.
+function Sidebar({ collapsed = false, onNavigate, onRequestExpand }) {
+  const { pathname } = useLocation();
+
+  // null = untouched, so the group holding the current route decides. A label
+  // opens that group, '' closes every group. Kept as state the render derives
+  // from rather than an effect that syncs it: landing on a child route with the
+  // group shut would otherwise show an active item nested inside a closed parent.
+  const [pickedGroup, setPickedGroup] = useState(null);
+
+  const routeGroup =
+    NAV_ITEMS.find((item) =>
+      item.children?.some((child) => isUnder(pathname, child.to))
+    )?.label ?? null;
+
+  // The 5rem rail has no room for a submenu, so nothing is open while collapsed.
+  const openGroup = collapsed ? null : pickedGroup ?? routeGroup;
+
+  const toggleGroup = (item) => {
+    if (collapsed) {
+      onRequestExpand?.();
+      setPickedGroup(item.label);
+      return;
+    }
+    setPickedGroup(openGroup === item.label ? '' : item.label);
+  };
+
   // Shared between the real NavLink and the inert stand-in so both look identical.
   const linkClass = (isActive) =>
     `relative flex items-center rounded-xl text-sm font-medium transition-all duration-300 group select-none ${collapsed
@@ -42,7 +85,7 @@ function Sidebar({ collapsed = false, onNavigate }) {
       }`
     }`;
 
-  const linkContent = (item, isActive) => (
+  const linkContent = (item, isActive, trailing = null) => (
     <>
       {/* Sliding Background Pill */}
       {isActive && (
@@ -76,14 +119,23 @@ function Sidebar({ collapsed = false, onNavigate }) {
         />
       )}
 
-      {/* Label — hidden when collapsed */}
+      {/* Label — hidden when collapsed. `truncate` is the safety net for
+          'Offline Quotation', which is wider than the 13rem rail's text column. */}
       {!collapsed && (
-        <span className="relative z-10 transition-colors duration-300 whitespace-nowrap">
+        <span className="relative z-10 min-w-0 flex-1 truncate transition-colors duration-300">
           {item.label}
         </span>
       )}
+
+      {trailing}
     </>
   );
+
+  const childClass = (isActive) =>
+    `block rounded-lg px-3 py-2 text-[13px] transition-colors duration-200 ${isActive
+      ? 'bg-orange-50 font-semibold text-orange-600'
+      : 'font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+    }`;
 
   return (
     <div className="flex flex-col h-full">
@@ -116,31 +168,101 @@ function Sidebar({ collapsed = false, onNavigate }) {
       {/* Nav */}
       <nav className="flex-1 px-2">
         <ul className="flex flex-col gap-1.5 list-none m-0 p-0">
-          {NAV_ITEMS.map((item) => (
-            <li key={item.label} className="relative">
-              {isRoutedPath(item.to) ? (
-                <NavLink
-                  to={item.to}
-                  end={item.to === '/'}
-                  onClick={onNavigate}
-                  title={collapsed ? item.label : undefined}
-                  className={({ isActive }) => linkClass(isActive)}
-                >
-                  {({ isActive }) => linkContent(item, isActive)}
-                </NavLink>
-              ) : (
-                // No page for this path yet — same look, but it never navigates
-                // and can never be the active item.
-                <div
-                  aria-disabled="true"
-                  title={collapsed ? item.label : undefined}
-                  className={`${linkClass(false)} cursor-default`}
-                >
-                  {linkContent(item, false)}
-                </div>
-              )}
-            </li>
-          ))}
+          {NAV_ITEMS.map((item) => {
+            if (item.children) {
+              const isOpen = openGroup === item.label;
+              const hasActiveChild = item.children.some((child) =>
+                isUnder(pathname, child.to)
+              );
+
+              return (
+                <li key={item.label} className="relative">
+                  <button
+                    type="button"
+                    onClick={() => toggleGroup(item)}
+                    title={collapsed ? item.label : undefined}
+                    aria-expanded={isOpen}
+                    className={`${linkClass(hasActiveChild)} w-full cursor-pointer text-left`}
+                  >
+                    {linkContent(
+                      item,
+                      hasActiveChild,
+                      !collapsed && (
+                        <ChevronDown
+                          aria-hidden="true"
+                          className={`relative z-10 h-4 w-4 shrink-0 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''
+                            }`}
+                        />
+                      )
+                    )}
+                  </button>
+
+                  <AnimatePresence initial={false}>
+                    {isOpen && (
+                      <motion.ul
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2, ease: 'easeOut' }}
+                        className="ml-7 list-none overflow-hidden border-l border-slate-200 p-0 pl-2"
+                      >
+                        <li className="pt-1.5" aria-hidden="true" />
+                        {item.children.map((child) => {
+                          const isActive = isUnder(pathname, child.to);
+                          return (
+                            <li key={child.label} className="pb-0.5">
+                              {isRoutedPath(child.to) ? (
+                                <NavLink
+                                  to={child.to}
+                                  onClick={onNavigate}
+                                  className={childClass(isActive)}
+                                >
+                                  {child.label}
+                                </NavLink>
+                              ) : (
+                                <div
+                                  aria-disabled="true"
+                                  className={`${childClass(false)} cursor-default`}
+                                >
+                                  {child.label}
+                                </div>
+                              )}
+                            </li>
+                          );
+                        })}
+                      </motion.ul>
+                    )}
+                  </AnimatePresence>
+                </li>
+              );
+            }
+
+            return (
+              <li key={item.label} className="relative">
+                {isRoutedPath(item.to) ? (
+                  <NavLink
+                    to={item.to}
+                    end={item.to === '/'}
+                    onClick={onNavigate}
+                    title={collapsed ? item.label : undefined}
+                    className={({ isActive }) => linkClass(isActive)}
+                  >
+                    {({ isActive }) => linkContent(item, isActive)}
+                  </NavLink>
+                ) : (
+                  // No page for this path yet — same look, but it never navigates
+                  // and can never be the active item.
+                  <div
+                    aria-disabled="true"
+                    title={collapsed ? item.label : undefined}
+                    className={`${linkClass(false)} cursor-default`}
+                  >
+                    {linkContent(item, false)}
+                  </div>
+                )}
+              </li>
+            );
+          })}
         </ul>
       </nav>
     </div>

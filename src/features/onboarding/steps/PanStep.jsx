@@ -1,13 +1,22 @@
 import { useForm, useWatch, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { CreditCard, Loader2, ShieldCheck, Sparkles, Upload } from "lucide-react";
+import {
+  CreditCard,
+  Loader2,
+  ShieldCheck,
+  Sparkles,
+  Upload,
+} from "lucide-react";
 import Input from "@/shared/components/Input";
 import Button from "@/shared/components/Button";
 import FileUpload from "@/shared/components/FileUpload";
 import { fileField } from "@/shared/upload/schema";
 import { personNameField } from "@/shared/validation/nameField";
-import { dateOfBirthField, formatDobInput } from "@/shared/validation/dateOfBirthField";
+import {
+  dateOfBirthField,
+  formatDobInput,
+} from "@/shared/validation/dateOfBirthField";
 import { maskedField, upperAlnumMask } from "@/shared/validation/inputMask";
 import { alertOnInvalid } from "@/shared/store/alertStore";
 import { reportFormError } from "@/shared/api/formErrors";
@@ -27,7 +36,9 @@ const panSchema = z.object({
      PAN with no date of birth against it cannot be matched during KYC, and the
      asterisk on the label is only honest if the schema enforces it. */
   dateOfBirth: dateOfBirthField({ required: true, label: "Date of birth" }),
-  panFrontImage: fileField({ message: "Please upload the front of your PAN card." }),
+  panFrontImage: fileField({
+    message: "Please upload the front of your PAN card.",
+  }),
   /* Optional, matching the server — a PAN with nothing on the back has none. */
   panBackImage: fileField({ required: false }),
 });
@@ -66,7 +77,7 @@ export default function PanStep({ onNext, initialValues }) {
       panFrontImage: initialValues?.panFrontImageKey,
       panBackImage: initialValues?.panBackImageKey,
     },
-    { form }
+    { form },
   );
 
   const pan = useWatch({ control: form.control, name: "panNumber" });
@@ -96,21 +107,19 @@ export default function PanStep({ onNext, initialValues }) {
   }, alertOnInvalid);
 
   return (
-    /* Card width scales up with the viewport: roomy on mobile, wider on each
-       breakpoint so big screens fill space instead of capping at a small card. */
-    <div className="w-full max-w-89 sm:max-w-103.5 lg:max-w-112 xl:max-w-112 mx-auto lg:mx-0 rounded-2xl border border-slate-100 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04),0_20px_48px_rgba(222,123,61,0.08)] overflow-hidden">
+    <div className="w-full rounded-2xl border border-slate-100 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04),0_20px_48px_rgba(222,123,61,0.08)] overflow-hidden">
       {/* Header — padding and type scale with breakpoints */}
       <div className="px-4 sm:px-5 lg:px-6 pt-4 pb-3 bg-linear-to-br from-orange-50/60 to-white border-b border-orange-100/60">
         <span className="inline-flex items-center gap-1.5 text-[10px] sm:text-xs font-bold tracking-widest uppercase text-orange-500 mb-3">
           <CreditCard size={12} strokeWidth={2} />
           Step 1 · PAN Verification
         </span>
-        <h2 className="text-lg sm:text-xl lg:text-2xl font-extrabold text-slate-800 tracking-tight">
+        <h2 className="text-base sm:text-lg lg:text-[1.375rem] font-extrabold text-slate-800 tracking-tight">
           Verify your PAN card
         </h2>
-        <p className="flex items-center gap-1.5 text-xs sm:text-sm text-slate-500 mt-1 lg:mt-2">
+        <p className="flex items-center gap-1.5 text-[0.625rem] sm:text-xs text-slate-500 mt-1 lg:mt-2">
           <ShieldCheck size={12} className="text-emerald-500 shrink-0" />
-          Your data is encrypted and protected by Lets Insure.
+          Your data is encrypted and protected by Lets Insurance.
         </p>
       </div>
 
@@ -195,7 +204,7 @@ export default function PanStep({ onNext, initialValues }) {
           <Button
             type="submit"
             disabled={form.formState.isSubmitting}
-            className="flex-1 flex items-center justify-center gap-2 lg:text-base"
+            className="flex-1 flex items-center justify-center gap-2 lg:text-sm"
           >
             {form.formState.isSubmitting ? (
               <>

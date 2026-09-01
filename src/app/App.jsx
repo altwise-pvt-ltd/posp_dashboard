@@ -9,6 +9,7 @@ import { landingPath } from '@/app/funnel';
 const OnboardingScreen = lazy(() => import('@/features/onboarding/pages/OnboardingScreen'));
 const VerificationPendingPage = lazy(() => import('@/features/verification/pages/VerificationPendingPage'));
 const TrainingPage = lazy(() => import('@/features/posp-training/pages/TrainingPage'));
+const CertificatePage = lazy(() => import('@/features/posp-training/pages/CertificatePage'));
 const OverviewPage = lazy(() => import('@/features/overview/pages/OverviewPage'));
 const ProfilePage = lazy(() => import('@/features/profile/pages/ProfilePage'));
 
@@ -69,6 +70,13 @@ function App() {
           <Route
             path="/posp-training"
             element={<RequireFunnel through="verification"><TrainingPage /></RequireFunnel>}
+          />
+
+          {/* The certificate, straight from `/certificates/me`. Behind the same
+              stage as the dashboard because holding one *is* what clears it. */}
+          <Route
+            path="/certificate"
+            element={<RequireFunnel through="training"><CertificatePage /></RequireFunnel>}
           />
 
           {/* Dashboard — the whole funnel behind them. */}

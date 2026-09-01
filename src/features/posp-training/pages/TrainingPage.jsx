@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Loader2, TriangleAlert } from 'lucide-react';
 import FunnelLayout from '@/shared/layouts/FunnelLayout';
@@ -156,10 +156,10 @@ function TrainingProgramme() {
    * this page sat open, which the check on mount could not have known.
    *
    * Only ever the *press* path's answer. The mount path contributes through
-   * `examEligibility` instead, and `certifiedSection` further down is where the
-   * two meet — see there for why this half is state and that half is not.
+   * `examEligibility` instead, and `isCertified` further down is where the two
+   * meet — see there for why this half is state and that half is not.
    */
-  const [certifiedByPress, setCertifiedByPress] = useState(null);
+  const [passedOnPress, setPassedOnPress] = useState(false);
   /**
    * The caution between the settled record and the paper — see
    * `ExamCautionDialog`. Its own state rather than a stage, because the page
@@ -243,8 +243,8 @@ function TrainingProgramme() {
   const examEligibility = useExamEligibility();
 
   /**
-   * The line this POSP is already certified in — and the whole of the
-   * certificate screen's state.
+   * Whether this POSP already holds a pass — and the whole of the certificate
+   * screen's state.
    *
    * Two sources answer the same question and this is where they meet: the mount
    * check just above, and `handleStartExam` for a pass recorded while this page
@@ -253,22 +253,16 @@ function TrainingProgramme() {
    * an effect the instant the fetch resolved — a second render pass for a value
    * that is a pure function of a reply already in hand.
    *
-   * The press wins when both have an answer. It is the later of the two, and the
-   * only one that can have changed since the page loaded.
+   * Either one is enough. Both are reports of the same fact, and a pass cannot
+   * be taken back — so this is an `||` rather than a precedence rule.
    *
-   * A section rather than a boolean because that is what `CertificateScreen`
-   * prints: `describeSections` reads `label` off it to say which paper was
-   * passed. The line is the server's own `insuranceTypeName` falling back to the
-   * plan the LMS record carries — both name the same enrolment, and the
-   * eligibility reply is simply the fresher of the two.
+   * A boolean, because that is all the certificate screen needs: it fetches its
+   * own document from `/certificates/me` and the sheet it frames is the server's
+   * rendering. It used to be a `{ id, label, title }` section, back when the app
+   * drew the sheet and had to name the line examined on it.
    */
-  const certifiedSection = useMemo(() => {
-    if (certifiedByPress) return certifiedByPress;
-    if (!examEligibility.eligibility?.alreadyPassed) return null;
-
-    const line = examEligibility.eligibility.insuranceTypeName || plan?.name || '';
-    return { id: 'posp-certificate', label: line, title: line };
-  }, [certifiedByPress, examEligibility.eligibility, plan?.name]);
+  const isCertified =
+    passedOnPress || Boolean(examEligibility.eligibility?.alreadyPassed);
 
   /**
    * Unlock the dashboard that the certificate screen's "Go to Dashboard" button
@@ -281,8 +275,8 @@ function TrainingProgramme() {
    * *this* browser — which a POSP who passed on another device never did.
    */
   useEffect(() => {
-    if (certifiedSection) markCertified();
-  }, [certifiedSection]);
+    if (isCertified) markCertified();
+  }, [isCertified]);
 
   /**
    * Why the exam is shut, in the examiner's own words — or null while it is
@@ -610,8 +604,7 @@ function TrainingProgramme() {
        * off to the same helper so they cannot drift.
        */
       if (eligibility?.alreadyPassed) {
-        const line = eligibility.insuranceTypeName || plan.name;
-        setCertifiedByPress({ id: 'posp-certificate', label: line, title: line });
+        setPassedOnPress(true);
         return;
       }
 
@@ -637,13 +630,8 @@ function TrainingProgramme() {
     /* Certified, on the server's word — see `handleStartExam`. First because it
        outranks every screen below it: a POSP holding a pass has no hours to
        serve, no exam to sit and nothing to choose. */
-    if (certifiedSection) {
-      return (
-        <CertificateScreen
-          sections={[certifiedSection]}
-          onGoToDashboard={() => navigate('/overview')}
-        />
-      );
+    if (isCertified) {
+      return <CertificateScreen onAction={() => navigate('/overview')} />;
     }
 
     if (!plan) {
@@ -786,10 +774,10 @@ function TrainingProgramme() {
      this asks the portal rather than `isExamOpen`. Its own padding is generous
      enough that the shell's would only push it further in. */
   /* The certificate is full-bleed for a different reason than the paper: it
-     carries its own sticky bar and prints itself, and `cert-print-root` hides
-     everything outside the sheet — a second header above it would be chrome the
-     learner can see but the printer never gets. */
-  const isFullBleed = (isExamOpen && isExamFullBleed) || Boolean(certifiedSection);
+     carries its own sticky bar with the document's dates and a link out to the
+     file, so a second header above it would be two bars saying overlapping
+     things about one sheet. */
+  const isFullBleed = (isExamOpen && isExamFullBleed) || isCertified;
 
   return (
     /* `main` holds flex-1, so on short screens the footer settles at the bottom
@@ -799,7 +787,7 @@ function TrainingProgramme() {
       footer={!isFullBleed}
       className="bg-slate-50"
       mainClassName={`flex w-full flex-1 flex-col ${
-        isExamOpen || certifiedSection ? 'p-0' : 'p-4 md:p-6 lg:p-8'
+        isExamOpen || isCertified ? 'p-0' : 'p-4 md:p-6 lg:p-8'
       }`}
     >
       {renderStage()}

@@ -117,6 +117,7 @@ function DashboardLayout({ children }) {
         <Sidebar
           collapsed={collapsed && !drawerOpen}
           onNavigate={() => setDrawerOpen(false)}
+          onRequestExpand={() => setCollapsed(false)}
         />
       </aside>
 
