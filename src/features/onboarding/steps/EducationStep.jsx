@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { GraduationCap, Loader2, ShieldCheck, ArrowRight } from "lucide-react";
 import Input from "@/shared/components/Input";
-import Button from "@/shared/components/Button";
+import CustomButton from "@/shared/components/CustomButton";
 import FileUpload from "@/shared/components/FileUpload";
 import { fileField } from "@/shared/upload/schema";
 import { digitMask, maskedField } from "@/shared/validation/inputMask";
@@ -239,10 +239,10 @@ export default function EducationStep({ onNext, initialValues }) {
         <div className="flex gap-3 pt-1">
           {/* Held closed until the options land, too: submitting before then
               would post an empty highestQualification the server requires. */}
-          <Button
+          <CustomButton
             type="submit"
             disabled={loading || unavailable || form.formState.isSubmitting}
-            className="flex-1 flex items-center justify-center gap-2"
+            className="flex-1"
           >
             {form.formState.isSubmitting ? (
               <>
@@ -254,7 +254,7 @@ export default function EducationStep({ onNext, initialValues }) {
                 Continue <ArrowRight size={16} strokeWidth={2.5} />
               </>
             )}
-          </Button>
+          </CustomButton>
         </div>
       </form>
 

@@ -401,6 +401,61 @@ export const ENDPOINTS = {
     me: "/certificates/me",
   },
 
+  /**
+   * Offline quotation. Paths sit at `/quote/...`, so a top-level group rather
+   * than a member of any of the above.
+   */
+  quotation: {
+    /**
+     * GET (bearer) → the product tree an offline quote is raised against:
+     * `[{ id, code, name, icon, products: [{ id, code, name,
+     *    subProducts: [{ id, code, name }] }] }]`.
+     *
+     * Three levels — line of business, product, sub-product — and all three ids
+     * are uuids. `code` is the stable machine name (the string a payload should
+     * carry); `name` is the label. `icon` is the server's own hint for the LOB
+     * tile and may be null.
+     *
+     * The whole catalogue arrives in one reply; there is no per-LOB route, so
+     * the product and sub-product selects are narrowed from what is already in
+     * hand rather than re-fetched.
+     */
+    catalog: "/quote/catalog",
+
+    /**
+     * GET (bearer) ?productId=<uuid>[&subProductId=<uuid>][&fileType=] → the
+     * form to raise a quote on that product: `{ productId, subProductId,
+     * sections: [{ code, name, displayOrder, isCollapsible, isRepeatable,
+     * fields: [FieldDto] }], documents, addOns, directives }`.
+     *
+     * This is the schema the dynamic form renders. Nothing about the questions
+     * is written in the app — `controlType` on each field picks the component,
+     * `options` / `lookupSource` fill the choices, `validations` carry the rules
+     * and their messages.
+     *
+     * ⚠ `productId` is the **uuid**, not the `code` the catalogue also carries.
+     *
+     * `directives` (hidden / required / disabled field lists, `setValues`) are a
+     * snapshot for the empty form. They are re-issued by `rules/evaluate` as
+     * answers come in, so they must be applied at render rather than baked into
+     * the normalized schema.
+     */
+    metadata: "/quote/metadata",
+
+    /**
+     * GET (bearer) ?source=RTO_CODE[&parent=MH] → `[{ value, text }]`.
+     *
+     * The options for a field whose `lookupSource` is set. These lists arrive
+     * empty on the metadata reply — MAKE, MODEL, VARIANT and the rest are
+     * fetched here instead, because a model list only means anything once a make
+     * is chosen. `parent` is the answer to that field's `dependsOnFieldCode`.
+     *
+     * ⚠ `text` is the label and `value` is what a payload carries — not
+     * `label`/`value`, which is what every other list in this file returns.
+     */
+    lookup: "/quote/lookup",
+  },
+
   onboarding: {
     /**
      * GET (bearer) → where this application stands: the step to resume on,

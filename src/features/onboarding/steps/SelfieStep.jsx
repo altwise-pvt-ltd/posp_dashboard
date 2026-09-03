@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import { Camera, ShieldCheck, Upload, RotateCcw, Check, UserRound, AlertCircle, Loader2 } from "lucide-react";
-import Button from "@/shared/components/Button";
+import CustomButton from "@/shared/components/CustomButton";
 import { SELFIE, acceptAttribute } from "@/shared/upload/policy";
 import { prepareFile } from "@/shared/upload/validate";
 import { showAlert } from "@/shared/store/alertStore";
@@ -275,9 +275,9 @@ export default function SelfieStep({ onNext, initialValues }) {
               >
                 Cancel
               </button>
-              <Button type="button" onClick={capture} className="flex-1 flex items-center justify-center gap-2">
+              <CustomButton type="button" onClick={capture} className="flex-1">
                 <Camera size={16} strokeWidth={2.5} /> Capture
-              </Button>
+              </CustomButton>
             </div>
           ) : photo ? (
             /* Photo taken → retake / confirm */
@@ -290,11 +290,11 @@ export default function SelfieStep({ onNext, initialValues }) {
               >
                 <RotateCcw size={16} strokeWidth={2.5} /> Retake
               </button>
-              <Button
+              <CustomButton
                 type="button"
                 onClick={submit}
                 disabled={uploading}
-                className="flex-1 flex items-center justify-center gap-2"
+                className="flex-1"
               >
                 {uploading ? (
                   <>
@@ -306,19 +306,19 @@ export default function SelfieStep({ onNext, initialValues }) {
                     <Check size={16} strokeWidth={2.5} /> Use this photo
                   </>
                 )}
-              </Button>
+              </CustomButton>
             </div>
           ) : (
             /* Idle → choose a source */
             <div className="flex flex-col sm:flex-row gap-3">
-              <Button
+              <CustomButton
                 type="button"
                 onClick={startCamera}
                 disabled={preparing}
-                className="flex-1 flex items-center justify-center gap-2"
+                className="flex-1"
               >
                 <Camera size={16} strokeWidth={2.5} /> Take photo now
-              </Button>
+              </CustomButton>
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}

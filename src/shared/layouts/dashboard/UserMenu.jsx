@@ -1,7 +1,10 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { UserRound } from 'lucide-react';
 import { useAuthStore } from '@/shared/store/authStore';
 import { usePospProfileStore } from '@/shared/store/pospProfileStore';
 import { useProfilePhoto } from '@/features/profile/hooks/useProfilePhoto';
+import AppLink from '@/shared/components/AppLink';
 
 /**
  * The signed-in POSP, as the bar shows them.
@@ -29,11 +32,21 @@ function useAccount() {
 function UserMenu({ isOpen, onToggle }) {
   const { name, mobile, photoKey } = useAccount();
   const photo = useProfilePhoto(photoKey);
+  const signOut = useAuthStore((s) => s.signOut);
+  const navigate = useNavigate();
+  const [signingOut, setSigningOut] = useState(false);
 
   // Falls back to the number, then to a generic label — the bar renders before
   // any of it is guaranteed to have arrived.
   const label = name || mobile || 'Your account';
   const initial = name ? name.trim()[0].toUpperCase() : null;
+
+  const handleSignOut = async () => {
+    if (signingOut) return;
+    setSigningOut(true);
+    await signOut();
+    navigate('/login', { replace: true });
+  };
 
   return (
     <div className="relative">
@@ -65,20 +78,29 @@ function UserMenu({ isOpen, onToggle }) {
               {name && mobile ? mobile : 'Signed in'}
             </p>
           </div>
-          {/* Inert until these screens exist — anchors here would only dirty
-              the URL with a hash and scroll the page to the top. */}
-          <span
-            aria-disabled="true"
-            className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 cursor-default"
+          <AppLink
+            to="/profile"
+            onClick={onToggle}
+            className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
           >
             Your profile
-          </span>
+          </AppLink>
+          {/* Inert until the screen exists — an anchor here would only dirty
+              the URL with a hash and scroll the page to the top. */}
           <span
             aria-disabled="true"
             className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 cursor-default"
           >
             Change Password
           </span>
+          <button
+            type="button"
+            onClick={handleSignOut}
+            disabled={signingOut}
+            className="block w-full text-left px-4 py-2 text-sm text-red-600 border-t border-slate-100 hover:bg-red-50 disabled:opacity-60 disabled:hover:bg-transparent focus:outline-none focus:bg-red-50"
+          >
+            {signingOut ? 'Logging out…' : 'Logout'}
+          </button>
         </div>
       )}
     </div>

@@ -12,6 +12,9 @@ const TrainingPage = lazy(() => import('@/features/posp-training/pages/TrainingP
 const CertificatePage = lazy(() => import('@/features/posp-training/pages/CertificatePage'));
 const OverviewPage = lazy(() => import('@/features/overview/pages/OverviewPage'));
 const ProfilePage = lazy(() => import('@/features/profile/pages/ProfilePage'));
+const OfflineQuotationPage = lazy(() =>
+  import('@/features/posp-dashboard/offline-quotation/page/OfflineQuotationPage')
+);
 
 /**
  * Every protected route names the last stage that must be behind the user, and
@@ -87,6 +90,10 @@ function App() {
           <Route
             path="/profile"
             element={<RequireFunnel through="training"><ProfilePage /></RequireFunnel>}
+          />
+          <Route
+            path="/offline-quotation/create"
+            element={<RequireFunnel through="training"><OfflineQuotationPage /></RequireFunnel>}
           />
 
           <Route path="*" element={<Navigate to="/" replace />} />

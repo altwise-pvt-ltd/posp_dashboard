@@ -10,7 +10,7 @@ import Topbar from './dashboard/Topbar';
  *
  * The padding ramp is deliberately shallower than the funnel's
  * (`px-4 sm:px-6 lg:px-10 xl:px-14`): from `lg` up this page already spends
- * 208px — 256px from `xl` — on the sidebar, so repeating the funnel's inset
+ * 176px — 216px from `xl` — on the sidebar, so repeating the funnel's inset
  * would inset the content twice.
  *
  * The cap is written on the spacing scale (`max-w-320` = 320 × 0.25rem = 1280px,
@@ -25,8 +25,8 @@ export const DASHBOARD_SHELL =
 
 function DashboardLayout({ children }) {
   // Collapsed/expanded state of the *static* rail, which only exists from `lg`
-  // up. Below `lg` the rail is an overlay drawer and this is ignored — a 5rem
-  // icon rail is still a fifth of a 390px phone, so the narrow mode isn't a
+  // up. Below `lg` the rail is an overlay drawer and this is ignored — a 68px
+  // icon rail is still a sixth of a 390px phone, so the narrow mode isn't a
   // useful mobile answer; being off-canvas entirely is.
   const [collapsed, setCollapsed] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -71,20 +71,22 @@ function DashboardLayout({ children }) {
 
       {/*
         One <aside> in two modes:
-          < lg  fixed overlay drawer at 13rem, slid off-canvas
-          ≥ lg  static in-flow rail whose width animates 13rem ↔ 5rem,
-                opening out to 16rem from `xl`
-        13rem rather than a flat 16rem below `xl` because that is where the rail
-        costs the most: at 1024px the old 256px was a quarter of the viewport,
-        and on a 390px phone the drawer covered two thirds of it. The collapsed
-        width stays 5rem — its 48px nav pill plus the aside's own padding needs
-        exactly that, so it has no 18% to give.
+          < lg  fixed overlay drawer, slid off-canvas
+          ≥ lg  static in-flow rail whose width animates between the two,
+                opening out further from `xl`
+        The widths below read as 13rem / 5rem / 16rem but render at 85% of that
+        — 176px, 68px and 216px — because `.sidebar-scale` rescales the
+        --spacing these resolve against for this element and everything inside
+        it. See the block in index.css.
+        The narrow rail is exactly its nav pill plus the aside's own padding, so
+        it has nothing further to give; the drawer is off-canvas rather than
+        narrow because even 68px is a sixth of a 390px phone.
         `lg:relative` matters as much as `lg:static` — the collapse toggle below
         is positioned against this element, and a plain `static` ancestor would
         drop it onto the viewport instead.
       */}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 w-52 shrink-0 border-r border-slate-200 bg-white p-4 transition-transform duration-300 ease-in-out lg:relative lg:z-auto lg:translate-x-0 lg:transition-[width] ${
+        className={`sidebar-scale fixed inset-y-0 left-0 z-40 w-52 shrink-0 border-r border-slate-200 bg-white p-4 transition-transform duration-300 ease-in-out lg:relative lg:z-auto lg:translate-x-0 lg:transition-[width] ${
           drawerOpen ? 'translate-x-0' : '-translate-x-full'
         } ${collapsed ? 'lg:w-20' : 'xl:w-64'}`}
       >

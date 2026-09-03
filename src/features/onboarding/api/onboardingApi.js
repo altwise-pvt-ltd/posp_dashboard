@@ -164,21 +164,20 @@ function toApiDate(value) {
  *
  * DOB is optional to the server and required by `panSchema` — the form is the
  * stricter of the two on purpose, so it is still guarded here rather than
- * assumed present. `panBackImage` is optional on both sides.
+ * assumed present. The server also accepts a `panBackImage`; a PAN card has no
+ * details on its back, so the form never collects one and this never sends it.
  */
 export async function submitPanDetails({
   panNumber,
   fullName,
   dateOfBirth,
   panFrontImage,
-  panBackImage,
 } = {}) {
   const body = new FormData();
   body.append('panNumber', panNumber);
   body.append('fullname', fullName);
   if (dateOfBirth) body.append('dateOfBirth', toApiDate(dateOfBirth));
   if (panFrontImage) body.append('panFrontImage', panFrontImage, panFrontImage.name);
-  if (panBackImage) body.append('panBackImage', panBackImage, panBackImage.name);
 
   const response = await api.post(
     ENDPOINTS.onboarding.submitPanDetails,
@@ -655,8 +654,6 @@ export function normalizeReview(data = {}) {
         fullName: pan.fullName ?? '',
         dateOfBirth: toDisplayDate(pan.dateOfBirth) ?? '',
         panFrontImageKey: pan.frontDocumentKey ?? null,
-        /** Optional on both sides — a PAN with nothing on the back has none. */
-        panBackImageKey: pan.backDocumentKey ?? null,
       },
 
       /** The address lives at the top level of the response, not in a section

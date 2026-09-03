@@ -1,5 +1,5 @@
-import { Link } from 'react-router-dom';
-import { isRoutedPath } from '@/app/routes';
+import { Link } from "react-router-dom";
+import { isRoutedPath } from "@/app/routes";
 
 /**
  * Drop-in replacement for react-router's <Link> that refuses to navigate to a
@@ -22,7 +22,7 @@ export default function AppLink({ to, children, className, ...rest }) {
     <span
       role="link"
       aria-disabled="true"
-      className={`${className ?? ''} cursor-default`}
+      className={`${className ?? ""} cursor-default`}
       {...rest}
     >
       {children}

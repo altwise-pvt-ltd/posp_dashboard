@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Mail, ShieldCheck, ArrowRight, CheckCircle2, RotateCcw, Loader2 } from "lucide-react";
 import Input from "@/shared/components/Input";
-import Button from "@/shared/components/Button";
+import CustomButton from "@/shared/components/CustomButton";
 import { showAlert, alertOnInvalid } from "@/shared/store/alertStore";
 import { reportFormError } from "@/shared/api/formErrors";
 import { sendEmailOtp, verifyEmailOtp } from "../api/onboardingApi";
@@ -170,10 +170,10 @@ export default function EmailStep({ onNext, initialValues }) {
 
           {!codeSent && (
             <div className="flex gap-3 pt-1">
-              <Button
+              <CustomButton
                 type="submit"
                 disabled={emailForm.formState.isSubmitting}
-                className="flex-1 flex items-center justify-center gap-2"
+                className="flex-1"
               >
                 {emailForm.formState.isSubmitting ? (
                   <>
@@ -185,7 +185,7 @@ export default function EmailStep({ onNext, initialValues }) {
                     Send Code <ArrowRight size={16} strokeWidth={2.5} />
                   </>
                 )}
-              </Button>
+              </CustomButton>
             </div>
           )}
         </form>
@@ -231,10 +231,10 @@ export default function EmailStep({ onNext, initialValues }) {
             </div>
 
             <div className="flex gap-3 pt-1">
-              <Button
+              <CustomButton
                 type="submit"
                 disabled={otpForm.formState.isSubmitting}
-                className="flex-1 flex items-center justify-center gap-2"
+                className="flex-1"
               >
                 {otpForm.formState.isSubmitting ? (
                   <>
@@ -246,7 +246,7 @@ export default function EmailStep({ onNext, initialValues }) {
                     <CheckCircle2 size={16} strokeWidth={2.5} /> Verify Email
                   </>
                 )}
-              </Button>
+              </CustomButton>
             </div>
           </form>
         )}

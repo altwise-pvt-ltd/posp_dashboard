@@ -4,7 +4,7 @@ import { z } from "zod";
 import { Fingerprint, Loader2, ShieldCheck, Upload } from "lucide-react";
 import Input from "@/shared/components/Input";
 import Select from "@/shared/components/Select";
-import Button from "@/shared/components/Button";
+import CustomButton from "@/shared/components/CustomButton";
 import FileUpload from "@/shared/components/FileUpload";
 import { fileField } from "@/shared/upload/schema";
 import { personNameField } from "@/shared/validation/nameField";
@@ -195,10 +195,10 @@ export default function AadhaarStep({ onNext, initialValues }) {
         <div className="flex gap-3 pt-1">
           {/* Disabled while the upload is out — two images make this the longest
               round trip in the wizard, and the easiest to double-submit. */}
-          <Button
+          <CustomButton
             type="submit"
             disabled={form.formState.isSubmitting}
-            className="flex-1 flex items-center justify-center gap-2"
+            className="flex-1"
           >
             {form.formState.isSubmitting ? (
               <>
@@ -210,7 +210,7 @@ export default function AadhaarStep({ onNext, initialValues }) {
                 <Upload size={16} strokeWidth={2.5} /> Submit Aadhaar
               </>
             )}
-          </Button>
+          </CustomButton>
         </div>
       </form>
 

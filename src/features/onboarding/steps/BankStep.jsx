@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Landmark, Loader2, ShieldCheck, Upload } from "lucide-react";
 import Input from "@/shared/components/Input";
-import Button from "@/shared/components/Button";
+import CustomButton from "@/shared/components/CustomButton";
 import FileUpload from "@/shared/components/FileUpload";
 import { fileField } from "@/shared/upload/schema";
 import { bankNameField, personNameField } from "@/shared/validation/nameField";
@@ -297,10 +297,10 @@ export default function BankStep({ onNext, initialValues }) {
         <div className="flex gap-3 pt-1">
           {/* Held closed until the options land, too: submitting before then
               would post an empty accountType the server would reject. */}
-          <Button
+          <CustomButton
             type="submit"
             disabled={loading || unavailable || form.formState.isSubmitting}
-            className="flex-1 flex items-center justify-center gap-2"
+            className="flex-1"
           >
             {form.formState.isSubmitting ? (
               <>
@@ -312,7 +312,7 @@ export default function BankStep({ onNext, initialValues }) {
                 <Upload size={16} strokeWidth={2.5} /> Submit Bank Details
               </>
             )}
-          </Button>
+          </CustomButton>
         </div>
       </form>
 

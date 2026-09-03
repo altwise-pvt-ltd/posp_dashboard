@@ -39,13 +39,20 @@ const NAV_ITEMS = [
 const isUnder = (pathname, to) =>
   pathname === to || pathname.startsWith(`${to}/`);
 
+// Every number below is written at the app's base scale and rendered at 85% of
+// it: the <aside> in DashboardLayout carries `.sidebar-scale`, which rescales
+// the --spacing and --text-* variables these utilities resolve against. So
+// `h-12` is the 48px pill this was designed with and the 40.8px one it draws.
+// Anything that must shrink with the rail therefore has to be a utility, not an
+// arbitrary literal — hence `text-nav-sub` on the submenu labels.
+//
 // `onNavigate` fires when a real nav item is clicked. DashboardLayout uses it to
 // dismiss the mobile drawer, which would otherwise stay parked over the page it
 // just opened. It hangs off the click rather than off the route changing so that
 // tapping the item you are already on closes the drawer too.
 //
 // `onRequestExpand` un-collapses the desktop rail. A submenu has nowhere to open
-// into at 5rem wide, so a parent tapped on the narrow rail widens it first.
+// into on the narrow rail, so a parent tapped there widens it first.
 function Sidebar({ collapsed = false, onNavigate, onRequestExpand }) {
   const { pathname } = useLocation();
 
@@ -60,7 +67,7 @@ function Sidebar({ collapsed = false, onNavigate, onRequestExpand }) {
       item.children?.some((child) => isUnder(pathname, child.to))
     )?.label ?? null;
 
-  // The 5rem rail has no room for a submenu, so nothing is open while collapsed.
+  // The narrow rail has no room for a submenu, so nothing is open while collapsed.
   const openGroup = collapsed ? null : pickedGroup ?? routeGroup;
 
   const toggleGroup = (item) => {
@@ -120,7 +127,7 @@ function Sidebar({ collapsed = false, onNavigate, onRequestExpand }) {
       )}
 
       {/* Label — hidden when collapsed. `truncate` is the safety net for
-          'Offline Quotation', which is wider than the 13rem rail's text column. */}
+          'Offline Quotation', which is wider than the rail's text column. */}
       {!collapsed && (
         <span className="relative z-10 min-w-0 flex-1 truncate transition-colors duration-300">
           {item.label}
@@ -132,7 +139,7 @@ function Sidebar({ collapsed = false, onNavigate, onRequestExpand }) {
   );
 
   const childClass = (isActive) =>
-    `block rounded-lg px-3 py-2 text-[13px] transition-colors duration-200 ${isActive
+    `block rounded-lg px-3 py-2 text-nav-sub transition-colors duration-200 ${isActive
       ? 'bg-orange-50 font-semibold text-orange-600'
       : 'font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-900'
     }`;
@@ -151,10 +158,11 @@ function Sidebar({ collapsed = false, onNavigate, onRequestExpand }) {
             L
           </div>
         ) : (
-          // The wordmark is 172px wide at h-10, which is wider than the 152px
-          // this container has inside the 13rem rail. max-w-full lets
-          // object-contain scale it down to fit rather than clipping it; at the
-          // 16rem rail from `xl` up it renders at its natural size.
+          // The wordmark is a 172×40 lockup, drawn here at 146×34 under
+          // .sidebar-scale — still wider than the 129px this container has
+          // inside the rail. max-w-full lets object-contain scale it down to
+          // fit rather than clipping it; at the wider rail from `xl` up it
+          // renders at its natural size.
           <img
             src={logo}
             alt="LetsInsure"

@@ -1,5 +1,5 @@
 import DashboardLayout from "@/shared/layouts/DashboardLayout";
-import Button from "@/shared/components/Button";
+import CustomButton from "@/shared/components/CustomButton";
 import ProfileCard from "./../components/ProfileCard";
 import SupportCard from "./../components/SupportCard";
 import KycComplianceCard from "./../components/KycComplianceCard";
@@ -53,9 +53,9 @@ function ProfileError({ error, onRetry }) {
         {error?.message || "The server didn’t answer. Please try again."}
       </p>
       <div className="mt-5">
-        <Button type="button" onClick={onRetry}>
+        <CustomButton type="button" onClick={onRetry} fullWidth>
           Try again
-        </Button>
+        </CustomButton>
       </div>
     </div>
   );

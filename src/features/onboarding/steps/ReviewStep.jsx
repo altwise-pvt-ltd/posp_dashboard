@@ -3,7 +3,7 @@ import {
   CreditCard, Mail, Fingerprint, Camera, Landmark, GraduationCap, Building2,
   Pencil, X, FileText, CheckCircle2, ShieldCheck, Send, AlertCircle, RotateCcw, Loader2,
 } from "lucide-react";
-import Button from "@/shared/components/Button";
+import CustomButton from "@/shared/components/CustomButton";
 import { formatAadhaar } from "@/shared/validation/aadhaarField";
 import { maskAccount } from "@/features/profile/lib/profileFields";
 import { fetchReviewDetails, fetchDocumentBlob, hasDocumentKey } from "../api/onboardingApi";
@@ -66,11 +66,7 @@ const SECTIONS = [
       ["Full Name", d.fullName],
       ["Date of Birth", d.dateOfBirth || "—"],
     ],
-    /* The back is optional in the step, so it's listed only when one exists. */
-    files: (d) => [
-      ["PAN Card", d.panFrontImageKey],
-      ...(d.panBackImageKey ? [["PAN Card (Back)", d.panBackImageKey]] : []),
-    ],
+    files: (d) => [["PAN Card", d.panFrontImageKey]],
   },
   {
     key: "email",
@@ -741,7 +737,7 @@ export default function ReviewStep({ onSubmit }) {
           </div>
         )}
 
-        <Button
+        <CustomButton
           type="button"
           onClick={handleSubmitClick}
           /* No record, no submit. This used to allow it — blocking on a verdict
@@ -752,7 +748,7 @@ export default function ReviewStep({ onSubmit }) {
              and confirming an application they cannot see is worse than waiting
              for the retry a few pixels above. */
           disabled={submitting || loadingReview || !review?.isSubmissionAllowed}
-          className="w-full flex items-center justify-center gap-2"
+          fullWidth
         >
           {submitting ? (
             <>
@@ -764,7 +760,7 @@ export default function ReviewStep({ onSubmit }) {
               <Send size={16} strokeWidth={2.5} /> Submit Application
             </>
           )}
-        </Button>
+        </CustomButton>
         <p className="mt-3 text-center text-[0.75rem] text-slate-400">
           By submitting, you confirm the details above are accurate.
         </p>

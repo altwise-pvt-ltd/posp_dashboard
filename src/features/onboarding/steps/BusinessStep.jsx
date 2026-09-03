@@ -16,7 +16,7 @@ import {
 import Input from "@/shared/components/Input";
 import Select from "@/shared/components/Select";
 import Autocomplete from "@/shared/components/Autocomplete";
-import Button from "@/shared/components/Button";
+import CustomButton from "@/shared/components/CustomButton";
 import { alertOnInvalid } from "@/shared/store/alertStore";
 import { reportFormError } from "@/shared/api/formErrors";
 import { useMasterOptions } from "../hooks/useMasterOptions";
@@ -658,7 +658,7 @@ export default function BusinessStep({ onNext, onSkip, initialValues }) {
             )}
 
             <div className="flex gap-3 pt-1">
-              <Button
+              <CustomButton
                 type="submit"
                 /* The masters list only gates the Yes branch — a No-business
                    user has no dropdown to wait for, and shouldn't be stuck
@@ -670,7 +670,7 @@ export default function BusinessStep({ onNext, onSkip, initialValues }) {
                   form.formState.isSubmitting ||
                   (hasBusiness === true && (loadingTypes || typesUnavailable))
                 }
-                className="flex-1 flex items-center justify-center gap-2"
+                className="flex-1"
               >
                 {form.formState.isSubmitting ? (
                   <>
@@ -682,7 +682,7 @@ export default function BusinessStep({ onNext, onSkip, initialValues }) {
                     Continue <ArrowRight size={16} strokeWidth={2.5} />
                   </>
                 )}
-              </Button>
+              </CustomButton>
             </div>
           </>
         )}

@@ -9,7 +9,7 @@ import {
   Upload,
 } from "lucide-react";
 import Input from "@/shared/components/Input";
-import Button from "@/shared/components/Button";
+import CustomButton from "@/shared/components/CustomButton";
 import FileUpload from "@/shared/components/FileUpload";
 import { fileField } from "@/shared/upload/schema";
 import { personNameField } from "@/shared/validation/nameField";
@@ -37,10 +37,8 @@ const panSchema = z.object({
      asterisk on the label is only honest if the schema enforces it. */
   dateOfBirth: dateOfBirthField({ required: true, label: "Date of birth" }),
   panFrontImage: fileField({
-    message: "Please upload the front of your PAN card.",
+    message: "Please upload a photo of your PAN card.",
   }),
-  /* Optional, matching the server — a PAN with nothing on the back has none. */
-  panBackImage: fileField({ required: false }),
 });
 
 const HOLDER_TYPE = {
@@ -64,19 +62,15 @@ export default function PanStep({ onNext, initialValues }) {
       fullName: "",
       dateOfBirth: "",
       panFrontImage: undefined,
-      panBackImage: undefined,
       ...initialValues,
     },
     mode: "onTouched",
   });
 
   /* Documents already on file, fetched back as `File`s so an edit that changes
-     only a text field doesn't force the applicant to re-pick both images. */
+     only a text field doesn't force the applicant to re-pick the card photo. */
   const storedFiles = useDocumentFiles(
-    {
-      panFrontImage: initialValues?.panFrontImageKey,
-      panBackImage: initialValues?.panBackImageKey,
-    },
+    { panFrontImage: initialValues?.panFrontImageKey },
     { form },
   );
 
@@ -173,7 +167,7 @@ export default function PanStep({ onNext, initialValues }) {
           render={({ field }) => (
             <FileUpload
               id="panFrontImage"
-              label="PAN Card (Front)"
+              label="PAN Card"
               required
               initialFile={storedFiles.panFrontImage}
               error={form.formState.errors.panFrontImage?.message}
@@ -183,28 +177,13 @@ export default function PanStep({ onNext, initialValues }) {
           )}
         />
 
-        <Controller
-          name="panBackImage"
-          control={form.control}
-          render={({ field }) => (
-            <FileUpload
-              id="panBackImage"
-              label="PAN Card (Back)"
-              initialFile={storedFiles.panBackImage}
-              error={form.formState.errors.panBackImage?.message}
-              hint="Optional — add it only if your PAN card has details on the back."
-              onChange={field.onChange}
-            />
-          )}
-        />
-
         <div className="flex gap-3 pt-1">
           {/* Disabled while the upload is out — the image makes this the first
               step with a round trip long enough to double-submit by accident. */}
-          <Button
+          <CustomButton
             type="submit"
             disabled={form.formState.isSubmitting}
-            className="flex-1 flex items-center justify-center gap-2 lg:text-sm"
+            className="flex-1 lg:text-sm"
           >
             {form.formState.isSubmitting ? (
               <>
@@ -216,7 +195,7 @@ export default function PanStep({ onNext, initialValues }) {
                 <Upload size={16} strokeWidth={2.5} /> Submit PAN
               </>
             )}
-          </Button>
+          </CustomButton>
         </div>
       </form>
     </div>
