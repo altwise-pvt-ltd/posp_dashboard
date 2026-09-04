@@ -6,14 +6,16 @@ import { findLobProducts, findProductSubProducts } from '../api/quoteCatalogApi'
 import { useQuoteMetadata } from '../hooks/useQuoteMetadata';
 import LobGrid from './LobGrid';
 import ProductPicker from './ProductPicker';
-import QuoteFormSteps from './QuoteFormSteps';
+import QuoteFormFields from './QuoteFormFields';
 import QuoteNotice from './QuoteNotice';
 import QuoteWizardFooter from './QuoteWizardFooter';
 import QuoteWizardStepper from './QuoteWizardStepper';
 
 const entryKey = (entry) => entry?.id ?? entry?.code ?? null;
 
-const CATALOG_STEPS = 2;
+const STEPS = [{ name: 'Line of business' }, { name: 'Product' }, { name: 'Quote details' }];
+
+const FORM_STEP = 2;
 
 function QuoteWizard({ catalog }) {
   const [lob, setLob] = useState('');
@@ -47,15 +49,6 @@ function QuoteWizard({ catalog }) {
     [metadata]
   );
 
-  const steps = useMemo(() => {
-    const tail =
-      sections.length > 0
-        ? [...sections.map((entry, index) => entry.name || `Section ${index + 1}`), 'Review']
-        : ['Details'];
-
-    return [{ name: 'Line of business' }, { name: 'Product' }, ...tail.map((name) => ({ name }))];
-  }, [sections]);
-
   useEffect(() => {
     if (!steppedRef.current) {
       steppedRef.current = true;
@@ -65,7 +58,7 @@ function QuoteWizard({ catalog }) {
   }, [stepIndex]);
 
   const goTo = (index) => {
-    const next = Math.min(Math.max(index, 0), steps.length - 1);
+    const next = Math.min(Math.max(index, 0), STEPS.length - 1);
     setCatalogError('');
     setStepIndex(next);
     setFurthestIndex((prev) => Math.max(prev, next));
@@ -81,13 +74,20 @@ function QuoteWizard({ catalog }) {
   };
 
   const selectLob = (next) => {
-    if (next === lob) return;
-    setLob(next);
-    setProduct('');
-    setSubProduct('');
-    setQuoteScope(null);
-    setCatalogError('');
-    setFurthestIndex(0);
+    if (next !== lob) {
+      setLob(next);
+      setProduct('');
+      setSubProduct('');
+      setQuoteScope(null);
+      setFurthestIndex(0);
+    }
+
+    if (findLobProducts(catalog, next).length === 0) {
+      setCatalogError('No products are published under this line yet.');
+      return;
+    }
+
+    goTo(1);
   };
 
   const selectProduct = (next) => {
@@ -103,18 +103,6 @@ function QuoteWizard({ catalog }) {
     setQuoteScope(null);
     setCatalogError('');
     setFurthestIndex(1);
-  };
-
-  const continueFromLob = () => {
-    if (!lob) {
-      setCatalogError('Pick a line of business to continue.');
-      return;
-    }
-    if (products.length === 0) {
-      setCatalogError('No products are published under this line yet.');
-      return;
-    }
-    goTo(1);
   };
 
   const continueFromProduct = () => {
@@ -134,7 +122,7 @@ function QuoteWizard({ catalog }) {
       });
     }
 
-    goTo(CATALOG_STEPS);
+    goTo(FORM_STEP);
   };
 
   const scopeLabel = [selectedLob, selectedProduct, selectedSubProduct]
@@ -142,50 +130,55 @@ function QuoteWizard({ catalog }) {
     .map((entry) => entry.name)
     .join(' › ');
 
-  const footerMessage = catalogError || scopeLabel || `Step ${stepIndex + 1} of ${steps.length}`;
-
-  const renderCatalogStep = (content, onContinue) => (
-    <>
-      {content}
-      <QuoteWizardFooter
-        message={footerMessage}
-        invalid={Boolean(catalogError)}
-        onBack={stepIndex > 0 ? goBack : null}
-      >
-        <CustomButton variant="primary" size="md" rightIcon={<ArrowRight />} onClick={onContinue}>
-          Continue
-        </CustomButton>
-      </QuoteWizardFooter>
-    </>
-  );
+  const footerMessage = catalogError || scopeLabel || `Step ${stepIndex + 1} of ${STEPS.length}`;
 
   const renderStep = () => {
     if (stepIndex === 0) {
-      return renderCatalogStep(
-        <LobGrid lobs={catalog} selected={lob} onSelect={selectLob} />,
-        continueFromLob
+      return (
+        <>
+          <LobGrid lobs={catalog} selected={lob} onSelect={selectLob} />
+          <QuoteWizardFooter
+            message={catalogError || 'Pick a line of business to continue.'}
+            invalid={Boolean(catalogError)}
+          />
+        </>
       );
     }
 
     if (stepIndex === 1) {
-      return renderCatalogStep(
-        products.length === 0 ? (
-          <p className="font-body-md text-body-md text-on-surface-variant">
-            No products are published under this line yet.
-          </p>
-        ) : (
-          <ProductPicker
-            products={products}
-            subProducts={subProducts}
-            product={product}
-            subProduct={subProduct}
-            productError={!product ? catalogError : ''}
-            subProductError={product ? catalogError : ''}
-            onProductChange={selectProduct}
-            onSubProductChange={selectSubProduct}
-          />
-        ),
-        continueFromProduct
+      return (
+        <>
+          {products.length === 0 ? (
+            <p className="font-body-md text-body-md text-on-surface-variant">
+              No products are published under this line yet.
+            </p>
+          ) : (
+            <ProductPicker
+              products={products}
+              subProducts={subProducts}
+              product={product}
+              subProduct={subProduct}
+              productError={!product ? catalogError : ''}
+              subProductError={product ? catalogError : ''}
+              onProductChange={selectProduct}
+              onSubProductChange={selectSubProduct}
+            />
+          )}
+          <QuoteWizardFooter
+            message={footerMessage}
+            invalid={Boolean(catalogError)}
+            onBack={goBack}
+          >
+            <CustomButton
+              variant="primary"
+              size="md"
+              rightIcon={<ArrowRight />}
+              onClick={continueFromProduct}
+            >
+              Continue
+            </CustomButton>
+          </QuoteWizardFooter>
+        </>
       );
     }
 
@@ -240,14 +233,10 @@ function QuoteWizard({ catalog }) {
     }
 
     return (
-      <QuoteFormSteps
+      <QuoteFormFields
         key={`${metadata.productId}-${metadata.subProductId ?? ''}`}
         metadata={metadata}
-        sections={sections}
-        sectionIndex={stepIndex - CATALOG_STEPS}
         onBack={goBack}
-        onNext={() => goTo(stepIndex + 1)}
-        onEditSection={(index) => jumpTo(CATALOG_STEPS + index)}
       />
     );
   };
@@ -255,7 +244,7 @@ function QuoteWizard({ catalog }) {
   return (
     <div ref={topRef} className="flex scroll-mt-4 flex-col gap-gutter">
       <QuoteWizardStepper
-        steps={steps}
+        steps={STEPS}
         current={stepIndex}
         furthest={furthestIndex}
         onJump={jumpTo}

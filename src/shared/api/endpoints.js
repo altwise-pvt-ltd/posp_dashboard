@@ -413,8 +413,8 @@ export const ENDPOINTS = {
      *
      * Three levels — line of business, product, sub-product — and all three ids
      * are uuids. `code` is the stable machine name (the string a payload should
-     * carry); `name` is the label. `icon` is the server's own hint for the LOB
-     * tile and may be null.
+     * carry); `name` is the label. `icon` is a Bootstrap Icons class name for
+     * the LOB tile (`"bi-car-front"`) and may be null.
      *
      * The whole catalogue arrives in one reply; there is no per-LOB route, so
      * the product and sub-product selects are narrowed from what is already in
@@ -454,6 +454,28 @@ export const ENDPOINTS = {
      * `label`/`value`, which is what every other list in this file returns.
      */
     lookup: "/quote/lookup",
+
+    /**
+     * POST (bearer) `{ productId, subProductId, values: { <fieldCode>: <string> } }`
+     * → the same `directives` object `metadata` returns, recomputed for the
+     * answers given so far.
+     *
+     * ⚠ `values` is a map keyed by field code, and every value is a string —
+     * not the `[{ fieldCode, value }]` list `save-draft` takes. A list posted
+     * here does not bind, and an object of the wrong shape binds as field codes
+     * named `fieldCode` and `value`, which evaluates as no answers at all and
+     * comes back looking exactly like a working call.
+     *
+     * The live half of `metadata`. `directives` on the metadata reply describes
+     * the empty form; once POLICY_TYPE or FILE_TYPE is answered the server
+     * decides again which sections and fields apply, so the answer set has to be
+     * sent back here and the reply applied at render.
+     *
+     * ⚠ Sections and fields are never re-sent — only the code lists. Whatever a
+     * screen hides on the snapshot it must keep in hand, or a field this call
+     * un-hides has nothing left to render.
+     */
+    rulesEvaluate: "/quote/rules/evaluate",
   },
 
   onboarding: {
