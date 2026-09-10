@@ -124,7 +124,11 @@ export default function FileUpload({
     if (inputRef.current) inputRef.current.value = "";
   };
 
-  const displayError = error || rejection;
+  // Rejection first: a file the validator just refused is newer information than
+  // the form-level error still standing from the last submit, and showing the
+  // stale "please upload a file" over it made every rejection look like the
+  // drop zone had simply ignored the pick.
+  const displayError = rejection || error;
 
   // Discrete-state styling → fixed class sets picked per state.
   const zoneBorder = displayError

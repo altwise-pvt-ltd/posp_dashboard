@@ -27,6 +27,7 @@ import {
   updateTrainingProgress,
 } from '../api/trainingApi';
 import { fetchExamEligibility, startExam } from '../api/examApi';
+import { loadTrainingRecord } from '../api/trainingRecord';
 /* `completeTrainingHours` above closes the mandated *hours* on the LMS; this
    records that the *exam* was passed. Both used to be called `completeTraining`
    and this import carried an alias to tell them apart — the names now do it. */
@@ -116,6 +117,17 @@ function TrainingPage() {
 
   return <TrainingProgramme />;
 }
+
+/**
+ * How close two hour figures have to be to count as the same.
+ *
+ * Both sides are already rounded to two decimals — the server's `completedHours`
+ * and the deltas this page sends it — so the gap between a settled record and
+ * its target is either zero or a rounding crumb. An `===` here would fail
+ * intermittently on the crumb and leave the hours unclosed for no reason a
+ * tester could see.
+ */
+const HOURS_EPSILON = 0.011;
 
 /**
  * The POSP programme, start to certificate.
@@ -402,22 +414,36 @@ function TrainingProgramme() {
   }, []);
 
   /**
-   * "Skip timer" — the dev affordance, made real.
+   * "Skip timer" — the dev affordance, made real, and now made final.
    *
    * It used to `reset(0)` and nothing else, which only fooled this browser: the
    * exam is gated on the LMS's own `completedHours`, so a skipped countdown left
    * the server still holding zero hours and the programme still `InProgress`.
-   * Now it hands the LMS the hours that are outstanding, and the clock on screen
-   * and the count on the server reach the end together.
    *
-   * `flushNow` first, for the same reason `handleStartExam` does it: it reports
-   * the minutes genuinely served and refreshes `completedHours`, so the top-up
-   * below is measured against what the server actually holds rather than against
-   * a figure that is one beat stale.
+   * Four calls, in order, each one earning the next:
    *
-   * Nothing is *completed* here — that stays with the exam button and
-   * `POST /lms/complete-training`. This only fast-forwards the hours, which is
-   * all the button ever claimed to do.
+   *   1. `flushNow` reports the minutes genuinely served, so the top-up below is
+   *      measured against what the server actually holds rather than against a
+   *      figure that is one beat stale. A no-op when there is nothing to report.
+   *   2. `update-progress` sends the outstanding hours as a delta.
+   *   3. `loadTrainingRecord` reads the record back. `update-progress` already
+   *      answers with it, so this buys the one thing that reply cannot: an
+   *      independent statement, from a second request, that the hours really did
+   *      land. That is the whole point of the check under it.
+   *   4. `complete-training` closes the period — but only once the read-back
+   *      agrees that `completedHours` has reached `requiredHours`.
+   *
+   * Step 4 is a deliberate departure from what this button used to do, which was
+   * to fast-forward the hours and leave closing the period to the exam button. A
+   * tester who skips the clock wants the state a POSP reaches at the end of it,
+   * and that state includes a settled record. Nothing is closed twice:
+   * `handleStartExam` guards on `hoursComplete`, so it finds the work already
+   * done and goes straight to eligibility.
+   *
+   * Still best-effort throughout. A tester who cannot reach the server should
+   * still reach the exam screen, so nothing here raises and `reset(0)` in
+   * `finally` gets them there either way. The cost is that a failed close is
+   * silent — the record is the place to check that, not this button.
    */
   const handleSkipTimer = async () => {
     if (skipping) return;
@@ -444,6 +470,50 @@ function TrainingProgramme() {
           });
         }
       }
+
+      /* The independent confirmation. A read that fails or comes back empty is
+         not a "no" — it is no answer at all, and closing the period on the back
+         of one would be precisely the assumption this step exists to avoid. */
+      const settled = await loadTrainingRecord();
+      if (!settled) return;
+
+      hydrateTrainingPlan({
+        ...settled,
+        startedAt: settled.startedAt ?? current.startedAt,
+      });
+
+      /* Already closed — by an earlier press, or on another device. Sending
+         `complete-training` again would ask the server to close a period twice,
+         which is the same reason `handleStartExam` guards on this flag. */
+      if (settled.hoursComplete) return;
+
+      /* The match the whole read-back was for. Compared against a tolerance
+         rather than with `===`: see HOURS_EPSILON. A shortfall wider than a
+         rounding crumb means the top-up did not land, and the honest response is
+         to leave the period open rather than declare it served. */
+      const shortfall = (settled.requiredHours ?? 0) - (settled.completedHours ?? 0);
+      if (shortfall > HOURS_EPSILON) return;
+
+      const closed = await completeTrainingHours();
+      if (!closed) return;
+
+      hydrateTrainingPlan({
+        ...closed,
+        startedAt: closed.startedAt ?? settled.startedAt,
+      });
+
+      /* Re-ask the examiner now that the period is closed.
+         `handleStartExam` asks again on the press and that is the reading that
+         keeps an attempt safe; this one keeps the screen honest. `reset(0)` in
+         `finally` swaps the rail for `TrainingCompleteCard`, and that card reads
+         `examBlockedReason` off this hook — whose verdict was taken on mount,
+         when the hours were still outstanding and the examiner had every reason
+         to refuse.
+         Through the hook rather than `fetchExamEligibility` directly, which is
+         the whole point: a bare call would fetch a verdict and discard it. It
+         swallows its own failures, so a refusal to answer leaves the card
+         exactly as it would have been without this line. */
+      await examEligibility.refresh();
     } catch {
       /* Swallowed: it is a test button, and the local zero below still gets the
          tester to the exam screen. A toast here would be noise in the one flow

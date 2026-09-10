@@ -29,7 +29,7 @@ function CustomRadio({ field, value, error, disabled, onChange, onBlur }) {
                   disabled={disabled}
                   onChange={() => onChange?.(opt.value)}
                   onBlur={() => onBlur?.()}
-                  className="size-4 shrink-0 accent-orange-500"
+                  className="control-radio"
                 />
                 {opt.text}
               </label>

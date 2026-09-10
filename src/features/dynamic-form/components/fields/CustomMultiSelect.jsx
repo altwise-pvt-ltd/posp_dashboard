@@ -37,7 +37,7 @@ function CustomMultiSelect({ field, value, error, disabled, onChange, onBlur }) 
                   disabled={disabled}
                   onChange={() => toggle(opt.value)}
                   onBlur={() => onBlur?.()}
-                  className="size-4 shrink-0 rounded accent-orange-500"
+                  className="control-check"
                 />
                 {opt.text}
               </label>

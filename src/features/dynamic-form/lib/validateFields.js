@@ -128,6 +128,33 @@ const yearsBetween = (from, to) => {
   return years;
 };
 
+/**
+ * The number behind a typed value, or NaN if there isn't one.
+ *
+ * Commas and spaces come out first: `1,50,000` is how an amount is written
+ * here, and `Number()` on its own reads that as NaN. `Number('')` is 0 rather
+ * than NaN, which would make an empty box look like a legitimate zero, so the
+ * empty case is answered explicitly.
+ */
+const toNumber = (text) => {
+  const cleaned = String(text ?? '').replace(/[\s,]/g, '');
+  return cleaned === '' ? NaN : Number(cleaned);
+};
+
+/**
+ * What a numeric rule says when the value is not a number at all.
+ *
+ * The comparisons below used to return null in this case, which read as "no
+ * complaint" and let `abc` clear a field whose only rule was a minimum: the
+ * check bailed on exactly the input it existed to catch. A rule that cannot be
+ * applied is a failure, not a pass.
+ *
+ * A field carrying its own `errorMessage` still wins over this, which is the
+ * better outcome anyway -- "Enter a valid manufacturing year." beats a generic
+ * line, and the caller already prefers it.
+ */
+const NOT_A_NUMBER = 'Enter a number';
+
 const parseRange = (raw) => {
   const parts = String(raw ?? '')
     .split(/[-,|]/)
@@ -194,23 +221,24 @@ function checkRule(name, ruleValue, value) {
         : null;
 
     case 'min': {
-      const amount = Number(text);
-      return Number.isFinite(limit) && Number.isFinite(amount) && amount < limit
-        ? `Enter ${limit} or more`
-        : null;
+      if (!Number.isFinite(limit)) return null;
+      const amount = toNumber(text);
+      if (!Number.isFinite(amount)) return NOT_A_NUMBER;
+      return amount < limit ? `Enter ${limit} or more` : null;
     }
 
     case 'max': {
-      const amount = Number(text);
-      return Number.isFinite(limit) && Number.isFinite(amount) && amount > limit
-        ? `Enter ${limit} or less`
-        : null;
+      if (!Number.isFinite(limit)) return null;
+      const amount = toNumber(text);
+      if (!Number.isFinite(amount)) return NOT_A_NUMBER;
+      return amount > limit ? `Enter ${limit} or less` : null;
     }
 
     case 'range': {
       const bounds = parseRange(ruleValue);
-      const amount = Number(text);
-      if (!bounds || !Number.isFinite(amount)) return null;
+      if (!bounds) return null;
+      const amount = toNumber(text);
+      if (!Number.isFinite(amount)) return NOT_A_NUMBER;
       const [low, high] = bounds;
       return amount < low || amount > high ? `Enter a value between ${low} and ${high}` : null;
     }

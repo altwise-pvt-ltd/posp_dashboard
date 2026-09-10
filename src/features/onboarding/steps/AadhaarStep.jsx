@@ -47,7 +47,6 @@ const aadhaarSchema = z.object({
      details it never held. */
   dateOfBirth: dateOfBirthField({ required: false, label: "Date of birth" }),
   gender: z.string().trim().optional(),
-  address: z.string().trim().max(500, "Address must be under 500 characters.").optional(),
   aadhaarFrontImage: fileField({ message: "Please upload the front of your Aadhaar." }),
   aadhaarBackImage:  fileField({ message: "Please upload the back of your Aadhaar." }),
 });
@@ -64,7 +63,6 @@ export default function AadhaarStep({ onNext, initialValues }) {
       // Optionals persist as null from the record — coerce to controlled strings.
       dateOfBirth: initialValues?.dateOfBirth ?? "",
       gender: initialValues?.gender ?? "",
-      address: initialValues?.address ?? "",
     },
     mode: "onTouched",
   });
@@ -157,15 +155,6 @@ export default function AadhaarStep({ onNext, initialValues }) {
           placeholder="Select gender"
           error={form.formState.errors.gender?.message}
           {...form.register("gender")}
-        />
-
-        <Input
-          id="address"
-          label="Address (as per Aadhaar)"
-          placeholder="Address printed on the back of your Aadhaar"
-          maxLength={500}
-          error={form.formState.errors.address?.message}
-          {...form.register("address")}
         />
 
         <Controller name="aadhaarFrontImage" control={form.control} render={({ field }) => (

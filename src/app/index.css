@@ -541,6 +541,80 @@
     }
   }
 
+  /* Radio and checkbox, drawn by us rather than by the browser.
+     
+     These replace `accent-orange-500`, which looked right and behaved badly.
+     `accent-color` only tints the control: the browser still picks the mark
+     inside it, by contrasting black and white against the accent and taking
+     whichever wins. Orange-500 is light enough that Blink picks *black*, so a
+     selected radio rendered as an orange disc with a black dot in it — a colour
+     that appears in no stylesheet and cannot be overridden. Firefox and Safari
+     apply their own thresholds, so the same control could differ per browser.
+
+     `appearance: none` gives the mark back to us. It also removes the UA focus
+     ring, which is why both utilities draw their own — without it the controls
+     become unreachable-looking for keyboard users. */
+
+  @utility control-radio {
+    appearance: none;
+    flex: none;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 9999px;
+    border: 2px solid var(--color-slate-300);
+    background-color: #fff;
+    transition: background-color .15s ease, border-color .15s ease;
+
+    /* The dot is a gradient rather than a pseudo-element: `::before` does not
+       render on a replaced element, which an <input> still is under
+       `appearance: none`. */
+    &:checked {
+      border-color: var(--color-orange-500);
+      background-color: var(--color-orange-500);
+      background-image: radial-gradient(circle at center, #fff 0 3px, transparent 3.5px);
+    }
+
+    &:focus-visible {
+      outline: 2px solid transparent;
+      box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-orange-500) 25%, transparent);
+    }
+
+    &:disabled {
+      opacity: .6;
+      cursor: not-allowed;
+    }
+  }
+
+  @utility control-check {
+    appearance: none;
+    flex: none;
+    width: 1rem;
+    height: 1rem;
+    border-radius: .25rem;
+    border: 2px solid var(--color-slate-300);
+    background-color: #fff;
+    transition: background-color .15s ease, border-color .15s ease;
+
+    &:checked {
+      border-color: var(--color-orange-500);
+      background-color: var(--color-orange-500);
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23fff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 8.5 6.5 11.5 12.5 5'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: 100% 100%;
+    }
+
+    &:focus-visible {
+      outline: 2px solid transparent;
+      box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-orange-500) 25%, transparent);
+    }
+
+    &:disabled {
+      opacity: .6;
+      cursor: not-allowed;
+    }
+  }
+
   .material-symbols-outlined {
     font-family: 'Material Symbols Outlined';
     font-weight: normal;

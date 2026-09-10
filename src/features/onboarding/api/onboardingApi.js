@@ -249,10 +249,18 @@ export async function verifyEmailOtp(email, otp) {
  * work, not a second convention. (Swagger gives `fullName` for both; PAN's
  * spelling binds only because ASP.NET is case-insensitive.)
  *
- * `dateOfBirth`, `gender` and `address` are optional, and each is omitted when
- * blank rather than sent empty, so "not provided" stays distinct from
- * "cleared". `dateOfBirth` takes the same `dd/mm/yyyy` → `yyyy/MM/dd` turn as
- * PAN's — the two endpoints want the same order.
+ * `dateOfBirth` and `gender` are optional, and each is omitted when blank
+ * rather than sent empty, so "not provided" stays distinct from "cleared".
+ * `dateOfBirth` takes the same `dd/mm/yyyy` → `yyyy/MM/dd` turn as PAN's — the
+ * two endpoints want the same order.
+ *
+ * `address` is the same shape, but no caller passes it any more: the Aadhaar
+ * step dropped the input, because the POSP's address is collected properly
+ * — line 1, line 2, city, state, PIN — by the business step, on both of its
+ * branches, and the back-of-card photo is what evidences the printed one. The
+ * parameter stays because omitting a multipart field reads as "leave it
+ * alone", so an address already on record survives an edit here and still
+ * renders on Review.
  */
 export async function submitAadhaarDetails({
   aadhaar,

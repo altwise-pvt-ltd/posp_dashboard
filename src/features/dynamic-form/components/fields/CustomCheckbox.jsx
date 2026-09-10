@@ -20,7 +20,7 @@ function CustomCheckbox({ field, value, error, disabled, onChange, onBlur }) {
           aria-describedby={describedBy}
           onChange={(e) => onChange?.(e.target.checked)}
           onBlur={() => onBlur?.()}
-          className="mt-0.5 size-4 shrink-0 rounded accent-orange-500"
+          className="control-check mt-0.5"
         />
         <span>{label}</span>
       </label>
