@@ -1,7 +1,19 @@
 import { ArrowLeft } from 'lucide-react';
 import CustomButton from '@/shared/components/CustomButton';
 
-function QuoteWizardFooter({ message, invalid = false, onBack, children }) {
+/**
+ * `backLabel` exists because the button does not always mean "one step back".
+ * On the first section of the form it leaves the form altogether and throws
+ * every answer away, so it names its destination instead of a direction.
+ */
+function QuoteWizardFooter({
+  message,
+  invalid = false,
+  onBack,
+  backLabel = 'Back',
+  backVariant = 'secondary',
+  children,
+}) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-unit border-t border-gray-200 pt-gutter">
       <p
@@ -14,8 +26,8 @@ function QuoteWizardFooter({ message, invalid = false, onBack, children }) {
 
       <div className="flex items-center gap-unit">
         {onBack && (
-          <CustomButton variant="secondary" size="md" leftIcon={<ArrowLeft />} onClick={onBack}>
-            Back
+          <CustomButton variant={backVariant} size="md" leftIcon={<ArrowLeft />} onClick={onBack}>
+            {backLabel}
           </CustomButton>
         )}
         {children}
