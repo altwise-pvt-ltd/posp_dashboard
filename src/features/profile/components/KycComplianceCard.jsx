@@ -151,9 +151,13 @@ const KycComplianceCard = ({ profile }) => {
               POSP Code
             </span>
             <span className="block text-sm font-semibold text-slate-700 font-data-mono truncate">
-              {/* Allocated by the back office when the profile clears, so a POSP
-                  still in review genuinely has none yet. */}
-              {profile?.pospCode || 'Allocated once your KYC is approved'}
+              {/* ⚠ NOT gated on the KYC. A record comes back `status:
+                  "KycApproved"` with `pospCode: null` — allocation happens at
+                  some later point the back office owns, and this card prints
+                  "Record status: KycApproved" a few lines below, so promising
+                  the code on approval contradicts itself on screen. Say only
+                  what is true: there is no code yet. */}
+              {profile?.pospCode || 'Not yet allocated'}
             </span>
           </div>
         </div>

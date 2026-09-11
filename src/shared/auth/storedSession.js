@@ -128,3 +128,69 @@ export function clearStoredSession() {
   remove(TOKEN_KEY);
   remove(SESSION_KEY);
 }
+
+/* ── Which POSP this browser last belonged to ─────────────────────── */
+
+/**
+ * The one key in this file that is NOT sessionStorage, and deliberately so:
+ * its whole job is to outlive the session it exists to detect a change *from*.
+ *
+ * The funnel flags — `onboardingComplete`, `profileVerification`,
+ * `profileVerificationSeen`, `trainingCertified`, `trainingPlan` — live in
+ * localStorage and survive a sign-out by design, so on a shared machine they
+ * are still sitting there when the next person signs in. Not one of them
+ * carries a user id, so without this the second POSP silently inherits the
+ * first one’s funnel position.
+ *
+ * Comparing against the stored *session* instead would not work: sign-out has
+ * already run `clearStoredSession` and taken the previous id with it, and that
+ * is precisely the case this has to survive.
+ *
+ * Only the opaque id is kept. It was inside the JWT this browser was holding a
+ * moment ago, so it discloses nothing the token did not.
+ */
+const LAST_USER_KEY = 'posp.lastUser';
+
+function readLocal(key) {
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Whether this sign-in belongs to someone other than the last one.
+ *
+ * False whenever either side is unknown — a first-ever sign-in, blocked
+ * storage, a reply with no `user.id`. The caller wipes the funnel on a true,
+ * so "cannot tell" has to mean "leave it alone": throwing a legitimate POSP
+ * back to step 1 of a wizard they already finished is a worse outcome than the
+ * stale flags this guards against, every one of which `resumeSession` already
+ * corrects from the verify reply.
+ */
+export function isDifferentUser(userId) {
+  const last = readLocal(LAST_USER_KEY);
+  return Boolean(last && userId && last !== userId);
+}
+
+/** Record who this browser now belongs to. A null id is deliberately not
+ *  written: it would erase a real one and leave the *next* sign-in unable to
+ *  spot a change. */
+export function rememberUser(userId) {
+  if (!userId) return;
+  try {
+    window.localStorage.setItem(LAST_USER_KEY, userId);
+  } catch {
+    // Ignore — the guard degrades to "cannot tell", its safe default.
+  }
+}
+
+/** For `Denied()`, whose whole job is to make this browser look untouched. */
+export function forgetUser() {
+  try {
+    window.localStorage.removeItem(LAST_USER_KEY);
+  } catch {
+    // Ignore: see rememberUser().
+  }
+}

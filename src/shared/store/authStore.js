@@ -5,6 +5,9 @@ import {
   readStoredSession,
   storeSession,
   clearStoredSession,
+  isDifferentUser,
+  rememberUser,
+  forgetUser,
 } from '@/shared/auth/storedSession';
 import { showAlert } from './alertStore';
 import { resetOnboarding } from './onboardingStore';
@@ -40,6 +43,23 @@ import { resetTrainingPlan } from './trainingPlanStore';
  * state that the boot-time session probe existed to resolve.
  */
 const restored = readStoredSession();
+
+/**
+ * Every stage flag this browser holds, cleared — the funnel as a brand-new
+ * visitor would find it.
+ *
+ * Four stores, because the funnel’s facts are genuinely separate: the wizard,
+ * the back office’s verdict, the exam pass, and the line being trained in.
+ * Clearing a subset leaves a half-replayed funnel that routes to a place no
+ * real POSP could be. Both callers want all four, so the list is written here
+ * once instead of being remembered correctly in two places.
+ */
+function resetFunnel() {
+  resetOnboarding();
+  resetVerification();
+  resetCertification();
+  resetTrainingPlan();
+}
 
 export const useAuthStore = create((set, get) => ({
   /**
@@ -95,6 +115,22 @@ export const useAuthStore = create((set, get) => ({
    */
   signIn: (session = {}) => {
     const { token, user, application, flow } = session;
+
+    /**
+     * Before anything else: if this is a different POSP than the one this
+     * browser last held, drop the funnel flags the previous one left behind in
+     * localStorage, where a sign-out does not reach them.
+     *
+     * A backstop, not the mechanism. `resumeSession` re-derives each flag from
+     * the verify reply a moment from now, and that is what normally keeps them
+     * honest; this catches what it cannot — a flag whose fact the server never
+     * sends (`profileVerificationSeen`), and any future one written in only one
+     * direction. It has to run *before* `resumeSession`, which is why it sits
+     * here rather than beside it.
+     */
+    if (isDifferentUser(user?.id)) resetFunnel();
+    rememberUser(user?.id);
+
     storeSession(session);
     set({
       authenticated: Boolean(token),
@@ -215,14 +251,10 @@ setUnauthorizedHandler(() => {
 if (typeof window !== 'undefined') {
   window.Denied = async () => {
     await useAuthStore.getState().signOut();
-    resetOnboarding();
-    resetVerification();
-    // Two different facts, two different stores: the exam pass, then the
-    // enrolment. Clearing one without the other leaves a half-replayed funnel.
-    resetCertification();
-    // The chosen insurance line goes too — otherwise the replay skips the
-    // choice screen and studies whatever the last run picked.
-    resetTrainingPlan();
+    resetFunnel();
+    // The last-user memory goes too, or the next sign-in is compared against a
+    // browser this call has just finished pretending was never used.
+    forgetUser();
     console.log(
       '[auth] Denied() — session + onboarding + verification + training cleared. Next login goes through the full flow: login → onboarding → verification → training → dashboard.'
     );
