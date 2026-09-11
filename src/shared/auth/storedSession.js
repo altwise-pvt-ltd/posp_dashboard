@@ -31,6 +31,19 @@ const TOKEN_KEY = 'posp.token';
 const SESSION_KEY = 'posp.session';
 
 /**
+ * The renewal credential, in its own key for the same reason the access token
+ * has one: the 401 retry path in `shared/api/client.js` asks for it before it
+ * can decide whether a dead request is worth retrying, and that is no place to
+ * be parsing a JSON blob.
+ *
+ * Same sessionStorage, same exposure as the token above — it buys a longer
+ * session, not a safer one. What bounds it is that it dies with the tab, and
+ * that the server hands back a new pair on every use, so the copy sitting here
+ * after a renewal is not the copy that was here before it.
+ */
+const REFRESH_KEY = 'posp.refreshToken';
+
+/**
  * Storage access is wrapped because it genuinely throws in the wild — Safari
  * private browsing, and any embedding where storage is partitioned or blocked.
  * A failure degrades to "not signed in", which sends the user to /login: wrong
@@ -72,6 +85,16 @@ export function getToken() {
 }
 
 /**
+ * The refresh token, or null when this session was issued without one (an older
+ * tab, or a server that stopped sending them). Null is a normal answer, not a
+ * broken session: the caller simply treats the 401 as final and signs out,
+ * which is exactly what the app did before renewal existed.
+ */
+export function getRefreshToken() {
+  return read(REFRESH_KEY);
+}
+
+/**
  * The whole persisted session — `{ token, user, application, expiresAt }` — or
  * null. Called once at module load by `authStore` to seed its initial state.
  *
@@ -110,9 +133,16 @@ export function readStoredSession() {
  * The token is pulled out and the remaining fields are stored wholesale, so a
  * new one on the verify response reaches storage without a change here.
  */
-export function storeSession({ token, ...details } = {}) {
+export function storeSession({ token, refreshToken, ...details } = {}) {
   if (!token) return;
   write(TOKEN_KEY, token);
+
+  /* Pulled out of `details` rather than left to ride in the JSON blob, so the
+   * 401 path can read it with one `getItem`. Absent means absent: a sign-in
+   * that returns no refresh token must not leave the previous one behind, or
+   * the next 401 renews a session that this one replaced. */
+  if (refreshToken) write(REFRESH_KEY, refreshToken);
+  else remove(REFRESH_KEY);
 
   const hasDetails = Object.values(details).some((value) => value != null);
   if (hasDetails) write(SESSION_KEY, JSON.stringify(details));
@@ -127,6 +157,37 @@ export function storeSession({ token, ...details } = {}) {
 export function clearStoredSession() {
   remove(TOKEN_KEY);
   remove(SESSION_KEY);
+  remove(REFRESH_KEY);
+}
+
+/**
+ * Swap in the pair a renewal returned, leaving the user, the application and
+ * the flow exactly as they were.
+ *
+ * Distinct from `storeSession` on purpose: a renewal is the *same* session with
+ * fresh credentials, and routing it through the sign-in path would rewrite the
+ * details blob from a reply that does not carry those fields — emptying the
+ * topbar's name and, worse, the application id the wizard quotes.
+ *
+ * A renewal that returns no new refresh token keeps the current one, which is
+ * the right reading for a server that rotates only the access half.
+ */
+export function updateStoredTokens({ token, refreshToken, expiresAt } = {}) {
+  if (!token) return;
+  write(TOKEN_KEY, token);
+  if (refreshToken) write(REFRESH_KEY, refreshToken);
+
+  if (expiresAt == null) return;
+  const raw = read(SESSION_KEY);
+  let details;
+  try {
+    details = raw ? JSON.parse(raw) : {};
+  } catch {
+    // Corrupt, as in readStoredSession — rebuilt from the expiry alone rather
+    // than dropped, since the alternative is a session with no known expiry.
+    details = {};
+  }
+  write(SESSION_KEY, JSON.stringify({ ...details, expiresAt }));
 }
 
 /* ── Which POSP this browser last belonged to ─────────────────────── */

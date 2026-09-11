@@ -1,6 +1,7 @@
 import { api, unwrap } from "@/shared/api/client";
 import { ApiError } from "@/shared/api/ApiError";
 import { ENDPOINTS } from "@/shared/api/endpoints";
+import { getToken, getRefreshToken } from "@/shared/auth/storedSession";
 
 /**
  * The auth calls. Plain arguments in, plain data out — no axios objects cross
@@ -61,8 +62,9 @@ export async function resendOtp(mobile) {
  *   { flow, token, applicationId, currentStep, expiresAt, refreshToken,
  *     user: { id, fullName, email, mobile, role }, overallStatus }
  *
- * split up here by owner. `refreshToken` is deliberately not carried — nothing
- * renews a session, a 401 signs the user out.
+ * split up here by owner, `refreshToken` included: it is what `refreshSession`
+ * below spends when a request comes back 401, so a session now outlives its
+ * access token instead of ending with it.
  *
  * ⚠ Throws when the reply carries no token, however healthy its status code:
  * a session with no credential 401s on first contact.
@@ -81,6 +83,12 @@ export async function verifyOtp(mobile, otp) {
 
   return {
     token,
+
+    /** Spent by `refreshSession()` on the first 401. Persisted beside the token
+     *  (`shared/auth/storedSession.js`); null from a server that doesn't issue
+     *  one, which simply means a 401 stays final. */
+    refreshToken: data.refreshToken ?? null,
+
     flow: toFlow(data.flow),
 
     /** The server's headline on the application — e.g. `UNDER_VERIFICATION`.
@@ -101,6 +109,55 @@ export async function verifyOtp(mobile, otp) {
        *  from `GET /onboarding/status`. */
       currentStep: data.currentStep ?? null,
     },
+  };
+}
+
+/**
+ * Trade the expired access token and the refresh token for a fresh pair.
+ *
+ * Called from the 401 seam in `shared/api/client.js` (through the refresher
+ * `authStore` registers), never from a screen — nothing in the UI decides when
+ * a session is renewed, the server's rejection does.
+ *
+ * Both credentials go up, and the dead access token goes up *twice*: in the
+ * body, and as the bearer header the request interceptor attaches anyway. The
+ * server rejects the call outright when it cannot read an access token, and
+ * which of the two places it reads is not something the client should have to
+ * be right about.
+ *
+ * ⚠ `skipAuthHandler` is what keeps this from eating its own tail: without it a
+ * 401 on *this* call would arrive back at the seam that made it and ask for
+ * another renewal. The caller treats a throw here as "the session is over".
+ *
+ * ⚠ Throws when the reply carries no token, for the same reason `verifyOtp`
+ * does — a renewal that renews nothing must not read as a success and leave the
+ * dead token in place.
+ */
+export async function refreshSession() {
+  const response = await api.post(
+    ENDPOINTS.auth.refresh,
+    { accessToken: getToken(), refreshToken: getRefreshToken() },
+    { skipAuthHandler: true }
+  );
+  const data = unwrap(response) ?? {};
+
+  /** `accessToken` accepted alongside `token`: the verify reply names it
+   *  `token`, and this endpoint is the one place the server might not. */
+  const token = data.token ?? data.accessToken ?? null;
+
+  if (!token) {
+    throw new ApiError({
+      message: "Session renewal didn't return a token.",
+      status: response?.status ?? 0,
+    });
+  }
+
+  return {
+    token,
+    /** Null when the server rotates only the access half — storage then keeps
+     *  the refresh token it already has. */
+    refreshToken: data.refreshToken ?? null,
+    expiresAt: data.expiresAt ?? null,
   };
 }
 

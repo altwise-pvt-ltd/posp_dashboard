@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { ApiError } from './ApiError';
-import { getToken } from '@/shared/auth/storedSession';
+import { getToken, getRefreshToken } from '@/shared/auth/storedSession';
 
 /**
  * The one axios instance. Nothing else in the app imports axios directly —
@@ -77,6 +77,43 @@ export function setUnauthorizedHandler(handler) {
   unauthorizedHandler = handler;
 }
 
+/**
+ * How to renew a dead session. Registered by `authStore` for the same
+ * cycle-avoiding reason as the handler above — the renewal itself is an API
+ * call, so importing it here would be this module importing a module that
+ * imports this module.
+ *
+ * Resolves to the new access token. Rejecting means the session is genuinely
+ * over, and the 401 falls through to `unauthorizedHandler`.
+ */
+let tokenRefresher = null;
+
+export function setTokenRefresher(refresher) {
+  tokenRefresher = refresher;
+}
+
+/**
+ * One renewal at a time, however many requests hit a 401 together.
+ *
+ * A dashboard screen fires several calls on mount, so an expired token is
+ * rarely discovered once — it is discovered four times within a few
+ * milliseconds. Without this each would spend the refresh token separately, and
+ * against a server that rotates it every renewal after the first is spending a
+ * token the first has already invalidated: the session dies *because* it was
+ * renewed. Sharing the in-flight promise makes the extra 401s wait for the
+ * winner and retry with what it got.
+ */
+let inFlightRefresh = null;
+
+function refreshOnce() {
+  inFlightRefresh ??= Promise.resolve()
+    .then(() => tokenRefresher())
+    .finally(() => {
+      inFlightRefresh = null;
+    });
+  return inFlightRefresh;
+}
+
 /* ── Interceptors ──────────────────────────────────────────────────────── */
 
 api.interceptors.response.use(
@@ -103,26 +140,57 @@ api.interceptors.response.use(
     }
     return response;
   },
-  (error) => {
+  async (error) => {
     const apiError = ApiError.from(error);
+    const config = error.config;
 
     /**
-     * A 401 means the token has expired or been revoked, so the "signed in"
-     * state is now a lie — clear it and let the route guard move the user.
+     * A 401 means the access token has expired or been revoked. It is still the
+     * only expiry signal the app acts on — nothing checks the token's own
+     * clock, because the server rejecting a token it considers dead has to be
+     * handled anyway and a client-side check would be a second, weaker copy of
+     * it. What changed is the response: the session gets one chance to renew
+     * itself before it is declared over.
      *
-     * This is the only expiry signal there is. Nothing checks the token's own
-     * clock: a client-side expiry check would still have to handle the server
-     * rejecting a token it considers dead early, so the rejection is the thing
-     * worth handling and the check would be a second, weaker copy of it.
-     *
-     * `skipAuthHandler` opts a request out — used by logout, where a 401 just
-     * means the token was already dead and a "session expired" toast on the way
-     * out is noise.
+     * `skipAuthHandler` opts a request out of both halves — used by logout,
+     * where a 401 just means the token was already dead, and by the renewal
+     * call itself, where re-entering here would be a loop.
      */
-    if (apiError.isUnauthorized && !error.config?.skipAuthHandler) {
-      unauthorizedHandler?.(apiError);
+    if (!apiError.isUnauthorized || config?.skipAuthHandler) {
+      return Promise.reject(apiError);
     }
 
+    /**
+     * Renew and replay, once per request.
+     *
+     * `_retriedAfterRefresh` is per-request rather than global: it has to stop
+     * *this* request from looping when the renewed token is rejected too (a
+     * revoked session, or an endpoint the token's role cannot reach — a 401
+     * that renewal cannot fix), while leaving a later, unrelated 401 free to
+     * try again. No refresh token means there is nothing to spend, which is the
+     * pre-renewal behaviour: straight to signed out.
+     */
+    const renewable =
+      tokenRefresher && config && !config._retriedAfterRefresh && getRefreshToken();
+
+    if (renewable) {
+      config._retriedAfterRefresh = true;
+      try {
+        const token = await refreshOnce();
+        if (token) {
+          /* Set explicitly rather than left to the request interceptor: the
+           * replay re-runs that interceptor and would pick the new token up
+           * anyway, but only if storage has already been written — and that
+           * ordering belongs to the refresher, not here. */
+          config.headers.Authorization = `Bearer ${token}`;
+          return api(config);
+        }
+      } catch {
+        // The renewal failed — the session really is over. Fall through.
+      }
+    }
+
+    unauthorizedHandler?.(apiError);
     return Promise.reject(apiError);
   }
 );

@@ -1,9 +1,13 @@
 import { create } from 'zustand';
-import { logout as logoutRequest } from '@/features/auth/api/authApi';
-import { setUnauthorizedHandler } from '@/shared/api/client';
+import {
+  logout as logoutRequest,
+  refreshSession,
+} from '@/features/auth/api/authApi';
+import { setUnauthorizedHandler, setTokenRefresher } from '@/shared/api/client';
 import {
   readStoredSession,
   storeSession,
+  updateStoredTokens,
   clearStoredSession,
   isDifferentUser,
   rememberUser,
@@ -163,6 +167,21 @@ export const useAuthStore = create((set, get) => ({
   },
 
   /**
+   * Adopt the credentials a renewal returned. The same session throughout —
+   * same user, same application, same flow — so nothing here touches those, and
+   * `authenticated` is already true and stays true.
+   *
+   * Storage first, state second, for the same reason `signIn` does it: the
+   * replayed request reads the token back out of storage through the request
+   * interceptor, so the write has to have happened by the time this resolves.
+   *
+   * Deliberately not a `set` of the whole session: see `updateStoredTokens`.
+   */
+  adoptTokens: (tokens = {}) => {
+    updateStoredTokens(tokens);
+  },
+
+  /**
    * Local half of a sign-out, with no server call. Used by the 401 handler,
    * where the token is already dead and posting to /logout would just draw a
    * second 401.
@@ -231,6 +250,23 @@ setUnauthorizedHandler(() => {
     title: 'Session expired',
     message: 'Please sign in again to pick up where you left off.',
   });
+});
+
+/**
+ * How a 401 gets a second opinion before the handler above fires.
+ *
+ * The client calls this, gets the new access token back, and replays the
+ * request that failed; a throw here means the refresh token was spent, expired
+ * or revoked, and the 401 proceeds to sign the user out as it always did.
+ *
+ * Registered next to the handler rather than inside `client.js` for the cycle
+ * reason documented there — and because persisting the new pair is this store's
+ * job, not the transport's.
+ */
+setTokenRefresher(async () => {
+  const tokens = await refreshSession();
+  useAuthStore.getState().adoptTokens(tokens);
+  return tokens.token;
 });
 
 /**

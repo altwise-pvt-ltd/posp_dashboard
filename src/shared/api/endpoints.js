@@ -50,6 +50,20 @@ export const ENDPOINTS = {
     verifyOtp: "/onboarding/mobile/verify-otp",
     /** POST → revokes the caller's token server-side. */
     logout: "/onboarding/logout",
+
+    /**
+     * POST { accessToken, refreshToken } → a fresh pair for the same session.
+     *
+     * ⚠ Not under `/onboarding` like its neighbours above — it sits at the API
+     * root, so the path is `<base>/auth/refresh`. Verified against the server:
+     * `/onboarding/auth/refresh` and `/onboarding/api/auth/refresh` both 404.
+     *
+     * The expired access token goes up alongside the refresh token — the server
+     * rejects the call with "Invalid access token" when it cannot read one — so
+     * this is called *with* the dead credential still in storage, never after
+     * clearing it.
+     */
+    refresh: "/auth/refresh",
   },
 
   posp: {
