@@ -1,5 +1,6 @@
 import { api, unwrap } from '@/shared/api/client';
 import { ENDPOINTS } from '@/shared/api/endpoints';
+import { DOCUMENTS_SECTION_CODE } from '../lib/quoteSections';
 
 const CONTROL_ALIASES = {
   text: 'text',
@@ -124,6 +125,22 @@ const normalizeSection = (entry = {}) => ({
   fields: (entry.fields ?? []).map(normalizeField),
 });
 
+/**
+ * A count the server may not send at all. Anything that isn't a positive number
+ * -- `null`, `0`, `"many"` -- means one file, which is what every document asked
+ * for one attachment before `maxCount` existed.
+ */
+const toCount = (raw) => {
+  const count = Number(raw);
+  return Number.isFinite(count) && count > 0 ? Math.floor(count) : 1;
+};
+
+/**
+ * Documents and add-ons carry a `controlType` of their own, so both resolve
+ * through the same table the fields do. The `dataType` fallbacks below only
+ * decide what an *older* payload -- one with no `controlType` -- renders as, and
+ * a document is a file and an add-on a checkbox in every such payload.
+ */
 const normalizeDocument = (entry = {}) => ({
   code: entry.code ?? '',
   name: entry.name ?? '',
@@ -131,6 +148,10 @@ const normalizeDocument = (entry = {}) => ({
   allowedExtensions: entry.allowedExtensions ?? null,
   maxSizeMb: entry.maxSizeMb ?? null,
   displayOrder: entry.displayOrder ?? 0,
+  control: resolveControl({ ...entry, dataType: entry.dataType ?? 'file' }),
+  controlType: entry.controlType ?? null,
+  maxCount: toCount(entry.maxCount),
+  sectionCode: entry.sectionCode || DOCUMENTS_SECTION_CODE,
 });
 
 const normalizeAddOn = (entry = {}) => ({
@@ -140,6 +161,9 @@ const normalizeAddOn = (entry = {}) => ({
   description: entry.description ?? null,
   requiresValue: Boolean(entry.requiresValue),
   valueLabel: entry.valueLabel ?? null,
+  displayOrder: entry.displayOrder ?? 0,
+  control: resolveControl({ ...entry, dataType: entry.dataType ?? 'bool' }),
+  controlType: entry.controlType ?? null,
 });
 
 export const normalizeDirectives = (entry = {}) => ({
@@ -169,7 +193,7 @@ export async function fetchQuoteMetadata({ productId, subProductId, fileType } =
     subProductId: data.subProductId ?? subProductId ?? null,
     sections: (data.sections ?? []).map(normalizeSection).sort(byDisplayOrder),
     documents: (data.documents ?? []).map(normalizeDocument).sort(byDisplayOrder),
-    addOns: (data.addOns ?? []).map(normalizeAddOn),
+    addOns: (data.addOns ?? []).map(normalizeAddOn).sort(byDisplayOrder),
     directives: normalizeDirectives(data.directives),
   };
 }

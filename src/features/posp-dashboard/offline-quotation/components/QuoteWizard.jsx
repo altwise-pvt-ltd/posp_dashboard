@@ -4,6 +4,7 @@ import { resolveVisibleSections } from '@/features/dynamic-form/lib/visibleSecti
 import CustomButton from '@/shared/components/CustomButton';
 import { findLobProducts, findProductSubProducts } from '../api/quoteCatalogApi';
 import { useQuoteMetadata } from '../hooks/useQuoteMetadata';
+import { buildQuoteSections } from '../lib/quoteSections';
 import LobGrid from './LobGrid';
 import ProductPicker from './ProductPicker';
 import QuoteFormFields from './QuoteFormFields';
@@ -44,8 +45,11 @@ function QuoteWizard({ catalog }) {
   const selectedProduct = products.find((entry) => entryKey(entry) === product);
   const selectedSubProduct = subProducts.find((entry) => entryKey(entry) === subProduct);
 
+  // Counted the way the form counts them -- documents and add-ons are sections
+  // too, so a product that asks for nothing but an RC copy still has a form.
   const sections = useMemo(
-    () => (metadata ? resolveVisibleSections(metadata.sections, metadata.directives) : []),
+    () =>
+      metadata ? resolveVisibleSections(buildQuoteSections(metadata), metadata.directives) : [],
     [metadata]
   );
 
@@ -139,7 +143,7 @@ function QuoteWizard({ catalog }) {
           <LobGrid lobs={catalog} selected={lob} onSelect={selectLob} />
           <QuoteWizardFooter
             message={catalogError || 'Pick a line of business to continue.'}
-            invalid={Boolean(catalogError)}
+            tone={catalogError ? 'error' : 'default'}
           />
         </>
       );
@@ -166,7 +170,7 @@ function QuoteWizard({ catalog }) {
           )}
           <QuoteWizardFooter
             message={footerMessage}
-            invalid={Boolean(catalogError)}
+            tone={catalogError ? 'error' : 'default'}
             onBack={goBack}
           >
             <CustomButton

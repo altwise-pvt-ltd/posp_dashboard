@@ -18,7 +18,9 @@ function defaultFor(field) {
       .filter(Boolean);
   }
 
-  if (field.control === 'file') return null;
+  // A document taking several files answers with a list, empty until one is
+  // picked; a single one answers with the file itself, or nothing.
+  if (field.control === 'file') return (field.maxCount ?? 1) > 1 ? [] : null;
 
   return raw ?? '';
 }

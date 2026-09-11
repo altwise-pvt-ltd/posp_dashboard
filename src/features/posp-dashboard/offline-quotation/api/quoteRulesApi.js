@@ -2,8 +2,19 @@ import { api, unwrap } from '@/shared/api/client';
 import { ENDPOINTS } from '@/shared/api/endpoints';
 import { normalizeDirectives } from './quoteMetadataApi';
 
+/**
+ * `values` posts as a flat map of strings, so anything that isn't one is
+ * dropped rather than stringified. That now includes attachments: a `File`
+ * joined into a list reads as `[object File]` on the wire, which the server
+ * would take for an answer.
+ */
 const toRuleValue = (value) => {
-  if (Array.isArray(value)) return value.length > 0 ? value.join(',') : null;
+  if (Array.isArray(value)) {
+    const parts = value.filter(
+      (entry) => entry !== null && entry !== undefined && entry !== '' && typeof entry !== 'object'
+    );
+    return parts.length > 0 ? parts.join(',') : null;
+  }
   if (value === null || value === undefined || value === '') return null;
   if (typeof value === 'object') return null;
   return String(value);

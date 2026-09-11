@@ -89,7 +89,25 @@ const RULE_ALIASES = {
   maxdate: 'maxDate',
   minage: 'minAge',
   maxage: 'maxAge',
+
+  filetypes: 'fileTypes',
+  filetype: 'fileTypes',
+  allowedextensions: 'fileTypes',
+  extensions: 'fileTypes',
+  accept: 'fileTypes',
+
+  maxfilesize: 'maxFileSize',
+  maxsize: 'maxFileSize',
+  maxsizemb: 'maxFileSize',
+  filesize: 'maxFileSize',
+
+  maxcount: 'maxCount',
+  maxfiles: 'maxCount',
 };
+
+const FILE_RULES = new Set(['fileTypes', 'maxFileSize', 'maxCount']);
+
+const MEGABYTE = 1024 * 1024;
 
 const COMPACT_PATTERNS = {
   mobile: [/^[6-9]\d{9}$/, 'Enter a valid 10-digit mobile number'],
@@ -155,6 +173,54 @@ const toNumber = (text) => {
  */
 const NOT_A_NUMBER = 'Enter a number';
 
+/**
+ * An attachment is a `File`, or a list of them when the document takes more
+ * than one -- and, on a value that came back from the server rather than a
+ * picker, a name. All three answer the checks below; only a `File` knows its
+ * own size, so the size rule passes anything that doesn't.
+ */
+const fileList = (value) => {
+  if (Array.isArray(value)) return value.filter(Boolean);
+  return value ? [value] : [];
+};
+
+const extensionOf = (entry) => {
+  const name = typeof entry === 'string' ? entry : (entry?.name ?? '');
+  const dot = name.lastIndexOf('.');
+  return dot >= 0 ? name.slice(dot).toLowerCase() : '';
+};
+
+function checkFileRule(name, ruleValue, value) {
+  const files = fileList(value);
+  if (files.length === 0) return null;
+
+  if (name === 'fileTypes') {
+    const allowed = String(ruleValue ?? '')
+      .split(',')
+      .map((entry) => entry.trim().toLowerCase())
+      .filter(Boolean)
+      .map((entry) => (entry.startsWith('.') ? entry : `.${entry}`));
+
+    if (allowed.length === 0) return null;
+
+    return files.every((entry) => allowed.includes(extensionOf(entry)))
+      ? null
+      : `Upload ${allowed.join(', ')} only`;
+  }
+
+  const limit = Number(ruleValue);
+  if (!Number.isFinite(limit)) return null;
+
+  if (name === 'maxFileSize') {
+    const oversized = files.some(
+      (entry) => Number.isFinite(entry?.size) && entry.size > limit * MEGABYTE
+    );
+    return oversized ? `Keep each file under ${limit} MB` : null;
+  }
+
+  return files.length > limit ? `Attach no more than ${limit} files` : null;
+}
+
 const parseRange = (raw) => {
   const parts = String(raw ?? '')
     .split(/[-,|]/)
@@ -178,6 +244,10 @@ export function isFieldRequired(field, requiredCodes) {
 }
 
 function checkRule(name, ruleValue, value) {
+  // Ahead of the array branch below: a document taking several files is an
+  // array too, and its rules count attachments rather than picked options.
+  if (FILE_RULES.has(name)) return checkFileRule(name, ruleValue, value);
+
   const limit = Number(ruleValue);
 
   if (Array.isArray(value)) {

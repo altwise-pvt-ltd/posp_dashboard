@@ -476,6 +476,40 @@ export const ENDPOINTS = {
      * un-hides has nothing left to render.
      */
     rulesEvaluate: "/quote/rules/evaluate",
+
+    /**
+     * POST (bearer) `{ productId, subProductId, values: [{ fieldCode, value }] }`
+     * → the stored draft, which may carry an id or quote number of its own.
+     *
+     * ⚠ `values` is a **list of pairs** here, not the `{ fieldCode: value }` map
+     * `rules/evaluate` takes two entries above. The two calls sit beside each
+     * other in the same feature and disagree on purpose; posting one shape to
+     * the other binds as no answers at all and still answers 200.
+     *
+     * Attachments are not part of this. A file has no place in a list of
+     * strings, so the documents on the form are left out of the draft entirely
+     * until an upload endpoint is wired — a saved draft is the answers only.
+     *
+     * ⚠ CONFIRM WITH BACKEND — whether a second save updates the draft it
+     * already stored or opens another one. Nothing is echoed back to identify
+     * the first, so as it stands each save is a fresh POST.
+     */
+    draft: "/quote/draft",
+
+    /**
+     * POST (bearer, multipart) `/quote/<quoteId>/documents` → the stored
+     * document. One request per file.
+     *
+     * `quoteId` is the **uuid** the draft reply carries, not the quote number
+     * shown to the user: `.../quote/00d16b8e-.../documents`, never
+     * `.../quote/QT-2026-000008/documents`. So a document cannot be uploaded
+     * before its draft is saved — there is no quote to hang it on yet.
+     *
+     * ⚠ CONFIRM WITH BACKEND — the part names. This sends the binary as `file`
+     * and the document's metadata code (`RC`, `KYC_PAN`) as `documentCode`.
+     * Both are one-line constants in `quoteDocumentsApi.js`.
+     */
+    documents: (quoteId) => `/quote/${encodeURIComponent(quoteId)}/documents`,
   },
 
   onboarding: {

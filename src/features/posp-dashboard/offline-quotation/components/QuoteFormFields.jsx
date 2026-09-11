@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowRight, FileText, Save, ShieldAlert } from 'lucide-react';
+import { ArrowRight, Check, RefreshCw, Save, ShieldAlert } from 'lucide-react';
 import DynamicForm from '@/features/dynamic-form/components/DynamicForm';
 import { useDynamicFormValues } from '@/features/dynamic-form/hooks/useDynamicFormValues';
 import { useLookupOptions } from '@/features/dynamic-form/hooks/useLookupOptions';
@@ -11,16 +11,21 @@ import {
 } from '@/features/dynamic-form/lib/validateFields';
 import CustomButton from '@/shared/components/CustomButton';
 import { fetchLookupOptions } from '../api/quoteMetadataApi';
+import { addOnValueCode, buildQuoteSections, pruneAddOnValues } from '../lib/quoteSections';
+import { useQuoteDraft } from '../hooks/useQuoteDraft';
 import { useQuoteRules } from '../hooks/useQuoteRules';
 import QuoteSectionProgress from './QuoteSectionProgress';
 import QuoteWizardFooter from './QuoteWizardFooter';
 
 /**
- * The requirements screen is modelled as one more section that happens to have
- * no fields, so Next/Back, the progress bar and the section count need no
- * special case for the last screen. It is appended only when there is something
- * on it -- `QuoteRequirements` renders nothing without documents or an
- * inspection, and an empty screen should not be counted or walked through.
+ * The inspection notice is modelled as one more section that happens to have no
+ * fields, so Next/Back, the progress bar and the section count need no special
+ * case for the last screen. It is appended only when the product actually calls
+ * for an inspection -- an empty screen should not be counted or walked through.
+ *
+ * Documents used to share this screen as a read-only checklist. They now arrive
+ * with a `controlType` and render as file fields in a section of their own, so
+ * nothing is left here but the notice.
  */
 const REVIEW_CODE = '__review__';
 const REVIEW_SECTION = { code: REVIEW_CODE, name: 'Before you submit', fields: [] };
@@ -31,47 +36,42 @@ const focusField = (code) => {
   node?.focus?.({ preventScroll: true });
 };
 
-function QuoteRequirements({ documents, inspectionRequired }) {
-  if (documents.length === 0 && !inspectionRequired) return null;
+function QuoteInspection({ inspectionRequired }) {
+  if (!inspectionRequired) return null;
 
   return (
     <section className="rounded-xl border border-gray-200 bg-orange-50/40 p-4">
-      {inspectionRequired && (
-        <p className="font-body-md text-body-md mb-gutter flex items-start gap-2 text-on-surface">
-          <ShieldAlert size={16} className="mt-0.5 shrink-0 text-primary" />
-          This product needs a physical inspection before the policy can be issued.
-        </p>
-      )}
-
-      <ul className="flex flex-col gap-2">
-        {documents.map((doc) => (
-          <li
-            key={doc.code}
-            className="font-body-md text-body-md flex items-start gap-2 text-on-surface-variant"
-          >
-            <FileText size={16} className="mt-0.5 shrink-0 text-primary" />
-            <span>
-              {doc.name}
-              {doc.required && <span className="ml-0.5 text-orange-500">*</span>}
-              {doc.allowedExtensions ? ` — ${doc.allowedExtensions}` : ''}
-              {doc.maxSizeMb ? ` (max ${doc.maxSizeMb} MB)` : ''}
-            </span>
-          </li>
-        ))}
-      </ul>
+      <p className="font-body-md text-body-md flex items-start gap-2 text-on-surface">
+        <ShieldAlert size={16} className="mt-0.5 shrink-0 text-primary" />
+        This product needs a physical inspection before the policy can be issued.
+      </p>
     </section>
   );
 }
 
 function QuoteFormFields({ metadata, onBack }) {
-  const { values, setValue } = useDynamicFormValues(
-    metadata.sections,
-    metadata.directives.setValues
-  );
+  // Documents and add-ons are sections like any other from here down, so the
+  // defaults, the validation sweep and the step list all pick them up without
+  // knowing where they came from.
+  const baseSections = useMemo(() => buildQuoteSections(metadata), [metadata]);
+
+  const { values, setValue } = useDynamicFormValues(baseSections, metadata.directives.setValues);
 
   const [errors, setErrors] = useState({});
-  const [checked, setChecked] = useState(false);
   const [confirmingBack, setConfirmingBack] = useState(false);
+
+  /**
+   * Where the save has got to -- the draft post, then the uploads it unlocks.
+   * The hook owns both because they are one action to the user: an edit
+   * withdraws the confirmation for the pair, and a file that fails leaves the
+   * answers saved and says so.
+   */
+  const draft = useQuoteDraft({
+    productId: metadata.productId,
+    subProductId: metadata.subProductId,
+  });
+
+  const busy = draft.phase === 'saving' || draft.phase === 'uploading';
 
   /**
    * The cursor is stored as a section *code*, because a rule can hide a section
@@ -99,8 +99,8 @@ function QuoteFormFields({ metadata, onBack }) {
   const directives = ruleDirectives ?? metadata.directives;
 
   const sections = useMemo(
-    () => resolveVisibleSections(metadata.sections, directives),
-    [metadata.sections, directives]
+    () => resolveVisibleSections(pruneAddOnValues(baseSections, values), directives),
+    [baseSections, values, directives]
   );
 
   const fields = useMemo(() => sections.flatMap((entry) => entry.fields), [sections]);
@@ -112,13 +112,26 @@ function QuoteFormFields({ metadata, onBack }) {
 
   const requiredCodes = useMemo(() => new Set(directives.requiredFields ?? []), [directives]);
 
-  const hasRequirements = metadata.documents.length > 0 || Boolean(directives.inspectionRequired);
+  // The add-ons that carry an amount, so unticking one can take its amount with
+  // it rather than leaving a figure behind for an add-on nobody chose.
+  const addOnsWithValue = useMemo(
+    () =>
+      new Set(
+        baseSections
+          .flatMap((entry) => entry.fields)
+          .map((field) => field.addOnFor)
+          .filter(Boolean)
+      ),
+    [baseSections]
+  );
+
+  const needsInspection = Boolean(directives.inspectionRequired);
 
   const steps = useMemo(() => {
-    const list = hasRequirements ? [...sections, REVIEW_SECTION] : sections;
+    const list = needsInspection ? [...sections, REVIEW_SECTION] : sections;
     // Rules can hide every section; never leave the form with nothing on screen.
     return list.length > 0 ? list : [REVIEW_SECTION];
-  }, [sections, hasRequirements]);
+  }, [sections, needsInspection]);
 
   const index = useMemo(() => {
     const found = steps.findIndex((entry) => entry.code === cursor.code);
@@ -180,6 +193,9 @@ function QuoteFormFields({ metadata, onBack }) {
   const moveTo = (next) => {
     const clamped = Math.min(Math.max(next, 0), steps.length - 1);
     setConfirmingBack(false);
+    // A failed save is about the form, not the section: it stops being the news
+    // as soon as the user walks away from it. A stored draft is left alone.
+    if (draft.phase === 'error') draft.reset();
     setCursor({ code: steps[clamped].code, index: clamped });
   };
 
@@ -193,9 +209,15 @@ function QuoteFormFields({ metadata, onBack }) {
 
   const handleChange = (code, next) => {
     setValue(code, next);
-    setChecked(false);
     setConfirmingBack(false);
     clearError(code);
+    draft.reset();
+
+    if (!next && addOnsWithValue.has(code)) {
+      const valueCode = addOnValueCode(code);
+      setValue(valueCode, '');
+      clearError(valueCode);
+    }
   };
 
   const handleBlur = (code) => {
@@ -234,27 +256,35 @@ function QuoteFormFields({ metadata, onBack }) {
   /**
    * Save still re-checks every field, not just the last section: a rule can add
    * a `requiredField` to a section the user already walked past. The first
-   * offender decides which section to jump back to.
+   * offender decides which section to jump back to, and nothing is posted --
+   * the server hears about the form only once it is answerable.
    */
   const handleSave = () => {
+    if (busy) return;
+
     const found = validateFields(fields, values, requiredCodes);
     setErrors(found);
-    setChecked(true);
 
     const first = fields.find((field) => found[field.code]);
-    if (!first) return;
 
-    const target = steps.findIndex((entry) =>
-      entry.fields.some((field) => field.code === first.code)
-    );
+    if (first) {
+      if (draft.phase === 'error') draft.reset();
 
-    if (target >= 0 && target !== index) {
-      pendingFocusRef.current = first.code;
-      moveTo(target);
+      const target = steps.findIndex((entry) =>
+        entry.fields.some((field) => field.code === first.code)
+      );
+
+      if (target >= 0 && target !== index) {
+        pendingFocusRef.current = first.code;
+        moveTo(target);
+        return;
+      }
+
+      focusField(first.code);
       return;
     }
 
-    focusField(first.code);
+    draft.save(fields, values);
   };
 
   /**
@@ -279,21 +309,119 @@ function QuoteFormFields({ metadata, onBack }) {
 
   const errorCount = Object.keys(visibleErrors).length;
 
-  const message = confirmingBack
-    ? 'Going back to the product clears every answer on this form.'
-    : errorCount > 0
-      ? `Fix ${errorCount} highlighted ${errorCount === 1 ? 'field' : 'fields'} to continue.`
-      : checked && isLast
-        ? 'All answers look good. Draft saving is not wired up yet.'
-        : isReview
-          ? `${fields.length} questions across ${sections.length} ${
-              sections.length === 1 ? 'section' : 'sections'
-            }.`
-          : `${section.fields.length} ${
-              section.fields.length === 1 ? 'question' : 'questions'
-            } in this section.`;
+  const uploads = draft.uploads;
+  const failed = uploads?.failed ?? [];
+
+  const discardMessage =
+    metadata.documents.length > 0
+      ? 'Going back to the product clears every answer and attachment on this form.'
+      : 'Going back to the product clears every answer on this form.';
+
+  /** What was stored, by the number the agent would quote for it. */
+  const storedLine = () =>
+    draft.draft?.reference ? `Draft saved as ${draft.draft.reference}.` : 'Draft saved.';
+
+  const countOf = (total, noun) => `${total} ${total === 1 ? noun : `${noun}s`}`;
+
+  const statusMessage = () => {
+    if (confirmingBack) return discardMessage;
+    if (draft.phase === 'saving') return 'Saving your draft…';
+
+    if (draft.phase === 'uploading') {
+      const at = Math.min(uploads.done + 1, uploads.total);
+      return `${storedLine()} Uploading document ${at} of ${uploads.total}…`;
+    }
+
+    if (draft.phase === 'error') return draft.error;
+
+    // The answers are safe and some file is not. Saying so in that order
+    // matters: the user's next move is to retry an upload, not to fill the
+    // form in again.
+    if (draft.phase === 'partial') {
+      return `${storedLine()} ${countOf(failed.length, 'document')} didn't upload — ${
+        failed[0]?.message ?? ''
+      }`;
+    }
+
+    if (draft.phase === 'done') {
+      const sent = uploads?.done ?? 0;
+      return sent > 0 ? `${storedLine()} ${countOf(sent, 'document')} uploaded.` : storedLine();
+    }
+
+    if (errorCount > 0) {
+      return `Fix ${errorCount} highlighted ${errorCount === 1 ? 'field' : 'fields'} to continue.`;
+    }
+
+    if (isReview) {
+      return `${fields.length} questions across ${sections.length} ${
+        sections.length === 1 ? 'section' : 'sections'
+      }.`;
+    }
+
+    return `${section.fields.length} ${
+      section.fields.length === 1 ? 'question' : 'questions'
+    } in this section.`;
+  };
+
+  const tone =
+    confirmingBack || errorCount > 0 || draft.phase === 'error' || draft.phase === 'partial'
+      ? 'error'
+      : draft.phase === 'done'
+        ? 'success'
+        : 'default';
 
   const backLabel = confirmingBack ? 'Discard answers' : index === 0 ? 'Change product' : 'Back';
+
+  /**
+   * Four things the same button does, in the order they can happen: save, wait,
+   * send the files again if some didn't make it, and finally stop being a
+   * button at all. That last state matters -- once the draft on the server and
+   * the form on screen are the same thing, a second press would post a second
+   * copy. The first edit brings it back.
+   */
+  const saveButton = () => {
+    if (draft.phase === 'done') {
+      return (
+        <CustomButton variant="secondary" size="md" leftIcon={<Check />} disabled>
+          Draft saved
+        </CustomButton>
+      );
+    }
+
+    if (draft.phase === 'partial') {
+      return (
+        <CustomButton
+          variant="primary"
+          size="md"
+          leftIcon={<RefreshCw />}
+          onClick={() => draft.retryUploads(fields, values)}
+        >
+          Retry {failed.length === 1 ? 'upload' : 'uploads'}
+        </CustomButton>
+      );
+    }
+
+    const label =
+      draft.phase === 'saving'
+        ? 'Saving'
+        : draft.phase === 'uploading'
+          ? `Uploading ${Math.min(uploads.done + 1, uploads.total)} of ${uploads.total}`
+          : draft.phase === 'error'
+            ? 'Try again'
+            : 'Save draft';
+
+    return (
+      <CustomButton
+        variant="primary"
+        size="md"
+        loading={busy}
+        leftIcon={draft.phase === 'error' ? <RefreshCw /> : <Save />}
+        onClick={handleSave}
+      >
+        {label}
+      </CustomButton>
+    );
+  };
 
   return (
     <div ref={rootRef} className="flex scroll-mt-4 flex-col gap-gutter">
@@ -309,10 +437,7 @@ function QuoteFormFields({ metadata, onBack }) {
           component around it, which stays mounted. */}
       <div key={section.code} className="anim-fade flex flex-col gap-gutter">
         {isReview ? (
-          <QuoteRequirements
-            documents={metadata.documents}
-            inspectionRequired={directives.inspectionRequired}
-          />
+          <QuoteInspection inspectionRequired={directives.inspectionRequired} />
         ) : (
           <DynamicForm
             sections={formSections}
@@ -327,20 +452,19 @@ function QuoteFormFields({ metadata, onBack }) {
       </div>
 
       <QuoteWizardFooter
-        message={message}
-        invalid={confirmingBack || errorCount > 0}
+        message={statusMessage()}
+        tone={tone}
         onBack={handleBack}
         backLabel={backLabel}
         backVariant={confirmingBack ? 'danger' : 'secondary'}
+        backDisabled={busy}
       >
         {confirmingBack ? (
           <CustomButton variant="secondary" size="md" onClick={() => setConfirmingBack(false)}>
             Keep editing
           </CustomButton>
         ) : isLast ? (
-          <CustomButton variant="primary" size="md" leftIcon={<Save />} onClick={handleSave}>
-            Save draft
-          </CustomButton>
+          saveButton()
         ) : (
           <CustomButton variant="primary" size="md" rightIcon={<ArrowRight />} onClick={handleNext}>
             Next
