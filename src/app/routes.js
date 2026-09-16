@@ -17,6 +17,7 @@ export const ROUTES = [
   '/posp-training',
   '/certificate',
   '/offline-quotation/create',
+  '/offline-quotation/view',
 ];
 
 /**

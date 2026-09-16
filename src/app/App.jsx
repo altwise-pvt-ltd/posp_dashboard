@@ -15,6 +15,9 @@ const ProfilePage = lazy(() => import('@/features/profile/pages/ProfilePage'));
 const OfflineQuotationPage = lazy(() =>
   import('@/features/posp-dashboard/offline-quotation/page/OfflineQuotationPage')
 );
+const ViewQuotationsPage = lazy(() =>
+  import('@/features/posp-dashboard/offline-quotation/view/page/ViewQuotationsPage')
+);
 
 /**
  * Every protected route names the last stage that must be behind the user, and
@@ -94,6 +97,12 @@ function App() {
           <Route
             path="/offline-quotation/create"
             element={<RequireFunnel through="training"><OfflineQuotationPage /></RequireFunnel>}
+          />
+          {/* The read side of the same group, behind the same stage as the
+              create screen. */}
+          <Route
+            path="/offline-quotation/view"
+            element={<RequireFunnel through="training"><ViewQuotationsPage /></RequireFunnel>}
           />
 
           <Route path="*" element={<Navigate to="/" replace />} />
