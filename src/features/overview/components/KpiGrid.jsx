@@ -101,7 +101,10 @@ function KpiGrid() {
 
         <KpiCard
           label="Policies"
-          to="/policies"
+          /* /business, not /policies — the book of policies has a page now and
+             this is the card that should open it. The other five destinations
+             here are still unbuilt and stay inert. */
+          to="/business"
           highlighted
           theme="primary"
           toggleIcon="workspace_premium"

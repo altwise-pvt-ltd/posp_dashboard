@@ -19,6 +19,7 @@ const ViewQuotationsPage = lazy(() =>
   import('@/features/posp-dashboard/offline-quotation/view/page/ViewQuotationsPage')
 );
 const MarketingKitPage = lazy(() => import('@/features/marketing-kit/pages/MarketingKitPage'));
+const BusinessPage = lazy(() => import('@/features/business/pages/BusinessPage'));
 
 /**
  * Every protected route names the last stage that must be behind the user, and
@@ -112,6 +113,14 @@ function App() {
           <Route
             path="/marketing-kit"
             element={<RequireFunnel through="training"><MarketingKitPage /></RequireFunnel>}
+          />
+
+          {/* My Business — the book of policies issued under the POSP's code.
+              Behind the same stage as the rest of the dashboard: there is no
+              business to show before certification. */}
+          <Route
+            path="/business"
+            element={<RequireFunnel through="training"><BusinessPage /></RequireFunnel>}
           />
 
           <Route path="*" element={<Navigate to="/" replace />} />

@@ -18,6 +18,8 @@
  * module throws and the share falls back to a plain link — see `useShare`.
  */
 
+import { fileNameFor } from './fileName';
+
 /**
  * Long edge of the output, in pixels.
  *
@@ -213,16 +215,6 @@ function fitFont(ctx, text, startSize, weight, maxWidth) {
   return size;
 }
 
-/** `Diwali Greeting` → `diwali-greeting.jpg`, for the share sheet's label. */
-function fileNameFor(title) {
-  const slug = String(title || 'marketing-card')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 60);
-  return `${slug || 'marketing-card'}.jpg`;
-}
-
 /**
  * The artwork with the agent's signature strip under it, as a shareable `File`.
  *
@@ -333,7 +325,7 @@ export async function buildBrandedCard({ imageUrl, title, lines = [], photoUrl }
   canvas.width = 0;
   canvas.height = 0;
 
-  return new File([blob], fileNameFor(title), {
+  return new File([blob], fileNameFor(title, 'jpg'), {
     type: 'image/jpeg',
     lastModified: Date.now(),
   });

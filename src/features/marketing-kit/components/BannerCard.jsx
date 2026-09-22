@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import CardShell from './CardShell';
 import { shareCaption, signatureLines } from '../lib/agentSignature';
 import { buildBrandedCard } from '../lib/brandedCard';
+import { fetchAsFile } from '../lib/remoteFile';
 
 /**
  * One banner: the artwork, its title, and what you can do with it.
@@ -10,28 +11,43 @@ import { buildBrandedCard } from '../lib/brandedCard';
  * falls through to the image itself. That is the more useful target anyway —
  * an agent wants to see the card full size before sending it.
  *
- * Sharing sends the artwork as a file with the agent's signature drawn along
- * its bottom edge — see `lib/brandedCard`. With no `agent` — an onboarding
- * user, or a profile that has not answered yet — `prepareFile` is undefined and
- * the share falls back to the plain link. Nothing on screen breaks; the button
- * just says "Share" again.
+ * What gets sent is always the image, never a link to it — see `prepareFile`,
+ * which has two ways to produce one and only gives up if both fail.
  */
 function BannerCard({ banner, agent }) {
   const { title, imageUrl, linkUrl } = banner;
 
-  /* `useCallback` and not a bare arrow: `ShareButton` takes this as a prop, and
+  /**
+   * The artwork as a file, by whichever route works.
+   *
+   * Signed when there is an agent to sign it with, and *unsigned* when there is
+   * not: `signatureLines(null)` is empty, which `buildBrandedCard` renders as
+   * the resized artwork with no strip under it. That case is a real one — an
+   * onboarding user 403s on `/posp/me` — and it used to fall through to sharing
+   * the URL. A card without a signature is still the card; a link is not.
+   *
+   * The catch is the same argument one level down. If the canvas cannot run at
+   * all — the CORS header gone from `/uploads`, a browser without `toBlob` —
+   * the bytes are still fetchable, so fetch them. Only if that fails too does
+   * `useShare` have nothing to attach.
+   *
+   * `useCallback` and not a bare arrow: `CardActions` takes this as a prop, and
    * a new function identity on every render of a 20-card grid would defeat any
-   * memoisation added to the button later. */
-  const prepareFile = useCallback(
-    () =>
-      buildBrandedCard({
+   * memoisation added to the buttons later.
+   */
+  const prepareFile = useCallback(async () => {
+    try {
+      return await buildBrandedCard({
         imageUrl,
         title,
         lines: signatureLines(agent),
         photoUrl: agent?.photo,
-      }),
-    [imageUrl, title, agent]
-  );
+      });
+    } catch (err) {
+      console.warn('[BannerCard] could not brand the card, sending the artwork as-is', err);
+      return fetchAsFile(imageUrl, title);
+    }
+  }, [imageUrl, title, agent]);
 
   return (
     <CardShell
@@ -40,7 +56,7 @@ function BannerCard({ banner, agent }) {
       href={linkUrl || imageUrl}
       shareUrl={imageUrl || linkUrl}
       shareText={shareCaption(title, agent)}
-      prepareFile={imageUrl && agent ? prepareFile : undefined}
+      prepareFile={imageUrl ? prepareFile : undefined}
       openLabel="View"
     />
   );

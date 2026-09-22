@@ -1,53 +1,27 @@
 /**
  * Display formatting for a quotation row.
  *
- * Both the table and the mobile card need these, so they live here rather than
- * being written twice with two different answers for a missing premium.
+ * The money and date formatters used to be defined here. They are generic —
+ * "₹, Indian grouping, no paise" and "11 Sep 2026" are not quotation facts —
+ * and the Business module needs the same two answers, so they now live in
+ * `@/shared/lib/format`. They are re-exported under the names this module's
+ * components already import, so the table and card below are unchanged.
  */
 
-/**
- * `₹1,24,500` — Indian grouping, no paise.
- *
- * Built once at module scope: `Intl.NumberFormat` is expensive to construct and
- * this runs per row, per render.
- *
- * Fraction digits are pinned to 0 on both ends. A premium is quoted in whole
- * rupees, and letting the default range through would render one row as
- * `₹12,499` and the next as `₹12,499.5`, which reads as a bug in a column of
- * aligned figures.
- */
-const INR = new Intl.NumberFormat('en-IN', {
-  style: 'currency',
-  currency: 'INR',
-  minimumFractionDigits: 0,
-  maximumFractionDigits: 0,
-});
+import { formatCurrency, formatDate } from '@/shared/lib/format';
 
-/**
- * An em dash, not '₹0' — a draft that has not been priced yet has no premium,
- * and zero is a different claim from "not known".
- */
-export const formatPremium = (value) =>
-  Number.isFinite(value) ? INR.format(value) : '—';
+/** A quote's premium. `—` when a draft has not been priced — see the shared module. */
+export const formatPremium = formatCurrency;
 
-/** `11 Sep 2026`. Same em dash for an absent or unparseable date. */
-export function formatDate(value) {
-  if (!value) return '—';
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return '—';
-
-  return date.toLocaleDateString('en-IN', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
-}
+export { formatDate };
 
 /**
  * "Motor · Private Car" — the line of business and, when there is one, the
  * sub-product under it. Joined here so a quote with no sub-product doesn't
  * render a trailing separator.
+ *
+ * Stays in this module: it reads fields off a quotation, so it is not the
+ * shared kind of formatting.
  */
 export const formatProduct = (quotation) =>
   [quotation?.product, quotation?.subProduct].filter(Boolean).join(' · ');

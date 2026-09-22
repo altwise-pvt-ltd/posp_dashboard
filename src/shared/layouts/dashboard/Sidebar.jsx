@@ -12,10 +12,15 @@ import renewal from '@/assets/sidebar/renewal.webp';
 import Profile from '@/assets/sidebar/profile.webp';
 import iconTraining from '@/assets/sidebar/iconTraining.webp';
 
-// `to` is the route path each link navigates to. 'Home', 'Profile' and
-// 'POSP Training' map to real pages (/overview, /profile, /posp-training);
-// the others have no page yet, so `isRoutedPath` renders them inert — they
-// stay visible and styled but clicking them does nothing.
+// `to` is the route path each link navigates to. 'Home', 'My Business',
+// 'Profile', 'Marketing Kit' and 'POSP Training' map to real pages; the others
+// have no page yet, so `isRoutedPath` renders them inert — they stay visible
+// and styled but clicking them does nothing.
+//
+// 'My Business' replaced an inert 'Policies' item pointing at /policies. It is
+// the same concept under the name the bottom bar was already using, and it now
+// has a page — so the book of policies is one destination reached one way,
+// rather than a live route beside a dead link that means the same thing.
 //
 // An item with `children` never navigates itself: it toggles its group open.
 const NAV_ITEMS = [
@@ -29,7 +34,7 @@ const NAV_ITEMS = [
       { label: 'View Quotations', to: '/offline-quotation/view' },
     ],
   },
-  { label: 'Policies', to: '/policies', icon: iconPolicies },
+  { label: 'My Business', to: '/business', icon: iconPolicies },
   { label: 'Reports', to: '/reports', icon: iconReports },
   { label: 'Renewal', to: '/renewal', icon: renewal },
   { label: 'Profile', to: '/profile', icon: Profile },

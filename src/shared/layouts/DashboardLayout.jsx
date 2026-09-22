@@ -38,7 +38,10 @@ export const DASHBOARD_SHELL =
  *
  * `MORE` is the escape hatch: it opens the drawer, which is the full labelled
  * nav including the Offline Quotation submenu — a two-level group has nowhere
- * to open into inside a 58px bar.
+ * to open into inside a 58px bar. POSP Training lives there now: the
+ * 'My Business' tab used to open it, which was the label promising a book of
+ * policies and delivering a course. It opens /business, and training keeps its
+ * sidebar row inside the drawer.
  *
  * Icons are lucide components, not the sidebar's .webp assets: the bar sizes
  * and re-weights its icon per state (`size`, `strokeWidth`), which an <img>
@@ -49,19 +52,24 @@ const MORE = 'more';
 const BOTTOM_NAV_ITEMS = [
   { id: '/overview', label: 'Home', icon: House },
   { id: '/offline-quotation/create', label: 'Quote', icon: FileText },
-  { id: '/posp-training', label: 'My Business', icon: Briefcase },
+  { id: '/business', label: 'My Business', icon: Briefcase },
   { id: '/profile', label: 'Profile', icon: User },
   { id: MORE, label: 'More', icon: Menu },
 ];
 
 // Which tab a given URL lights up. Prefix-matched, so /offline-quotation/create/3
-// keeps Quote lit, and the certificate page stays under My Business rather than
-// leaving every tab dark.
+// keeps Quote lit.
+//
+// /posp-training and /certificate are absent on purpose. They used to map to
+// the My Business tab, back when that tab navigated to training; now that it
+// opens /business, keeping them here would light a tab for a page it does not
+// lead to — press it and you'd leave the page that highlighted it. Those two
+// screens are reached through More, so every tab dark is the honest answer:
+// none of them is where you are.
 const TAB_PREFIXES = [
   ['/overview', '/overview'],
   ['/offline-quotation', '/offline-quotation/create'],
-  ['/posp-training', '/posp-training'],
-  ['/certificate', '/posp-training'],
+  ['/business', '/business'],
   ['/profile', '/profile'],
 ];
 

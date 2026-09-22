@@ -19,6 +19,7 @@ export const ROUTES = [
   '/offline-quotation/create',
   '/offline-quotation/view',
   '/marketing-kit',
+  '/business',
 ];
 
 /**

@@ -1,6 +1,6 @@
 import { ArrowUpRight, ImageOff } from 'lucide-react';
 import { useState } from 'react';
-import ShareButton from './ShareButton';
+import CardActions from './CardActions';
 
 /**
  * The frame both card types share: a landscape preview, the details beneath it,
@@ -126,11 +126,12 @@ function CardShell({
         {children}
       </div>
 
-      {/* `min-w-0` + truncate on both children: at two-across phone width a long
+      {/* `min-w-0` + truncate on every child: at two-across phone width a long
           label would otherwise push the bar wider than the card and scroll the
-          page sideways. */}
-      <div className="flex items-center justify-between gap-1 border-t border-gray-100 px-1.5 py-1">
-        <ShareButton title={title} url={shareUrl} text={shareText} prepareFile={prepareFile} />
+          page sideways. `flex-wrap` because a branded card carries two actions
+          here, and the narrowest tile cannot hold both on one line. */}
+      <div className="flex flex-wrap items-center justify-between gap-1 border-t border-gray-100 px-1.5 py-1">
+        <CardActions title={title} url={shareUrl} text={shareText} prepareFile={prepareFile} />
 
         {!href && unavailableLabel && (
           <span className="font-body-md text-body-md min-w-0 truncate pr-2 text-on-surface-variant italic">
