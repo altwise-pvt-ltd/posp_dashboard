@@ -1,3 +1,23 @@
+/**
+ * Percent-encode a document key without eating its slashes.
+ *
+ * A key is a storage path — `onboarding/<app>/selfie/<guid>.png` — and the
+ * route that serves it is `/onboarding/documents/{key}`. Running
+ * `encodeURIComponent` over the whole key turns every `/` into `%2F`, which is
+ * not the same URL: IIS' request filtering rejects a path containing an
+ * escaped slash outright (404.11, "double escape sequence"), and an ASP.NET
+ * catch-all route never sees the segments it is meant to match. Either way the
+ * answer is a 404 that looks like a missing file and is really a malformed URL.
+ *
+ * So each segment is encoded on its own and the separators are left literal:
+ * a space or `#` inside a filename is still escaped, the path structure is not.
+ */
+const encodeDocumentKey = (key) =>
+  String(key)
+    .split("/")
+    .map(encodeURIComponent)
+    .join("/");
+
 export const ENDPOINTS = {
   /**
    * Reference data that isn't the onboarding application's own.
@@ -537,7 +557,6 @@ export const ENDPOINTS = {
      */
     status: "/onboarding/status",
 
-    // Pan details submission and retrieval endpoints
     /**
      * POST multipart { panNumber, fullname, dateOfBirth, panFrontImage } → the
      * saved PAN record.
@@ -552,10 +571,6 @@ export const ENDPOINTS = {
      */
     submitPanDetails: "/onboarding/pan/save",
 
-    /** GET (bearer) → the PAN details already on file, or null. */
-    getPanDetails: "/onboarding/pan",
-
-    //Email verification endpoints
     /**
      * POST { email } → dispatches the code. Replies with
      * `{ message, expiresInSeconds }` — how long the *code* stays valid, which
@@ -577,12 +592,8 @@ export const ENDPOINTS = {
      */
     verifyEmail: "/onboarding/email/verify-otp",
 
-    // Adhaar details submission and retrieval endpoints
     /** POST (bearer) → the saved Aadhaar record. */
     submitAadhaarDetails: "/onboarding/aadhaar/save",
-
-    /** GET (bearer) → the Aadhaar details already on file, or null. */
-    getAadhaarDetails: "/onboarding/aadhaar",
 
     /**
      * POST multipart { selfieImage } → `{ documentKey, contentType, sizeBytes,
@@ -645,9 +656,80 @@ export const ENDPOINTS = {
      * fetched as a blob through the axios client and turned into an object URL
      * — which is what `fetchDocumentBlob` does.
      */
-    getDocument: (key) => `/onboarding/documents/${encodeURIComponent(key)}`,
+    getDocument: (key) => `/onboarding/documents/${encodeDocumentKey(key)}`,
 
     /** POST(beearer)-> submit the application */
     submitApplication: "/onboarding/submit",
+  },
+
+  /**
+   * The notification / content service — a different host and a different
+   * credential from everything above it.
+   *
+   * Every path in this group is served by `notification.shrisoft.co.in` and
+   * must go through `notificationApi` (see `shared/api/notificationClient.js`),
+   * never through `api`. The two clients have different base URLs, so a path
+   * from this group sent on the wrong client resolves against the POSP backend
+   * and 404s — which reads as a missing endpoint rather than the wrong client.
+   *
+   * Note the leading `/api`: unlike `VITE_API_BASE_URL`, this service's base URL
+   * stops at the origin, so each path carries the prefix itself.
+   */
+  notification: {
+    /**
+     * GET → `[{ id, name, description, displayOrder, isActive, createdAt, updatedAt }]`
+     *
+     * A bare array — no `{ success, data }` envelope, unlike the POSP backend.
+     * `id` is a GUID string and is what the templates call will be keyed by.
+     *
+     * The list is not pre-filtered: `isActive: false` rows are sent and are the
+     * caller's to drop, and `displayOrder` is the intended order rather than a
+     * hint. Both are handled in `marketingKitApi.js`.
+     */
+    categories: "/api/categories",
+
+    /**
+     * GET ?categoryId=<guid> → `[{ id, categoryId, title, imageUrl, linkUrl,
+     * displayOrder, isActive, createdAt, updatedAt }]`
+     *
+     * The service's own word is "banner", and that is what the app calls these
+     * too — the payload is an image and an optional outbound link, with nothing
+     * template-shaped in it to personalise.
+     *
+     * A bare array again, and `categoryId` is a query parameter rather than a
+     * path segment, so it is passed via axios `params` rather than baked into
+     * this string. Same two caveats as `categories`: `isActive: false` rows are
+     * sent, and `displayOrder` is the intended order.
+     *
+     * ⚠ `imageUrl` has been seen with a placeholder host in the spec sample. It
+     * may well arrive relative — `fetchBanners` resolves it against the service
+     * origin so the caller always gets something an `<img src>` can use.
+     */
+    banners: "/api/banners",
+
+    /**
+     * GET → the brochure categories, same row shape as `categories`.
+     *
+     * A separate list, not a flag on the one above: brochures are filed under
+     * their own taxonomy ("Motor Insurance") and a category id from one list is
+     * meaningless to the other endpoint. Mixing them would fetch an empty grid
+     * that looks like a category with nothing published in it.
+     */
+    brochureCategories: "/api/brochure-categories",
+
+    /**
+     * GET ?categoryId=<guid> → `[{ id, categoryId, title, description,
+     * thumbnailUrl, documentUrl, displayOrder, isActive, ... }]`
+     *
+     * Two URLs per row, and they are not interchangeable: `thumbnailUrl` is the
+     * preview image, `documentUrl` the PDF itself.
+     *
+     * The service also documents two optional parameters that this app does not
+     * send. `search` filters by title — worth wiring the day the list is long
+     * enough to need it, with a debounce, since it is a request per keystroke
+     * otherwise. `isActive` is ignored for API-key callers and forced to true,
+     * so sending it would imply a control this caller does not have.
+     */
+    brochures: "/api/brochures",
   },
 };

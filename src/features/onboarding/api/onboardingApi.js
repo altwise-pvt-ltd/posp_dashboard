@@ -788,6 +788,19 @@ export function fetchDocumentBlob(key) {
     .then((response) => response.data)
     .catch((error) => {
       documentBlobRequests.delete(key);
+
+      /* Every caller swallows this failure — a thumbnail that doesn't draw is
+         not worth breaking a screen over — which also means a broken document
+         route is invisible while developing. The key and the server's own
+         wording are the two things needed to tell "that file is gone" apart
+         from "that URL is wrong", so they are said out loud here, once. */
+      if (import.meta.env.DEV) {
+        console.warn(
+          `[documents] ${error?.status ?? '?'} for key ${key}`,
+          error?.cause?.response?.data ?? error?.message
+        );
+      }
+
       throw error;
     });
 

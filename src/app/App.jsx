@@ -18,6 +18,7 @@ const OfflineQuotationPage = lazy(() =>
 const ViewQuotationsPage = lazy(() =>
   import('@/features/posp-dashboard/offline-quotation/view/page/ViewQuotationsPage')
 );
+const MarketingKitPage = lazy(() => import('@/features/marketing-kit/pages/MarketingKitPage'));
 
 /**
  * Every protected route names the last stage that must be behind the user, and
@@ -103,6 +104,14 @@ function App() {
           <Route
             path="/offline-quotation/view"
             element={<RequireFunnel through="training"><ViewQuotationsPage /></RequireFunnel>}
+          />
+
+          {/* Marketing Kit — the cards and brochures a POSP sends out. Behind
+              the same stage as the rest of the dashboard: there is no one to
+              send a greeting to before certification. */}
+          <Route
+            path="/marketing-kit"
+            element={<RequireFunnel through="training"><MarketingKitPage /></RequireFunnel>}
           />
 
           <Route path="*" element={<Navigate to="/" replace />} />

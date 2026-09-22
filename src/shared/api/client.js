@@ -141,6 +141,24 @@ api.interceptors.response.use(
     return response;
   },
   async (error) => {
+    /**
+     * A blob request fails as a blob.
+     *
+     * `responseType: 'blob'` applies to the *response*, not to the happy path —
+     * so a 404 or a 500 on a document fetch hands axios a Blob holding the
+     * server's JSON (or its HTML error page) rather than a parsed body. Nothing
+     * downstream can read that: `ApiError.fromBody` sees an object with no
+     * `message`, falls through to the status fallback, and the one sentence
+     * that would have said *why* never reaches a console or a bug report.
+     *
+     * Reading it back here keeps that sentence, and keeps it in one place —
+     * every blob route (documents, certificates) is covered without either
+     * caller having to know this is a concern.
+     */
+    if (error?.response?.data instanceof Blob) {
+      error.response.data = await readErrorBlob(error.response.data);
+    }
+
     const apiError = ApiError.from(error);
     const config = error.config;
 
@@ -196,6 +214,32 @@ api.interceptors.response.use(
 );
 
 /* ── Helpers ───────────────────────────────────────────────────────────── */
+
+/**
+ * The body behind a failed blob request, as something readable.
+ *
+ * JSON when the server sent JSON — which is what `ApiError.fromBody` wants, so
+ * a document 404 can carry the backend's own wording instead of the generic
+ * fallback. Otherwise the raw text, which `fromBody` deliberately discards for
+ * display (an IIS error page is not a user-facing sentence) but which stays on
+ * `error.response.data` for whoever is reading the network tab.
+ *
+ * Never throws: this runs inside error handling, and a failure to read the
+ * explanation must not replace the error being explained.
+ */
+async function readErrorBlob(blob) {
+  try {
+    const text = await blob.text();
+    if (!text) return null;
+    try {
+      return JSON.parse(text);
+    } catch {
+      return text;
+    }
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Pull the payload out of a response.

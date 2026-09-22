@@ -33,6 +33,7 @@ const NAV_ITEMS = [
   { label: 'Reports', to: '/reports', icon: iconReports },
   { label: 'Renewal', to: '/renewal', icon: renewal },
   { label: 'Profile', to: '/profile', icon: Profile },
+  { label: 'Marketing Kit', to: '/marketing-kit', icon: iconCustomer },
   { label: 'POSP Training', to: '/posp-training', icon: iconTraining },
 ];
 
@@ -174,7 +175,13 @@ function Sidebar({ collapsed = false, onNavigate, onRequestExpand }) {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-2">
+      {/* `px-2` insets the pills from the rail's edges while expanded. Collapsed,
+          the rail is sized to be exactly one pill wide plus the aside's own
+          padding (68px = 40.8 + 13.6 x 2), so that same inset leaves the pill
+          13.6px wider than the box holding it. `mx-auto` is then over-constrained,
+          CSS zeroes the left margin, and the whole icon column lands 6.8px right
+          of the brand mark above it. So: no inset on the narrow rail. */}
+      <nav className={`flex-1 ${collapsed ? 'px-0' : 'px-2'}`}>
         <ul className="flex flex-col gap-1.5 list-none m-0 p-0">
           {NAV_ITEMS.map((item) => {
             if (item.children) {

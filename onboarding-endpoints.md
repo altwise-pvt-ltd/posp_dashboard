@@ -292,14 +292,13 @@ Files: `features/posp-dashboard/offline-quotation/api/*`, `features/dynamic-form
 
 ## Declared but not wired
 
-These exist in `src/shared/api/endpoints.js` and are referenced in comments, but nothing in the app calls them today. Don't assume they work until someone tries them.
+Routes the app knows about but does not call. Don't assume they work until someone tries them.
 
 | Endpoint | Status |
 | --- | --- |
-| `GET /onboarding/pan` | Declared as `getPanDetails`. No caller — the Review screen reads PAN out of `/onboarding/review` instead. |
-| `GET /onboarding/aadhaar` | Declared as `getAadhaarDetails`. Same story. |
+| `GET /onboarding/pan` | Exists on the server; no longer declared in the app — the constant was removed as dead code. The Review screen reads PAN out of `/onboarding/review` instead. |
+| `GET /onboarding/aadhaar` | Same story — removed from `endpoints.js`, read from `/onboarding/review`. |
 | `POST /onboarding/logout` | Wired into `signOut()`, but no UI element calls it. Only reachable via the console helper `Denied()`. |
-| `POST /quote/rules/evaluate` | Mentioned in the metadata endpoint's notes as the source of live `directives`. Not implemented on the app side. |
 
 ---
 
