@@ -1,6 +1,5 @@
 import { ArrowUpRight, ImageOff } from 'lucide-react';
 import { useState } from 'react';
-import CardActions from './CardActions';
 
 /**
  * The frame both card types share: a landscape preview, the details beneath it,
@@ -17,21 +16,10 @@ import CardActions from './CardActions';
  * blurred backdrop below is what makes that read as a frame rather than as dead
  * space — same `src`, so it is one download and one decode, painted twice.
  *
- * Nothing interactive is nested inside the link: the preview and title are the
- * anchor, the share button is its sibling. A button inside an anchor is invalid
- * and activates both on click.
+ * Display only: the preview, the title, and the link that opens the artwork or
+ * the PDF.
  */
-function CardShell({
-  title,
-  imageUrl,
-  href,
-  shareUrl = href,
-  shareText,
-  prepareFile,
-  children,
-  openLabel = 'Open',
-  unavailableLabel,
-}) {
+function CardShell({ title, imageUrl, href, children, openLabel = 'Open', unavailableLabel }) {
   /* An image can 404 even with a well-formed URL — the uploads host is a
    * separate concern from the API that named the file. */
   const [broken, setBroken] = useState(false);
@@ -114,8 +102,8 @@ function CardShell({
         preview
       )}
 
-      {/* `flex-1` so bodies of different lengths still put every action bar on
-          the same line across a row of cards.
+      {/* `flex-1` so bodies of different lengths still line up the bottom edge
+          of every card across a row.
 
           The title is drawn here rather than passed in as a child: both card
           types were rendering the identical span, which is two places for one
@@ -126,19 +114,16 @@ function CardShell({
         {children}
       </div>
 
-      {/* `min-w-0` + truncate on every child: at two-across phone width a long
-          label would otherwise push the bar wider than the card and scroll the
-          page sideways. `flex-wrap` because a branded card carries two actions
-          here, and the narrowest tile cannot hold both on one line. */}
-      <div className="flex flex-wrap items-center justify-between gap-1 border-t border-gray-100 px-1.5 py-1">
-        <CardActions title={title} url={shareUrl} text={shareText} prepareFile={prepareFile} />
-
-        {!href && unavailableLabel && (
-          <span className="font-body-md text-body-md min-w-0 truncate pr-2 text-on-surface-variant italic">
+      {/* Only drawn when there is nothing to open. Rendering the strip
+          unconditionally would put an empty bordered rule under the title of
+          every card that does have a link. */}
+      {!href && unavailableLabel && (
+        <div className="border-t border-gray-100 px-3 py-1.5">
+          <span className="font-body-md text-body-md truncate text-on-surface-variant italic">
             {unavailableLabel}
           </span>
-        )}
-      </div>
+        </div>
+      )}
     </article>
   );
 }

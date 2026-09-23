@@ -33,8 +33,8 @@ function CategoryStrip({ categories, selectedId, onSelect }) {
             title={category.description || undefined}
             onClick={() => onSelect?.(category.id)}
             className={[
-              /* Taller on a phone for the same reason as the share button —
-                 these are the screen's main control and get tapped most. */
+              /* Taller on a phone: these are the screen's main control and get
+                 tapped most, so they are sized as thumb targets. */
               'font-body-md text-body-md rounded-full border px-4 py-2.5 transition sm:py-2',
               'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
               /* Selection is brand-orange, not the dark `on-surface` this

@@ -1,5 +1,4 @@
 import BannerCard from './BannerCard';
-import { useAgentSignature } from '../hooks/useAgentSignature';
 import { KIT_COLUMNS } from '../lib/gridLayout';
 
 /**
@@ -8,12 +7,10 @@ import { KIT_COLUMNS } from '../lib/gridLayout';
  * would say none of them.
  */
 function BannerGrid({ banners }) {
-  const agent = useAgentSignature();
-
   return (
     <div className={`grid gap-3 ${KIT_COLUMNS}`}>
       {banners.map((banner) => (
-        <BannerCard key={banner.id} banner={banner} agent={agent} />
+        <BannerCard key={banner.id} banner={banner} />
       ))}
     </div>
   );
