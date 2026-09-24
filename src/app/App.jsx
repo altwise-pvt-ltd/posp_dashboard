@@ -18,6 +18,9 @@ const OfflineQuotationPage = lazy(() =>
 const ViewQuotationsPage = lazy(() =>
   import('@/features/posp-dashboard/offline-quotation/view/page/ViewQuotationsPage')
 );
+const QuotationDetailPage = lazy(() =>
+  import('@/features/posp-dashboard/offline-quotation/view/page/QuotationDetailPage')
+);
 const MarketingKitPage = lazy(() => import('@/features/marketing-kit/pages/MarketingKitPage'));
 const BusinessPage = lazy(() => import('@/features/business/pages/BusinessPage'));
 
@@ -105,6 +108,18 @@ function App() {
           <Route
             path="/offline-quotation/view"
             element={<RequireFunnel through="training"><ViewQuotationsPage /></RequireFunnel>}
+          />
+          {/* One quote, by uuid — `GET /quote/<quoteId>`.
+
+              Not listed in `app/routes.js`: ROUTES holds literal paths that
+              `isRoutedPath` compares exactly, and there is no literal to write
+              for a parameterised one. Nothing needs it there — that list exists
+              so *navigation* components can stay inert on an unbuilt path, and
+              the only thing linking here is the row action, which already
+              checks it has an id before rendering a link. */}
+          <Route
+            path="/offline-quotation/view/:quoteId"
+            element={<RequireFunnel through="training"><QuotationDetailPage /></RequireFunnel>}
           />
 
           {/* Marketing Kit — the cards and brochures a POSP sends out. Behind

@@ -10,7 +10,8 @@ import QuotationTable from './QuotationTable';
  * mounted, and there is no client-only branch to get wrong.
  *
  * The cost is that each row's text is in the DOM twice. At a page of quotes
- * that is nothing; if this ever paginates into the hundreds, revisit it.
+ * that is nothing; the endpoint pages at 20, and "load more" appends, so keep
+ * an eye on this if an agent with hundreds of quotes ever loads them all.
  *
  * `md` and not `lg` because the table is the better answer the moment it fits:
  * DashboardLayout's sidebar is still off-canvas at this width, so the content
@@ -21,7 +22,7 @@ function QuotationList({ quotations }) {
     <>
       <div className="flex flex-col gap-2.5 md:hidden">
         {quotations.map((quotation) => (
-          <QuotationCard key={quotation.quoteId} quotation={quotation} />
+          <QuotationCard key={quotation.id ?? quotation.quoteNumber} quotation={quotation} />
         ))}
       </div>
 

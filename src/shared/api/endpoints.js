@@ -457,6 +457,105 @@ export const ENDPOINTS = {
     catalog: "/quote/catalog",
 
     /**
+     * GET (bearer) ?status=DRAFT&page=1&pageSize=20 → this agent's own quote
+     * queue, paged:
+     * `{ items: [QueueRow], totalCount, page, pageSize, totalPages,
+     *    hasPreviousPage, hasNextPage }`.
+     *
+     * The read side of the offline quotation flow. `mine` is the whole scope —
+     * the token decides whose queue it is, so there is no agent parameter and
+     * no way to ask for anyone else's.
+     *
+     * A QueueRow is a *workflow* record, not the customer-facing quote the
+     * create screen builds. It carries no customer name, mobile or premium:
+     *
+     *   id            uuid — what `/quote/<quoteId>/documents` takes
+     *   quoteNumber   `QT-2026-000008`, the human reference
+     *   lob, product  two levels, not the catalogue's three — `"Motor"` and
+     *                 `"Two Wheeler"`. ⚠ `product` here is the catalogue's
+     *                 *sub*-product; there is no separate sub-product field.
+     *   statusCode    `DRAFT` — the machine value, and what `?status=` takes
+     *   status        `Draft` — the *label*. ⚠ Two different things under two
+     *                 names one letter apart; the app renames the label to
+     *                 `statusLabel` on the way in so nothing compares against
+     *                 it by accident.
+     *   colorHex      `#9AA3B2` — the server owns the status colour, so the
+     *                 pill is tinted from this rather than a table in the app.
+     *   sumInsured    nullable — a draft that hasn't been priced has none.
+     *                 ⚠ Sum insured, NOT premium.
+     *   ageDays       whole days since `createdAt`, computed server-side
+     *   lastRemark    nullable workflow note
+     *   originator*   Type/Code/Name/Mobile — who raised it. All null on a
+     *                 POSP's own rows, where the originator is the caller.
+     *
+     * ⚠ CONFIRM WITH BACKEND — (1) the full `statusCode` vocabulary; only
+     * `DRAFT` has been seen. (2) Whether omitting `status` returns every state,
+     * which is what the "All" chip relies on. (3) Whether a search parameter
+     * exists; the toolbar filters the loaded pages client-side because none is
+     * known.
+     */
+    queueMine: "/quote/queue/mine",
+
+    /**
+     * GET (bearer) `/quote/<quoteId>` → one quote in full: the queue row's
+     * fields, plus `productId` / `subProductId` / `fileType`, `expectedPremium`,
+     * `updatedAt`, `addOns`, and
+     * `values: [{ fieldCode, rowIndex, value }]`.
+     *
+     * `quoteId` is the **uuid** from the queue row's `id`, never the quote
+     * number shown to the user: `/quote/00d16b8e-...`, not
+     * `/quote/QT-2026-000008`. The same distinction `documents` below turns on.
+     *
+     * ⚠ `values` carries field *codes* and strings, with no labels and no
+     * order — `MFG_YEAR: "2020"`, `ZERO_DEP: "true"`, `""` for anything left
+     * blank. The questions live on `metadata` above, and the three ids on this
+     * reply are exactly its parameters, so reading a quote back is a pair of
+     * calls: this one, then `metadata` for the form it was raised on. See
+     * `view/hooks/useQuoteDetail.js`.
+     *
+     * ⚠ Add-ons come back inside `values` (`ZERO_DEP: "true"`, with the amount
+     * beside it as `CPA__VALUE`), not in `addOns`, which has been empty on
+     * every quote seen. The app folds metadata's add-ons and documents into the
+     * section list via `buildQuoteSections`, which is what gives those codes
+     * their labels.
+     *
+     * ⚠ Every value is a **string**, booleans included. `"false"` is truthy in
+     * JS, so nothing may test these values directly.
+     *
+     * ⚠ CONFIRM WITH BACKEND — this reply carries no `colorHex`, though every
+     * queue row does. The app works around it by remembering what the queue
+     * said (see `recallStatusColor`); sending it here would let that go.
+     */
+    detail: (quoteId) => `/quote/${encodeURIComponent(quoteId)}`,
+
+    /**
+     * POST (bearer) `/quote/<quoteId>/submit-for-verification` → hands a drafted
+     * quote to the back office to be checked and sent on to the insurer.
+     *
+     * No payload. The quote is named in the path and everything else is already
+     * stored. Verified against the server: `GET` answers 405 and `POST` 401, so
+     * the route exists and this is its only method.
+     *
+     * Replies `{ success: true, message: "Submitted for verification.",
+     * data: null }` — the only route here whose worth is in `message` rather
+     * than `data`, so `submitQuoteForVerification` reads the envelope directly
+     * instead of going through `unwrap`, and that sentence is what the success
+     * alert shows.
+     *
+     * One way, from the agent's side. There is no companion route to withdraw a
+     * quote once submitted, which is why the app asks before calling this, and
+     * why it returns the agent to the list afterwards rather than to a screen
+     * whose only remaining action is gone.
+     *
+     * ⚠ CONFIRM WITH BACKEND — which statuses the route accepts. The app hides
+     * the button on a status known to be at or past verification and leaves it
+     * visible otherwise, so an unknown state produces a rejection carrying the
+     * server's own message instead of a missing control.
+     */
+    submitForVerification: (quoteId) =>
+      `/quote/${encodeURIComponent(quoteId)}/submit-for-verification`,
+
+    /**
      * GET (bearer) ?productId=<uuid>[&subProductId=<uuid>][&fileType=] → the
      * form to raise a quote on that product: `{ productId, subProductId,
      * sections: [{ code, name, displayOrder, isCollapsible, isRepeatable,

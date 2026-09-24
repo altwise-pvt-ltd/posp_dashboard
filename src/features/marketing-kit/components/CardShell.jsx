@@ -16,10 +16,24 @@ import { useState } from 'react';
  * blurred backdrop below is what makes that read as a frame rather than as dead
  * space — same `src`, so it is one download and one decode, painted twice.
  *
- * Display only: the preview, the title, and the link that opens the artwork or
- * the PDF.
+ * The preview, the title, and two ways out of the card: clicking the artwork
+ * opens the original, and `actions` is a bar beneath the body for the thing
+ * that produces a file. They are different intents — one is "let me look at
+ * this", the other "let me keep this" — and collapsing them into a single
+ * target made the fast one wait on the slow one.
  */
-function CardShell({ title, imageUrl, href, children, openLabel = 'Open', unavailableLabel }) {
+function CardShell({
+  title,
+  imageUrl,
+  href,
+  children,
+  actions,
+  /* No default. The badge only renders when there is an `href`, and the only
+     caller that passes one passes its own wording — a fallback here would be a
+     branch nothing reaches, pretending there is a sensible generic answer. */
+  openLabel,
+  unavailableLabel,
+}) {
   /* An image can 404 even with a well-formed URL — the uploads host is a
    * separate concern from the API that named the file. */
   const [broken, setBroken] = useState(false);
@@ -62,7 +76,13 @@ function CardShell({ title, imageUrl, href, children, openLabel = 'Open', unavai
               loading="lazy"
               decoding="async"
               onError={() => setBroken(true)}
-              className="relative size-full object-contain transition duration-300 group-hover:scale-[1.03]"
+              /* The lift on hover is the artwork answering a pointer, so it is
+                 only correct where the artwork is actually a target. A card
+                 whose preview does nothing should not animate as though it
+                 does — the promise is the misleading part, not the motion. */
+              className={`relative size-full object-contain transition duration-300 ${
+                href ? 'group-hover:scale-[1.03]' : ''
+              }`}
             />
           </>
         ) : (
@@ -113,6 +133,8 @@ function CardShell({ title, imageUrl, href, children, openLabel = 'Open', unavai
         <span className="font-body-md text-body-md truncate text-on-surface">{title}</span>
         {children}
       </div>
+
+      {actions && <div className="border-t border-gray-100 px-3 py-2.5">{actions}</div>}
 
       {/* Only drawn when there is nothing to open. Rendering the strip
           unconditionally would put an empty bordered rule under the title of

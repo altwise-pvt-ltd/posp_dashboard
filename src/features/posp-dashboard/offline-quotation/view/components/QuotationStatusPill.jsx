@@ -1,20 +1,27 @@
-import { statusMeta } from '../lib/quotationStatus';
+import { recallStatusColor, statusLabel, statusStyle } from '../lib/quotationStatus';
 
 /**
  * The one place a quote's status becomes something visible.
  *
- * `ring` rather than `border`: the pill sits inside table cells and card rows
- * whose heights are set by the text beside it, and a ring draws outside the box
- * without adding a pixel to it.
+ * Both the wording and the colour come off the row — `/quote/queue/mine` sends
+ * `status: "Draft"` and `colorHex: "#9AA3B2"` — so this component decides
+ * nothing about the vocabulary. `statusStyle` only makes the server's colour
+ * legible; see the note on INK_LUMINANCE there.
+ *
+ * The detail reply carries no `colorHex`, so a missing one falls back to what
+ * the queue said about that status rather than straight to neutral: the same
+ * quote should not wear a coloured pill in the list and a grey one on the page
+ * that list opens.
  */
-function QuotationStatusPill({ status, className = '' }) {
-  const { label, pill } = statusMeta(status);
+function QuotationStatusPill({ quotation, className = '' }) {
+  const color = quotation?.colorHex ?? recallStatusColor(quotation?.statusCode);
 
   return (
     <span
-      className={`font-label-caps text-status-pill inline-flex items-center rounded-full px-2 py-0.5 font-semibold uppercase tracking-wide ring-1 ring-inset ${pill} ${className}`}
+      style={statusStyle(color)}
+      className={`font-label-caps text-status-pill inline-flex items-center rounded-full px-2 py-0.5 font-semibold uppercase tracking-wide ${className}`}
     >
-      {label}
+      {statusLabel(quotation)}
     </span>
   );
 }

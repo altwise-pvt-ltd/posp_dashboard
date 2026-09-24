@@ -177,13 +177,17 @@ export const normalizeDirectives = (entry = {}) => ({
 
 const byDisplayOrder = (a, b) => a.displayOrder - b.displayOrder;
 
-export async function fetchQuoteMetadata({ productId, subProductId, fileType } = {}) {
+export async function fetchQuoteMetadata({ productId, subProductId, fileType, signal } = {}) {
   const response = await api.get(ENDPOINTS.quotation.metadata, {
     params: {
       productId,
       subProductId: subProductId || undefined,
       fileType: fileType || undefined,
     },
+    /* Optional, and only passed by callers that can be unmounted mid-flight --
+       the quote detail screen fetches this as the second half of a pair and has
+       to be able to abandon both. */
+    signal,
   });
 
   const data = unwrap(response) ?? {};
