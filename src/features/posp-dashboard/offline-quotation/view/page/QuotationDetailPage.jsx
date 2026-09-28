@@ -13,9 +13,11 @@ import DashboardLayout from '@/shared/layouts/DashboardLayout';
 import CustomButton from '@/shared/components/CustomButton';
 import { daysUntil } from '@/shared/lib/format';
 import QuoteNotice from '../../components/QuoteNotice';
+import InsurerResponsePanel from '../components/InsurerResponsePanel';
 import QuotationStatusPill from '../components/QuotationStatusPill';
 import VerificationDialog from '../components/VerificationDialog';
 import { useQuoteDetail } from '../hooks/useQuoteDetail';
+import { useQuoteResponses } from '../hooks/useQuoteResponses';
 import { formatAge, formatDate, formatProduct, formatSumInsured } from '../lib/quotationFormat';
 import { canApplyForVerification } from '../lib/quotationStatus';
 
@@ -70,6 +72,13 @@ function QuotationDetailPage() {
   const navigate = useNavigate();
   const { quote, answers, unlabelled, loading, error, missing, retry, submitForVerification, submitting } =
     useQuoteDetail(quoteId);
+
+  /**
+   * The insurers' answers, on a quote in a state that has them. Gated on the
+   * status inside the hook, so this is a no-op on every other quote — see
+   * `hasInsurerResponses`.
+   */
+  const insurer = useQuoteResponses(quoteId, quote?.statusCode);
 
   const [confirming, setConfirming] = useState(false);
 
@@ -229,6 +238,20 @@ function QuotationDetailPage() {
                 </div>
               )}
             </section>
+
+            {/* Above the answers, not below them: on a quote that has been
+                answered, what the insurers said is the reason the agent opened
+                the page, and the form they filled in themselves is the
+                reference underneath it. Absent entirely on every other status,
+                rather than rendered empty. */}
+            {insurer.expected && (
+              <InsurerResponsePanel
+                responses={insurer.responses}
+                loading={insurer.loading}
+                error={insurer.error}
+                onRetry={insurer.retry}
+              />
+            )}
 
             {/* The questions couldn't be fetched, so every label below is a
                 field code made readable rather than the wording the agent

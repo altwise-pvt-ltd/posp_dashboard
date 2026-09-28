@@ -134,6 +134,31 @@ export const statusLabel = ({ statusLabel: label, statusCode } = {}) => {
 export const ALL = 'ALL';
 
 /**
+ * The state in which the insurers' answers exist and are the agent's to read.
+ *
+ * Named rather than written inline because two unrelated things turn on it —
+ * the chip vocabulary below and whether the detail page asks
+ * `/quote/<id>/compare` at all — and a typo in either of two string literals
+ * fails silently: the panel simply never appears.
+ */
+export const RESPONSES_RECEIVED = 'RESPONSES_RECEIVED';
+
+/**
+ * Whether this quote has insurer responses to fetch.
+ *
+ * An allow-list of one, for the same reason `SUBMITTABLE` is one: `compare`
+ * answers `{ responses: [] }` on a quote that has none yet rather than a 404,
+ * so calling it on every quote would paint an empty "no responses" panel on a
+ * draft that was never sent anywhere — a statement about the insurers where
+ * the truth is that nobody has been asked.
+ *
+ * ⚠ CONFIRM WITH BACKEND — whether a later state (bound, issued, rejected)
+ * keeps the responses readable. If it does, add it here: the responses do not
+ * stop being worth reading the moment one of them is chosen.
+ */
+export const hasInsurerResponses = (statusCode) => statusCode === RESPONSES_RECEIVED;
+
+/**
  * Status codes seen from the server, verbatim.
  *
  * ⚠ Not a guess, and deliberately short. An earlier version of this list held
@@ -149,6 +174,7 @@ export const ALL = 'ALL';
 export const SEEN_STATUSES = [
   { code: 'DRAFT', label: 'Draft' },
   { code: 'SENT_TO_INSURER', label: 'Sent to Insurer' },
+  { code: RESPONSES_RECEIVED, label: 'Responses Received' },
 ];
 
 /**

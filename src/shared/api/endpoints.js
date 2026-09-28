@@ -556,6 +556,27 @@ export const ENDPOINTS = {
       `/quote/${encodeURIComponent(quoteId)}/submit-for-verification`,
 
     /**
+     * GET (bearer) `/quote/<quoteId>/compare` → what the insurers came back
+     * with: `{ quoteId, responses: [...] }`.
+     *
+     * Only worth calling once the quote reaches `RESPONSES_RECEIVED` — that
+     * status is the server saying a response has landed and is visible to the
+     * POSP. Before it, the route answers with an empty `responses` array, which
+     * is indistinguishable from "asked too early" and renders as an empty panel
+     * on a quote that was never going to have one. So the app gates the call on
+     * the status rather than asking every quote. See `useQuoteResponses`.
+     *
+     * `quoteId` is the **uuid**, as everywhere else on this group.
+     *
+     * ⚠ CONFIRM WITH BACKEND — the shape of a populated entry. The only reply
+     * observed so far is `responses: []`, so nothing in the app names a field
+     * inside one; `normalizeResponses` keeps whatever arrives and the panel
+     * renders it from its own keys. Once a real response is seen, that panel
+     * should be given the actual fields and this note removed.
+     */
+    compare: (quoteId) => `/quote/${encodeURIComponent(quoteId)}/compare`,
+
+    /**
      * GET (bearer) ?productId=<uuid>[&subProductId=<uuid>][&fileType=] → the
      * form to raise a quote on that product: `{ productId, subProductId,
      * sections: [{ code, name, displayOrder, isCollapsible, isRepeatable,
