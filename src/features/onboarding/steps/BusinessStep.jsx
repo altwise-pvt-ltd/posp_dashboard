@@ -547,7 +547,11 @@ export default function BusinessStep({ onNext, onSkip, initialValues }) {
                     <Autocomplete
                       id="state"
                       label="State *"
-                      placeholder="Start typing…"
+                      /* Named rather than "Start typing…", which the City field
+                         beside it also said: two adjacent dropdowns with the
+                         same instruction and different contents read as one
+                         field duplicated, and QA filed them as swapped. */
+                      placeholder="Select state"
                       value={field.value}
                       onChange={field.onChange}
                       onBlur={field.onBlur}
@@ -571,7 +575,7 @@ export default function BusinessStep({ onNext, onSkip, initialValues }) {
                          with a reason beats an open field that returns nothing
                          however carefully you type. */
                       disabled={!stateValue}
-                      placeholder={stateValue ? "Start typing…" : "Pick a state first"}
+                      placeholder={stateValue ? "Select city / district" : "Pick a state first"}
                       value={field.value}
                       onChange={field.onChange}
                       onBlur={field.onBlur}

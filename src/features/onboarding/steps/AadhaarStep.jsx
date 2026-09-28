@@ -7,7 +7,7 @@ import Select from "@/shared/components/Select";
 import CustomButton from "@/shared/components/CustomButton";
 import FileUpload from "@/shared/components/FileUpload";
 import { fileField } from "@/shared/upload/schema";
-import { personNameField } from "@/shared/validation/nameField";
+import { personNameField, NAME_MAX_LENGTH } from "@/shared/validation/nameField";
 import { dateOfBirthField, formatDobInput } from "@/shared/validation/dateOfBirthField";
 import {
   aadhaarField,
@@ -42,11 +42,14 @@ const aadhaarSchema = z.object({
   // Stored without spaces; the field formats display as XXXX XXXX XXXX.
   aadhaar: aadhaarField(),
   fullName: personNameField({ label: "Name" }),
-  /* Optional here as they are on the server — an application saved before this
-     step asked for them must still be editable without suddenly failing on
-     details it never held. */
-  dateOfBirth: dateOfBirthField({ required: false, label: "Date of birth" }),
-  gender: z.string().trim().optional(),
+  /* Required, and marked so on their labels. They were optional to spare an
+     application saved before this step asked for them — but the wizard has been
+     asking ever since, so the only thing the exemption bought was two blank
+     fields on a submitted application and a `*` missing from two labels whose
+     neighbours all had one. An old record simply gets asked for them on its way
+     through. */
+  dateOfBirth: dateOfBirthField({ label: "Date of birth" }),
+  gender: z.string().trim().min(1, "Select your gender."),
   aadhaarFrontImage: fileField({ message: "Please upload the front of your Aadhaar." }),
   aadhaarBackImage:  fileField({ message: "Please upload the back of your Aadhaar." }),
 });
@@ -132,14 +135,14 @@ export default function AadhaarStep({ onNext, initialValues }) {
           id="fullName"
           label="Name (as per Aadhaar) *"
           placeholder="Your full name"
-          maxLength={200}
+          maxLength={NAME_MAX_LENGTH}
           error={form.formState.errors.fullName?.message}
           {...form.register("fullName")}
         />
 
         <Input
           id="aadhaarDateOfBirth"
-          label="Date of Birth"
+          label="Date of Birth *"
           placeholder="dd/mm/yyyy"
           inputMode="numeric"
           autoComplete="off"
@@ -150,7 +153,7 @@ export default function AadhaarStep({ onNext, initialValues }) {
 
         <Select
           id="gender"
-          label="Gender"
+          label="Gender *"
           options={GENDERS}
           placeholder="Select gender"
           error={form.formState.errors.gender?.message}

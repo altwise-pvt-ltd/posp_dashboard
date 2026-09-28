@@ -3,7 +3,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
-  ChevronDown,
   Lock,
   Download,
   RotateCcw,
@@ -124,7 +123,7 @@ export default function LoginForm({ onVerified }) {
       showAlert({
         variant: "success",
         title: "OTP sent",
-        message: `We've sent a 6-digit code to +91 ${mobile}.`,
+        message: `We've sent a 6-digit code to ${mobile}.`,
       });
     } catch (error) {
       reportFormError(mobileForm, error, "Couldn't send the code");
@@ -142,7 +141,7 @@ export default function LoginForm({ onVerified }) {
       showAlert({
         variant: "info",
         title: "OTP resent",
-        message: `A new code is on its way to +91 ${sentTo}.`,
+        message: `A new code is on its way to ${sentTo}.`,
       });
     } catch (error) {
       // A 429 here isn't a failure so much as the server's own throttle being
@@ -195,26 +194,21 @@ export default function LoginForm({ onVerified }) {
           Mobile Number
         </label>
 
-        <div className="flex items-stretch gap-2">
-          {/* Country code — India only for now, so it renders as a static prefix */}
-          <div className="flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 text-[15px] font-semibold text-slate-800">
-            <span className="text-base leading-none">🇮🇳</span>
-            +91
-            <ChevronDown size={16} className="text-slate-500" />
-          </div>
-
-          <input
-            id="mobile"
-            type="tel"
-            placeholder="Enter Mobile Number"
-            inputMode="numeric"
-            autoComplete="tel-national"
-            maxLength={10}
-            className={`${FIELD} font-mono tracking-[0.08em] placeholder:font-sans placeholder:tracking-normal`}
-            {...mobileField}
-            onChange={digitsOnly(mobileField, 10)}
-          />
-        </div>
+        {/* No country-code prefix. It was a static +91 behind a ChevronDown that
+            opened nothing — a dropdown promising a choice that did not exist —
+            and it was never part of what gets sent: `requestOtp` takes the ten
+            digits alone. */}
+        <input
+          id="mobile"
+          type="tel"
+          placeholder="Enter Mobile Number"
+          inputMode="numeric"
+          autoComplete="tel-national"
+          maxLength={10}
+          className={`${FIELD} w-full font-mono tracking-[0.08em] placeholder:font-sans placeholder:tracking-normal`}
+          {...mobileField}
+          onChange={digitsOnly(mobileField, 10)}
+        />
 
         <FieldError error={mobileForm.formState.errors.mobile} />
 
@@ -242,9 +236,7 @@ export default function LoginForm({ onVerified }) {
         <form onSubmit={verify} className="anim-fade mt-5">
           <label htmlFor="otp" className={LABEL}>
             Enter the 6-digit code sent to{" "}
-            <strong className="font-semibold text-slate-800">
-              +91 {sentTo}
-            </strong>
+            <strong className="font-semibold text-slate-800">{sentTo}</strong>
           </label>
 
           <input

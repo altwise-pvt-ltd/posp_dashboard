@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Mail, ShieldCheck, ArrowRight, CheckCircle2, RotateCcw, Loader2 } from "lucide-react";
+import { Mail, ShieldCheck, ArrowRight, CheckCircle2, RotateCcw, Loader2, Clock, TimerOff } from "lucide-react";
 import Input from "@/shared/components/Input";
 import CustomButton from "@/shared/components/CustomButton";
 import { showAlert, alertOnInvalid } from "@/shared/store/alertStore";
@@ -20,9 +20,39 @@ const otpSchema = z.object({
 
 const RESEND_SECONDS = 30;
 
+/**
+ * The reply's `expiresInSeconds` as an absolute deadline, or null when it
+ * carried none. Shared by the send and the resend so both read the field the
+ * same way — and so neither mistakes it for the resend throttle, which is the
+ * confusion the API comment warns about.
+ */
+const deadlineFrom = (reply) =>
+  Number.isFinite(reply?.expiresInSeconds) && reply.expiresInSeconds > 0
+    ? Date.now() + reply.expiresInSeconds * 1000
+    : null;
+
+/** Seconds → `m:ss`, for the expiry line. */
+const asClock = (seconds) =>
+  `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+
 export default function EmailStep({ onNext, initialValues }) {
   const [sentTo, setSentTo] = useState(null); // email the code was sent to
   const [cooldown, setCooldown] = useState(0);
+  /**
+   * When the code on its way to `sentTo` stops being accepted — an absolute
+   * stamp, not a countdown held in state.
+   *
+   * The server tells us in `expiresInSeconds` and we turn it into a deadline at
+   * once, because the ticker below is throttled to roughly once a minute in a
+   * backgrounded tab. A stored count decremented per tick would drift behind by
+   * however long the user spent in another tab — which is exactly the stretch
+   * this display exists to warn them about. Derived from the clock instead, it
+   * is right the moment they come back.
+   *
+   * Null when the reply carried no lifetime: better to show nothing than to
+   * invent a window and count down to a deadline that isn't the server's.
+   */
+  const [expiresAt, setExpiresAt] = useState(null);
 
   /* ── Email entry ── */
   const emailForm = useForm({
@@ -60,14 +90,51 @@ export default function EmailStep({ onNext, initialValues }) {
   };
   useEffect(() => () => clearInterval(timerRef.current), []);
 
+  /* ── Expiry ticker ──
+     Its own interval rather than a branch inside the cooldown one: the two run
+     to different deadlines (30s vs the code's whole lifetime) and stop
+     independently, and folding them together made the resend timer responsible
+     for a clock it has nothing to do with.
+
+     Every tick re-derives the remaining time from the deadline rather than
+     subtracting one from the last value. That is what survives a backgrounded
+     tab: the interval stops firing every second, but the next pass reads the clock
+     and lands on the right number instead of resuming a count that fell behind.
+
+     Null while no code is live, so the line renders nothing rather than "0:00".*/
+  const [secondsLeft, setSecondsLeft] = useState(null);
+  useEffect(() => {
+    if (!expiresAt) {
+      setSecondsLeft(null);
+      return;
+    }
+
+    let id = null;
+    const update = () => {
+      const left = Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000));
+      setSecondsLeft(left);
+      // Nothing left to count. The deadline does not move on its own, so a
+      // timer still firing past it is a wake-up a second for the life of the
+      // page with the same answer every time.
+      if (left === 0 && id) clearInterval(id);
+    };
+
+    update(); // paint the first value now, not a second from now
+    id = setInterval(update, 1000);
+    return () => clearInterval(id);
+  }, [expiresAt]);
+
+  const expired = secondsLeft === 0;
+
   /* `sentTo` is set only after the server confirms the dispatch, so a failed
      send leaves the card on the email step rather than asking for a code that
      was never sent. */
   const sendCode = emailForm.handleSubmit(async (data) => {
     const email = data.email.trim();
     try {
-      await sendEmailOtp(email);
+      const reply = await sendEmailOtp(email);
       setSentTo(email);
+      setExpiresAt(deadlineFrom(reply));
       otpForm.reset({ otp: "" });
       // No argument: a successful send carries no throttle hint (its
       // `expiresInSeconds` is the code's lifetime, not a resend delay), so the
@@ -91,7 +158,10 @@ export default function EmailStep({ onNext, initialValues }) {
     if (cooldown > 0 || resending) return;
     setResending(true);
     try {
-      await sendEmailOtp(sentTo);
+      // A fresh code replaces the old one, so its window replaces the old
+      // window too — otherwise the line would keep counting down to the
+      // deadline of a code the server has already discarded.
+      setExpiresAt(deadlineFrom(await sendEmailOtp(sentTo)));
       startCooldown();
       showAlert({
         variant: "info",
@@ -210,7 +280,28 @@ export default function EmailStep({ onNext, initialValues }) {
               onChange={handleOtpChange}
             />
 
-            <div className="flex items-center justify-end -mt-1 text-sm">
+            {/* Expiry + resend on one row: the countdown is the reason to press
+                the button beside it, and a user who has watched it run out
+                should not have to hunt for what to do about it. Rendered only
+                when the server gave a lifetime — see `expiresAt`. */}
+            <div className="flex items-center justify-between gap-3 -mt-1 text-sm">
+              {secondsLeft === null ? (
+                <span />
+              ) : expired ? (
+                <span className="inline-flex items-center gap-1.5 font-semibold text-rose-600">
+                  <TimerOff size={13} strokeWidth={2.5} className="shrink-0" />
+                  Code expired
+                </span>
+              ) : (
+                <span
+                  className={`inline-flex items-center gap-1.5 font-medium tabular-nums ${
+                    secondsLeft <= 30 ? "text-amber-600" : "text-slate-500"
+                  }`}
+                >
+                  <Clock size={13} strokeWidth={2.5} className="shrink-0" />
+                  Expires in {asClock(secondsLeft)}
+                </span>
+              )}
               <button
                 type="button"
                 onClick={resend}

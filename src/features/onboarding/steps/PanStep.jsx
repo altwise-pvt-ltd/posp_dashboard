@@ -12,7 +12,7 @@ import Input from "@/shared/components/Input";
 import CustomButton from "@/shared/components/CustomButton";
 import FileUpload from "@/shared/components/FileUpload";
 import { fileField } from "@/shared/upload/schema";
-import { personNameField } from "@/shared/validation/nameField";
+import { personNameField, NAME_MAX_LENGTH } from "@/shared/validation/nameField";
 import {
   dateOfBirthField,
   formatDobInput,
@@ -145,7 +145,7 @@ export default function PanStep({ onNext, initialValues }) {
           id="fullName"
           label="Full Name (as per PAN) *"
           placeholder="Your full name"
-          maxLength={200}
+          maxLength={NAME_MAX_LENGTH}
           error={form.formState.errors.fullName?.message}
           {...form.register("fullName")}
         />

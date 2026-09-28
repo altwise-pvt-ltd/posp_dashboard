@@ -7,7 +7,7 @@ import Input from "@/shared/components/Input";
 import CustomButton from "@/shared/components/CustomButton";
 import FileUpload from "@/shared/components/FileUpload";
 import { fileField } from "@/shared/upload/schema";
-import { bankNameField, personNameField } from "@/shared/validation/nameField";
+import { bankNameField, personNameField, NAME_MAX_LENGTH } from "@/shared/validation/nameField";
 import { digitMask, maskedField, upperAlnumMask } from "@/shared/validation/inputMask";
 import { alertOnInvalid } from "@/shared/store/alertStore";
 import { reportFormError } from "@/shared/api/formErrors";
@@ -160,7 +160,7 @@ export default function BankStep({ onNext, initialValues }) {
           id="bankName"
           label="Bank Name *"
           placeholder="e.g. HDFC Bank"
-          maxLength={200}
+          maxLength={NAME_MAX_LENGTH}
           error={form.formState.errors.bankName?.message}
           {...form.register("bankName")}
         />
@@ -217,7 +217,7 @@ export default function BankStep({ onNext, initialValues }) {
           id="accountHolder"
           label="Account Holder Name *"
           placeholder="Name as on the passbook"
-          maxLength={200}
+          maxLength={NAME_MAX_LENGTH}
           error={form.formState.errors.accountHolder?.message}
           {...form.register("accountHolder")}
         />
@@ -265,7 +265,7 @@ export default function BankStep({ onNext, initialValues }) {
           id="branchName"
           label="Branch Name"
           placeholder="e.g. Shivaji Nagar"
-          maxLength={200}
+          maxLength={NAME_MAX_LENGTH}
           error={form.formState.errors.branchName?.message}
           {...form.register("branchName")}
         />

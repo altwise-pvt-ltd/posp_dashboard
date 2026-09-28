@@ -8,6 +8,7 @@ import CustomButton from "@/shared/components/CustomButton";
 import FileUpload from "@/shared/components/FileUpload";
 import { fileField } from "@/shared/upload/schema";
 import { digitMask, maskedField } from "@/shared/validation/inputMask";
+import { institutionNameField, NAME_MAX_LENGTH } from "@/shared/validation/nameField";
 import { alertOnInvalid } from "@/shared/store/alertStore";
 import { reportFormError } from "@/shared/api/formErrors";
 import { useMasterOptions } from "../hooks/useMasterOptions";
@@ -18,6 +19,22 @@ import {
   matchMasterValue,
   saveEducationDetails,
 } from "../api/onboardingApi";
+
+/**
+ * The window a passing year may fall in.
+ *
+ * The upper bound is *this* year, not a distant round number. It used to be
+ * 2100 — which accepted 2040 as a qualification already earned, and said so in
+ * a message ("between 1950 and 2100") that read as a typo to anyone who noticed
+ * it. A year you have not reached yet is not a year you graduated in.
+ *
+ * Read once per page load rather than per keystroke. The one case that costs
+ * anything is a tab left open across New Year's Eve, which would refuse January's
+ * graduates until a refresh — cheaper than re-deriving the bound, and its own
+ * message tells the user what the field currently believes.
+ */
+const EARLIEST_PASSING_YEAR = 1950;
+const CURRENT_YEAR = new Date().getFullYear();
 
 /* ── Schema ──
  * Only HighestQualification is required; everything else is optional.
@@ -34,16 +51,19 @@ const educationSchema = z.object({
    * rule exists to catch "nothing chosen".
    */
   highestQualification: z.string().min(1, "Select your highest qualification."),
-  institutionName: z.string().trim().max(200, "Keep it under 200 characters.").optional(),
-  boardOrUniversity: z.string().trim().max(200, "Keep it under 200 characters.").optional(),
+  institutionName: institutionNameField({ label: "Institution name", required: false }),
+  boardOrUniversity: institutionNameField({
+    label: "Board or university",
+    required: false,
+  }),
   passingYear: z
     .string()
     .trim()
     .optional()
     .refine((v) => !v || /^\d{4}$/.test(v), "Enter a 4-digit year.")
     .refine(
-      (v) => !v || (Number(v) >= 1950 && Number(v) <= 2100),
-      "Year must be between 1950 and 2100."
+      (v) => !v || (Number(v) >= EARLIEST_PASSING_YEAR && Number(v) <= CURRENT_YEAR),
+      `Year must be between ${EARLIEST_PASSING_YEAR} and ${CURRENT_YEAR}.`
     ),
   // Optional, but not unvalidated — an uploaded certificate has to satisfy the
   // same format and size rules as every other document.
@@ -196,7 +216,7 @@ export default function EducationStep({ onNext, initialValues }) {
           id="institutionName"
           label="Institution Name"
           placeholder="School / college name (optional)"
-          maxLength={200}
+          maxLength={NAME_MAX_LENGTH}
           error={form.formState.errors.institutionName?.message}
           {...form.register("institutionName")}
         />
@@ -207,7 +227,7 @@ export default function EducationStep({ onNext, initialValues }) {
             id="boardOrUniversity"
             label="Board / University"
             placeholder="e.g. CBSE, Mumbai University"
-            maxLength={200}
+            maxLength={NAME_MAX_LENGTH}
             error={form.formState.errors.boardOrUniversity?.message}
             {...form.register("boardOrUniversity")}
           />

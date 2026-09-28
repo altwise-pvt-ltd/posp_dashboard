@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 /**
- * The character rules for the app's two kinds of name field.
+ * The character rules for the app's three kinds of name field.
  *
  * Both anchor on a letter, which is what actually closes the hole QA found:
  * every one of these fields was `z.string().trim().min(1).max(200)`, so `12345`
@@ -13,6 +13,26 @@ import { z } from "zod";
  */
 const PERSON_NAME = /^\p{L}[\p{L}\s.'-]*$/u;
 const BANK_NAME = /^\p{L}[\p{L}\s.,&'()-]*$/u;
+/**
+ * An institution is the one kind that legitimately carries digits — "Kendriya
+ * Vidyalaya No. 2", "D.A.V. Public School No. 5" — so they are allowed *inside*
+ * the name while the leading `\p{L}` still refuses a value that is only digits.
+ * That is the distinction QA's `999999 999999` was sitting in: the problem was
+ * never the digits, it was that nothing anchored the name to a letter.
+ */
+const INSTITUTION_NAME = /^\p{L}[\p{L}\p{N}\s.,&'()/-]*$/u;
+
+/**
+ * The length every name field caps at, schema and input alike.
+ *
+ * Exported so an `<Input maxLength>` and the rule that rejects the same value
+ * cannot drift: they used to be written out separately as 200, and lowering one
+ * without the other is how you get a field that lets you type past the point it
+ * will accept. 70 covers the longest real Indian names and institution names
+ * with room to spare, and is short enough that the cap is reached by a stuck key
+ * rather than by a person.
+ */
+export const NAME_MAX_LENGTH = 70;
 
 /**
  * One name rule, built once for both shapes.
@@ -41,7 +61,7 @@ function nameField({ pattern, hint, label, max, required }) {
 }
 
 /** A person's name — PAN holder, Aadhaar holder, account holder. */
-export function personNameField({ label = "Name", max = 200, required = true } = {}) {
+export function personNameField({ label = "Name", max = NAME_MAX_LENGTH, required = true } = {}) {
   return nameField({
     pattern: PERSON_NAME,
     hint: "can only contain letters, spaces, apostrophes, hyphens and full stops.",
@@ -52,10 +72,28 @@ export function personNameField({ label = "Name", max = 200, required = true } =
 }
 
 /** An institution's name — the bank, or one of its branches. */
-export function bankNameField({ label = "Bank name", max = 200, required = true } = {}) {
+export function bankNameField({ label = "Bank name", max = NAME_MAX_LENGTH, required = true } = {}) {
   return nameField({
     pattern: BANK_NAME,
     hint: "can only contain letters, spaces and & . , - ( ) — no digits.",
+    label,
+    max,
+    required,
+  });
+}
+
+/**
+ * A school, college, board or university. Digits allowed after the first
+ * letter — see `INSTITUTION_NAME`.
+ */
+export function institutionNameField({
+  label = "Institution name",
+  max = NAME_MAX_LENGTH,
+  required = true,
+} = {}) {
+  return nameField({
+    pattern: INSTITUTION_NAME,
+    hint: "can only contain letters, digits, spaces and & . , - ( ) / — and must start with a letter.",
     label,
     max,
     required,
