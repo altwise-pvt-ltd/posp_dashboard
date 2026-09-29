@@ -14,11 +14,11 @@ function QuoteWizardStepper({ steps, current, furthest, onJump }) {
           <p className="font-headline-md text-headline-md min-w-0 truncate text-on-surface">
             {steps[current]?.name}
           </p>
-          <p className="text-[0.6875rem] font-medium whitespace-nowrap text-slate-400">
+          <p className="text-[0.6875rem] font-medium whitespace-nowrap text-ink-faint">
             Step {current + 1} of {total}
           </p>
         </div>
-        <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-slate-100">
+        <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-well-deep">
           <div
             className="h-full rounded-full bg-orange-500 transition-all duration-300"
             style={{ width: `${percent}%` }}
@@ -48,8 +48,8 @@ function QuoteWizardStepper({ steps, current, furthest, onJump }) {
                     done
                       ? 'border-orange-500 bg-orange-500 text-white'
                       : active
-                        ? 'border-orange-500 bg-white text-orange-600 ring-4 ring-orange-500/15'
-                        : 'border-slate-200 bg-white text-slate-400'
+                        ? 'border-orange-500 bg-white text-orange-600 ring-4 ring-focus/15'
+                        : 'border-hairline-cool bg-white text-ink-faint'
                   }`}
                 >
                   {done ? <Check size={12} strokeWidth={3} /> : index + 1}
@@ -57,10 +57,10 @@ function QuoteWizardStepper({ steps, current, furthest, onJump }) {
                 <span
                   className={`truncate text-[0.8125rem] ${
                     active
-                      ? 'font-semibold text-slate-900'
+                      ? 'font-semibold text-ink'
                       : done
                         ? 'font-medium text-slate-600'
-                        : 'text-slate-400'
+                        : 'text-ink-faint'
                   }`}
                 >
                   {step.name}

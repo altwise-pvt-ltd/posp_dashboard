@@ -50,7 +50,7 @@ function Fact({ label, children }) {
 /** A panel of answers — one section of the form, or the leftovers. */
 function AnswerPanel({ title, caption, entries }) {
   return (
-    <section className="anim-fade-d2 rounded-xl border border-gray-200 bg-white p-4 sm:p-gutter">
+    <section className="anim-fade-d2 rounded-xl border border-hairline bg-white p-4 sm:p-gutter">
       <h3 className="font-headline-md text-headline-md text-on-surface">{title}</h3>
       {caption && (
         <p className="font-body-md text-body-md mt-0.5 text-on-surface-variant">{caption}</p>
@@ -70,8 +70,18 @@ function AnswerPanel({ title, caption, entries }) {
 function QuotationDetailPage() {
   const { quoteId } = useParams();
   const navigate = useNavigate();
-  const { quote, answers, unlabelled, loading, error, missing, retry, submitForVerification, submitting } =
-    useQuoteDetail(quoteId);
+  const {
+    quote,
+    answers,
+    unlabelled,
+    loading,
+    error,
+    missing,
+    retry,
+    refresh,
+    submitForVerification,
+    submitting,
+  } = useQuoteDetail(quoteId);
 
   /**
    * The insurers' answers, on a quote in a state that has them. Gated on the
@@ -81,6 +91,23 @@ function QuotationDetailPage() {
   const insurer = useQuoteResponses(quoteId, quote?.statusCode);
 
   const [confirming, setConfirming] = useState(false);
+
+  /**
+   * Accepting a response changes two things, and the hook that posts it can
+   * only see one.
+   *
+   * `useQuoteResponses.select` re-reads the comparison, so the "Selected" badge
+   * comes from the server rather than from the click. But accepting a quote is
+   * a workflow event: the status moves, and the pill and the buttons in the
+   * header above are drawn from `useQuoteDetail`, which knows nothing about the
+   * POST. Without this the page would show the new badge under the old status.
+   *
+   * A quiet refresh, not `retry` — the page stays readable while it re-reads.
+   */
+  const acceptResponse = async (responseId) => {
+    const accepted = await insurer.select(responseId);
+    if (accepted) refresh();
+  };
 
   /**
    * Offered unless the quote is already at or past verification — a deny-list,
@@ -120,14 +147,14 @@ function QuotationDetailPage() {
             button that does nothing is worse than none. */}
         <Link
           to="/offline-quotation/view"
-          className="font-body-md text-body-md anim-fade inline-flex w-fit items-center gap-1.5 rounded-lg text-on-surface-variant transition-colors hover:text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40"
+          className="font-body-md text-body-md anim-fade inline-flex w-fit items-center gap-1.5 rounded-lg text-on-surface-variant transition-colors hover:text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus/40"
         >
           <ArrowLeft aria-hidden="true" className="size-4" />
           All quotations
         </Link>
 
         {loading ? (
-          <section className="anim-fade-d1 rounded-xl border border-gray-200 bg-white p-4 sm:p-gutter">
+          <section className="anim-fade-d1 rounded-xl border border-hairline bg-white p-4 sm:p-gutter">
             <QuoteNotice
               icon={<Loader2 size={20} className="animate-spin" />}
               title="Loading this quotation"
@@ -135,7 +162,7 @@ function QuotationDetailPage() {
             />
           </section>
         ) : missing ? (
-          <section className="anim-fade-d1 rounded-xl border border-gray-200 bg-white p-4 sm:p-gutter">
+          <section className="anim-fade-d1 rounded-xl border border-hairline bg-white p-4 sm:p-gutter">
             <QuoteNotice
               icon={<FileQuestion size={20} />}
               title="Quotation not found"
@@ -157,7 +184,7 @@ function QuotationDetailPage() {
             />
           </section>
         ) : error ? (
-          <section className="anim-fade-d1 rounded-xl border border-gray-200 bg-white p-4 sm:p-gutter">
+          <section className="anim-fade-d1 rounded-xl border border-hairline bg-white p-4 sm:p-gutter">
             <QuoteNotice
               icon={<TriangleAlert size={20} />}
               title="Couldn't load this quotation"
@@ -177,10 +204,10 @@ function QuotationDetailPage() {
           </section>
         ) : (
           <>
-            <section className="anim-fade-d1 rounded-xl border border-gray-200 bg-white p-4 sm:p-gutter">
+            <section className="anim-fade-d1 rounded-xl border border-hairline bg-white p-4 sm:p-gutter">
               {/* The reference is the quote's identity and leads at heading
                   size — there is no customer name to put in that position. */}
-              <header className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 pb-4">
+              <header className="flex flex-wrap items-start justify-between gap-3 border-b border-hairline-soft pb-4">
                 <div className="min-w-0">
                   <h1 className="font-data-mono text-headline-lg font-semibold text-on-surface">
                     {quote.quoteNumber ?? '—'}
@@ -228,11 +255,11 @@ function QuotationDetailPage() {
               </dl>
 
               {quote.lastRemark && (
-                <div className="mt-4 border-t border-slate-100 pt-4">
+                <div className="mt-4 border-t border-hairline-soft pt-4">
                   <p className="font-label-caps text-label-caps font-semibold uppercase text-on-surface-variant">
                     Last remark
                   </p>
-                  <p className="font-body-md text-body-md mt-1 rounded-lg bg-slate-50 px-3 py-2 text-on-surface">
+                  <p className="font-body-md text-body-md mt-1 rounded-lg bg-well px-3 py-2 text-on-surface">
                     {quote.lastRemark}
                   </p>
                 </div>
@@ -250,6 +277,11 @@ function QuotationDetailPage() {
                 loading={insurer.loading}
                 error={insurer.error}
                 onRetry={insurer.retry}
+                /* The choice is posted, then both the comparison and the
+                   quote itself are re-read — the panel holds no selection of
+                   its own. See `acceptResponse` above. */
+                onSelect={acceptResponse}
+                selectingId={insurer.selectingId}
               />
             )}
 
@@ -258,7 +290,7 @@ function QuotationDetailPage() {
                 actually saw. Said plainly, because the difference is not
                 otherwise visible. */}
             {unlabelled && (
-              <p className="anim-fade-d2 font-body-md text-body-md flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900">
+              <p className="anim-fade-d2 font-body-md text-body-md flex items-start gap-2 rounded-xl border border-warning-outline bg-warning-container px-3 py-2 text-on-warning-container">
                 <Info aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
                 The question list for this product couldn&apos;t be loaded, so the answers below are
                 labelled by field code.
@@ -288,7 +320,7 @@ function QuotationDetailPage() {
             )}
 
             {answers.sections.length === 0 && answers.orphans.length === 0 && (
-              <section className="anim-fade-d2 rounded-xl border border-gray-200 bg-white p-4 sm:p-gutter">
+              <section className="anim-fade-d2 rounded-xl border border-hairline bg-white p-4 sm:p-gutter">
                 <QuoteNotice
                   icon={<FileQuestion size={20} />}
                   title="No answers recorded"

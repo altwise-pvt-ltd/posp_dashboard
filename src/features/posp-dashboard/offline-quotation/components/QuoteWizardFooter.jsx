@@ -27,7 +27,7 @@ function QuoteWizardFooter({
   children,
 }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-unit border-t border-gray-200 pt-gutter">
+    <div className="flex flex-wrap items-center justify-between gap-unit border-t border-hairline pt-gutter">
       <p
         role={tone === 'error' ? 'alert' : tone === 'success' ? 'status' : undefined}
         aria-live={tone === 'default' ? undefined : 'polite'}

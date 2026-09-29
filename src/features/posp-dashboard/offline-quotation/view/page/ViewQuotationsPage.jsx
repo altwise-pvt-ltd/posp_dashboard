@@ -84,7 +84,7 @@ function ViewQuotationsPage() {
           </CustomButton>
         </header>
 
-        <section className="anim-fade-d1 rounded-xl border border-gray-200 bg-white p-4 sm:p-gutter">
+        <section className="anim-fade-d1 rounded-xl border border-hairline bg-white p-4 sm:p-gutter">
           {loading ? (
             <QuoteNotice
               icon={<Loader2 size={20} className="animate-spin" />}

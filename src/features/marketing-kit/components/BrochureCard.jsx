@@ -3,7 +3,7 @@ import { Download, ExternalLink } from 'lucide-react';
 import CardShell from './CardShell';
 import CardAction from './CardAction';
 import { useMounted } from '../hooks/useMounted';
-import { fetchAndSave } from '../lib/saveFile';
+import { fetchAndSave } from '@/shared/lib/saveFile';
 import { fileNameFor } from '../lib/fileName';
 
 /**

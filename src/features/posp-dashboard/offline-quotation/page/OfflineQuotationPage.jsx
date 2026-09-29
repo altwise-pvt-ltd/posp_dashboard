@@ -7,7 +7,7 @@ import QuoteWizard from '../components/QuoteWizard';
 
 function Panel({ children, className = '' }) {
   return (
-    <section className={`rounded-xl border border-gray-200 bg-white p-4 sm:p-gutter ${className}`}>
+    <section className={`rounded-xl border border-hairline bg-white p-4 sm:p-gutter ${className}`}>
       {children}
     </section>
   );

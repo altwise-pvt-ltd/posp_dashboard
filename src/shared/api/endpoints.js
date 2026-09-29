@@ -577,6 +577,32 @@ export const ENDPOINTS = {
     compare: (quoteId) => `/quote/${encodeURIComponent(quoteId)}/compare`,
 
     /**
+     * POST (bearer) `/quote/<quoteId>/accept` `{ responseId }` → the agent
+     * accepting one insurer's answer as the one to go ahead with.
+     *
+     * The write half of `compare`. That route hands back an `isSelected` flag
+     * on every response, which is the server's record of this decision — so the
+     * panel keeps no choice of its own: it posts here and re-reads the
+     * comparison, and the badge that comes back is the server's answer rather
+     * than the app's memory of a click.
+     *
+     * `quoteId` is the **uuid**, as everywhere else on this group, and
+     * `responseId` is the `responseId` from the matching `compare` entry — not
+     * `insurerId`, and not the insurer's own `insurerQuoteRef`.
+     *
+     * ⚠ The path is `accept`, not `select` — the flag it sets is `isSelected`
+     * and the button says "Select this policy", so the two vocabularies meet
+     * here and nowhere else. Named after the route, like every other key in
+     * this file.
+     *
+     * ⚠ CONFIRM WITH BACKEND — whether re-posting with a different
+     * `responseId` moves the acceptance or is rejected once one is made. The
+     * app leaves every non-accepted card's button live and lets the server's
+     * own message answer, rather than hiding a control on a guess.
+     */
+    accept: (quoteId) => `/quote/${encodeURIComponent(quoteId)}/accept`,
+
+    /**
      * GET (bearer) ?productId=<uuid>[&subProductId=<uuid>][&fileType=] → the
      * form to raise a quote on that product: `{ productId, subProductId,
      * sections: [{ code, name, displayOrder, isCollapsible, isRepeatable,

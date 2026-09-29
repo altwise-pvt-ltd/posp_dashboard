@@ -32,7 +32,7 @@ function QuotationTable({ quotations }) {
         </caption>
 
         <thead>
-          <tr className="border-b border-slate-200">
+          <tr className="border-b border-hairline-cool">
             {HEADINGS.map((heading, index) => (
               <th
                 key={heading || 'actions'}
@@ -56,7 +56,7 @@ function QuotationTable({ quotations }) {
             return (
               <tr
                 key={quotation.id ?? quotation.quoteNumber}
-                className="border-b border-slate-100 transition-colors last:border-0 hover:bg-slate-50/70"
+                className="border-b border-hairline-soft transition-colors last:border-0 hover:bg-well/70"
               >
                 <td className="px-3 py-3">
                   <span className="font-data-mono text-data-mono font-semibold text-on-surface">

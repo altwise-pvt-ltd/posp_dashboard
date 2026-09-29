@@ -22,12 +22,12 @@ function QuoteSectionProgress({ label, current, total, headingRef }) {
         >
           {label}
         </h3>
-        <p className="text-[0.6875rem] font-medium whitespace-nowrap text-slate-400">
+        <p className="text-[0.6875rem] font-medium whitespace-nowrap text-ink-faint">
           {current + 1} of {total}
         </p>
       </div>
 
-      <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-slate-100">
+      <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-well-deep">
         <div
           className="h-full rounded-full bg-orange-500 transition-all duration-300"
           style={{ width: `${percent}%` }}

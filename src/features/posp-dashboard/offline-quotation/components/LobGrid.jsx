@@ -99,7 +99,7 @@ function LobGrid({ lobs, selected, onSelect }) {
             className={`flex flex-col items-start gap-2 rounded-xl border p-4 text-left transition-all duration-200 ${
               active
                 ? 'border-primary bg-primary-fixed/30 shadow-[0_10px_24px_-16px_rgba(255,107,0,0.65)]'
-                : 'border-gray-200 bg-white hover:-translate-y-0.5 hover:border-orange-200'
+                : 'border-hairline bg-white hover:-translate-y-0.5 hover:border-orange-200'
             }`}
           >
             <span

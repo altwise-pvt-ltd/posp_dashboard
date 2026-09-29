@@ -82,6 +82,15 @@ const normalizeResponse = (entry, index) => {
   return {
     key: text(source.responseId) ?? `response-${index}`,
 
+    /**
+     * The id `accept` takes. Kept apart from `key` because the two
+     * differ exactly when it matters: `key` falls back to a positional string
+     * so React always has one, and posting `response-2` as a selection would be
+     * sending the server an index of this app's own making. Null here means
+     * "this response cannot be chosen", and the button is not offered.
+     */
+    responseId: text(source.responseId),
+
     /** ⚠ A uuid. There is no name on this reply — see the note above. */
     insurerId: text(source.insurerId),
     /** The insurer's own reference for this quote — "ACK01234". */
@@ -174,4 +183,34 @@ export async function fetchQuoteResponses(quoteId, { signal } = {}) {
     quoteId: text(data?.quoteId) ?? quoteId,
     responses,
   };
+}
+
+/**
+ * Choose one of the insurers' answers — `POST /quote/<id>/accept`.
+ *
+ * The route is `accept`; the flag it sets on the comparison is `isSelected`,
+ * and the button that calls it says "Select this policy". The function is named
+ * for what the screen means by it rather than for the path, which is the one
+ * place in this file that reads the other way round — `ENDPOINTS.quotation
+ * .accept` keeps the server's word.
+ *
+ * Deliberately returns nothing but the server's sentence. The caller refetches
+ * the comparison afterwards rather than marking the card selected itself: a
+ * selection is a fact about the quote that other things turn on (the status may
+ * move, the other responses may stop being selectable), and a card flipped to
+ * "Selected" locally would be this app narrating a change it cannot see the
+ * rest of.
+ *
+ * Reads `message` off the envelope for the same reason
+ * `submitQuoteForVerification` does — a confirmation's worth is in its wording,
+ * and `unwrap` reaches past it for a `data` that may well be null.
+ */
+export async function selectQuoteResponse(quoteId, responseId, { signal } = {}) {
+  const response = await api.post(
+    ENDPOINTS.quotation.accept(quoteId),
+    { responseId },
+    { signal }
+  );
+
+  return { message: response?.data?.message ?? null };
 }

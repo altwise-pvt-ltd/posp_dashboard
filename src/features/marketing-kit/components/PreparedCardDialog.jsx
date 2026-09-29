@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Download, X } from 'lucide-react';
 import CustomButton from '@/shared/components/CustomButton';
-import { saveBlob } from '../lib/saveFile';
+import { saveBlob } from '@/shared/lib/saveFile';
 import { fileNameFor } from '../lib/fileName';
 
 /**

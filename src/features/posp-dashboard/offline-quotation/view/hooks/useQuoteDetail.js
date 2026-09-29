@@ -168,6 +168,26 @@ export function useQuoteDetail(quoteId) {
     setAttempt((n) => n + 1);
   }, []);
 
+  /**
+   * Re-read the quote after something changed it, without emptying the screen.
+   *
+   * The same request `retry` makes and deliberately not the same state: `retry`
+   * answers a page that has *failed*, so it raises `loading` and the screen
+   * becomes the loading notice. This answers a page that is fine and is about
+   * to be out of date — accepting an insurer's quote moves the status, and the
+   * pill above would otherwise keep saying what was true before the POST.
+   *
+   * Holding the old values until the new ones land is the point. Blanking a
+   * page the user is reading, to fetch something they cannot yet tell has
+   * changed, reads as the app losing their place; the header simply updates
+   * under them instead. A failure mid-refresh is the one cost — `setQuote(null)`
+   * in the catch turns a working page into the error state — and that is the
+   * honest outcome: the quote's state is exactly what is no longer known.
+   */
+  const refresh = useCallback(() => {
+    setAttempt((n) => n + 1);
+  }, []);
+
   /** A 404 is reported through `missing`; everything else is a real failure. */
   const failure = error?.status === 404 ? null : error;
   const busy = Boolean(quoteId) && loading;
@@ -185,5 +205,7 @@ export function useQuoteDetail(quoteId) {
     /** True when there is no such quote to show. */
     missing: !quoteId || error?.status === 404 || (!busy && !failure && !quote),
     retry,
+    /** Re-read after a write, keeping what's on screen until the reply lands. */
+    refresh,
   };
 }

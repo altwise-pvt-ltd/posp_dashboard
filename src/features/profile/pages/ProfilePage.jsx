@@ -5,6 +5,7 @@ import SupportCard from "./../components/SupportCard";
 import KycComplianceCard from "./../components/KycComplianceCard";
 import PersonalInfoCard from "./../components/PersonalInfoCard";
 import CertificatePreviewBox from "../components/CertificatePreviewBox";
+import BusinessCardBox from "../components/BusinessCardBox";
 import { useProfileRecord } from "../hooks/useProfileRecord";
 
 /* Every width on this screen is decided here. The four cards are `w-full` and
@@ -84,6 +85,7 @@ function ProfilePage() {
             <aside className={`anim-fade ${RAIL}`}>
               <ProfileCard profile={profile} />
               <CertificatePreviewBox />
+              <BusinessCardBox profile={profile} />
               <SupportCard profile={profile} />
             </aside>
 

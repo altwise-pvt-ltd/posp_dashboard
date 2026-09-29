@@ -24,7 +24,7 @@ import { ChevronRight } from 'lucide-react';
  */
 
 const SHELL =
-  'inline-flex items-center gap-1 rounded-lg px-2 py-1 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40';
+  'inline-flex items-center gap-1 rounded-lg px-2 py-1 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus/40';
 
 function QuotationViewAction({ quotation, className = '' }) {
   const reference = quotation?.quoteNumber ?? 'this quotation';
@@ -36,7 +36,7 @@ function QuotationViewAction({ quotation, className = '' }) {
         aria-disabled="true"
         title={`Opening ${reference} isn't available yet`}
         aria-label={`View ${reference} — not available yet`}
-        className={`${SHELL} cursor-default text-slate-400 ${className}`}
+        className={`${SHELL} cursor-default text-ink-faint ${className}`}
       >
         View
         <ChevronRight aria-hidden="true" className="size-4" />
@@ -48,7 +48,7 @@ function QuotationViewAction({ quotation, className = '' }) {
     <Link
       to={`/offline-quotation/view/${quotation.id}`}
       aria-label={`View ${reference}`}
-      className={`${SHELL} text-slate-500 hover:bg-orange-50 hover:text-orange-700 ${className}`}
+      className={`${SHELL} text-ink-subtle hover:bg-orange-50 hover:text-orange-700 ${className}`}
     >
       View
       <ChevronRight aria-hidden="true" className="size-4" />

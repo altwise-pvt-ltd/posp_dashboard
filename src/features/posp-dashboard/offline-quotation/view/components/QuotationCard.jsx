@@ -18,7 +18,7 @@ function QuotationCard({ quotation }) {
   const age = formatAge(quotation.ageDays);
 
   return (
-    <article className="rounded-xl border border-slate-200 bg-white p-3.5 transition-colors hover:border-slate-300">
+    <article className="rounded-xl border border-hairline-cool bg-white p-3.5 transition-colors hover:border-hairline-strong">
       <div className="flex items-start justify-between gap-3">
         <span className="font-data-mono text-data-mono font-semibold text-on-surface">
           {quotation.quoteNumber ?? '—'}
@@ -34,14 +34,14 @@ function QuotationCard({ quotation }) {
           free text and one long enough to fill the screen would push the
           premium and the action off it. */}
       {quotation.lastRemark && (
-        <p className="font-body-md text-body-md mt-1.5 line-clamp-2 rounded-lg bg-slate-50 px-2 py-1.5 text-on-surface-variant">
+        <p className="font-body-md text-body-md mt-1.5 line-clamp-2 rounded-lg bg-well px-2 py-1.5 text-on-surface-variant">
           {quotation.lastRemark}
         </p>
       )}
 
       {/* The footer rule is the card's only internal divider — the figure and
           the dates are a different kind of fact from the identity above them. */}
-      <div className="mt-3 flex items-end justify-between gap-3 border-t border-slate-100 pt-3">
+      <div className="mt-3 flex items-end justify-between gap-3 border-t border-hairline-soft pt-3">
         <div>
           <p className="font-data-currency text-data-currency text-on-surface">
             {formatSumInsured(quotation.sumInsured)}

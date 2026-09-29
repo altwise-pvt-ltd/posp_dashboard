@@ -131,6 +131,70 @@
      the JSX. */
   --shadow-brand-soft: 0 4px 24px rgba(244, 124, 60, 0.1);
   --shadow-brand-card: 0 4px 24px rgba(15, 23, 42, 0.06), 0 24px 56px rgba(244, 124, 60, 0.08);
+
+  /* ── Structural roles ──────────────────────────────────────────────────
+     The Material You ramp above describes *text* and is used for it: 160
+     `text-on-surface` / `text-on-surface-variant` across the app. Every
+     border, well, focus ring and status tint was written as a raw Tailwind
+     literal instead — 1,592 of them — so the app has run two colour systems
+     side by side, and the M3 `outline` / `surface-container` roles have never
+     been used at all.
+
+     These are the second system, named. Each value is exactly the literal the
+     app already renders, so adopting a role changes no pixels; what it changes
+     is that the colour now has one definition instead of being retyped at
+     every call site.
+
+     ⚠ Two hairlines and not one. `gray-200` (#e5e7eb) and `slate-200`
+     (#e2e8f0) are both used as borders and are different colours. Merging them
+     would be the right design decision and the wrong refactor to make silently,
+     so both are kept until someone picks one on purpose.
+
+     ⚠ These are cool greys, and the M3 ramp above is warm (#4a3328 on #f4f4f4).
+     That mismatch is real and predates this block — naming it is the first step
+     to deciding it, not a decision in itself. */
+
+  /* Borders */
+  --color-hairline: #e5e7eb;        /* was gray-200   — section shells */
+  --color-hairline-cool: #e2e8f0;   /* was slate-200  — controls, inputs */
+  --color-hairline-soft: #f1f5f9;   /* was slate-100  — inner rules */
+  --color-hairline-strong: #cbd5e1; /* was slate-300  — emphasised edges */
+
+  /* Wells — recessed surfaces the app uses behind quoted text and summaries */
+  --color-well: #f8fafc;            /* was slate-50  */
+  --color-well-deep: #f1f5f9;       /* was slate-100 */
+
+  /* Text, cool ramp. The M3 `on-surface` pair remains the default for prose;
+     these exist because 400+ call sites already read this way. */
+  --color-ink: #0f172a;             /* was slate-900 */
+  --color-ink-muted: #334155;       /* was slate-700 */
+  --color-ink-subtle: #64748b;      /* was slate-500 */
+  --color-ink-faint: #94a3b8;       /* was slate-400 */
+
+  /* Focus. `orange-500` (#f97316) is brighter than both --color-primary
+     (#de7b3d) and --color-brand (#f47c3c) and matches neither; it is kept at
+     its rendered value so the ring does not shift, but it is now one token to
+     reconcile rather than 44 literals to find. */
+  --color-focus: #f97316;
+
+  /* Warning. M3 defines no warning role, so the app invented one in amber and
+     used it in 14 files. Declared here so it is a role rather than a habit. */
+  --color-warning: #d97706;             /* was amber-600 */
+  --color-warning-container: #fffbeb;   /* was amber-50  */
+  --color-on-warning-container: #78350f; /* was amber-900 */
+  --color-warning-outline: #fde68a;     /* was amber-200 */
+
+  /* ── Printed collateral (business card) ───────────────────────────────────
+     The card is artwork, not app chrome: it carries its own palette and its
+     own two faces, and it is laid out in literal pixels so the dashboard's
+     display-scale blocks below cannot resize a 700x400 print geometry. */
+  --font-card-sans: 'Plus Jakarta Sans', var(--font-sans);
+  --font-card-script: 'Parisienne', 'Segoe Script', cursive;
+
+  --color-card-surface: #f8f3ec;   /* card stock          */
+  --color-card-cream: #efe5d7;     /* cream field + icon chips */
+  --color-card-ink: #3a170d;       /* chocolate           */
+  --color-card-accent: #f56a13;    /* orange              */
 }
 
 /* ── Landing page mobile display scale ──────────────────────────────────────

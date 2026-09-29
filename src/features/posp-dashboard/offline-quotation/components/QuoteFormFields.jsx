@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Check, RefreshCw, Save, ShieldAlert } from 'lucide-react';
 import DynamicForm from '@/features/dynamic-form/components/DynamicForm';
 import { useDynamicFormValues } from '@/features/dynamic-form/hooks/useDynamicFormValues';
@@ -10,6 +11,7 @@ import {
   validateFields,
 } from '@/features/dynamic-form/lib/validateFields';
 import CustomButton from '@/shared/components/CustomButton';
+import { showAlert } from '@/shared/store/alertStore';
 import { fetchLookupOptions } from '../api/quoteMetadataApi';
 import { addOnValueCode, buildQuoteSections, pruneAddOnValues } from '../lib/quoteSections';
 import { useQuoteDraft } from '../hooks/useQuoteDraft';
@@ -40,7 +42,7 @@ function QuoteInspection({ inspectionRequired }) {
   if (!inspectionRequired) return null;
 
   return (
-    <section className="rounded-xl border border-gray-200 bg-orange-50/40 p-4">
+    <section className="rounded-xl border border-hairline bg-orange-50/40 p-4">
       <p className="font-body-md text-body-md flex items-start gap-2 text-on-surface">
         <ShieldAlert size={16} className="mt-0.5 shrink-0 text-primary" />
         This product needs a physical inspection before the policy can be issued.
@@ -72,6 +74,54 @@ function QuoteFormFields({ metadata, onBack }) {
   });
 
   const busy = draft.phase === 'saving' || draft.phase === 'uploading';
+
+  const navigate = useNavigate();
+
+  /**
+   * Fired once, on the save completing. `draft.phase` can reach `done` twice —
+   * `partial` retried into success is the second way — and without this the
+   * navigation would be attempted again on a screen that has already gone.
+   */
+  const leftRef = useRef(false);
+
+  /**
+   * A finished quote belongs in the queue, not on the form that made it.
+   *
+   * Every answer is on the server and the form is now a copy of something
+   * stored, so the only things left to do with this screen are to leave it or
+   * to press a button that is deliberately disabled. The queue is where the
+   * quote's own next step lives — submitting it for verification — and it is
+   * where the agent starts the next one from.
+   *
+   * ⚠ Only on `done`. `partial` means the answers are stored and some document
+   * is not, and the control that retries those uploads is on *this* screen,
+   * against the quote that already exists. Leaving would strand the files with
+   * no way back to them — `retryUploads` posts to a draft id this component
+   * holds and the queue has no notion of.
+   *
+   * The confirmation goes through the global alert store rather than the
+   * footer, for the same reason `submitForVerification` does: the footer's
+   * message dies with this component, and what was saved — the quote number the
+   * agent would quote on the phone — has to survive the navigation it triggers.
+   */
+  useEffect(() => {
+    if (draft.phase !== 'done' || leftRef.current) return;
+    leftRef.current = true;
+
+    const reference = draft.draft?.reference;
+    const uploaded = draft.uploads?.done ?? 0;
+
+    showAlert({
+      variant: 'success',
+      title: reference ? `Quotation ${reference} saved` : 'Quotation saved',
+      message:
+        uploaded > 0
+          ? `Your answers and ${uploaded} ${uploaded === 1 ? 'document' : 'documents'} are stored. It's in your quotations now.`
+          : "Your answers are stored. It's in your quotations now.",
+    });
+
+    navigate('/offline-quotation/view');
+  }, [draft.phase, draft.draft, draft.uploads, navigate]);
 
   /**
    * The cursor is stored as a section *code*, because a rule can hide a section
@@ -378,6 +428,12 @@ function QuoteFormFields({ metadata, onBack }) {
    * button at all. That last state matters -- once the draft on the server and
    * the form on screen are the same thing, a second press would post a second
    * copy. The first edit brings it back.
+   *
+   * `done` now lasts one frame, because the effect above leaves for the queue
+   * as soon as it is reached. It is still rendered rather than dropped: the
+   * navigation is an effect and the render that triggers it paints first, so
+   * this is what is on screen for that frame -- and it is the correct thing to
+   * show if the redirect is ever taken back out.
    */
   const saveButton = () => {
     if (draft.phase === 'done') {

@@ -1,4 +1,4 @@
-import { BadgeCheck, Inbox, Loader2, RefreshCw, TriangleAlert } from 'lucide-react';
+import { BadgeCheck, Check, Inbox, Loader2, RefreshCw, TriangleAlert } from 'lucide-react';
 import CustomButton from '@/shared/components/CustomButton';
 import { formatCurrency, formatDate } from '@/shared/lib/format';
 import QuoteNotice from '../../components/QuoteNotice';
@@ -43,18 +43,20 @@ function Fact({ label, children }) {
  * "No rate card is configured for this insurer yet" is an answer, `NO_GRID` is
  * a string only the backend team can read.
  *
- * `mt-auto` pins it to the foot of the card. Two cards side by side hold
- * different numbers of facts — one insurer sends a `validTill` and the other
- * does not — and without this the earning strips sit at two different heights,
- * which reads as one card being unfinished rather than as one fact being
- * absent.
+ * Pinned to the foot of the card — by `CardFoot` below, not by this component:
+ * two `mt-auto` children in one flex column split the slack between them
+ * instead of one taking it all, which would open a gap between this strip and
+ * the button under it. Two cards side by side hold different numbers of facts —
+ * one insurer sends a `validTill` and the other does not — and without the pin
+ * the earning strips sit at two different heights, which reads as one card
+ * being unfinished rather than as one fact being absent.
  */
 function Earning({ earning }) {
   const { points, status, planName, note } = earning;
   if (points === null && !status && !planName && !note) return null;
 
   return (
-    <div className="mt-auto pt-4">
+    <div className="pt-4">
       <div className="rounded-lg bg-slate-50 px-3 py-2.5">
         <p className="font-label-caps text-label-caps font-semibold uppercase text-on-surface-variant">
           Your earning
@@ -71,8 +73,67 @@ function Earning({ earning }) {
   );
 }
 
+/**
+ * The foot of a card: what the agent earns on this response, and the one
+ * decision the screen asks them to make about it.
+ *
+ * `mt-auto` here rather than on either child, so the whole block is pushed down
+ * as a unit and the foots of two side-by-side cards line up even when one
+ * insurer sent a `validTill` and the other did not.
+ *
+ * The button is only ever the *selecting* one. A response already chosen shows
+ * that it was, and offers nothing — there is no "unselect" route, and a control
+ * that undoes a decision the server has no way to undo is a lie told in a
+ * button. Switching to a different insurer is done from that insurer's own
+ * card, where the premium being switched to is on screen.
+ *
+ * ⚠ Whether the server accepts a second, different selection is unconfirmed —
+ * see `accept` in `endpoints.js`. So the other cards keep their buttons and a
+ * rejection arrives as the server's own message rather than as a control this
+ * app hid on a guess.
+ */
+function CardFoot({ response, onSelect, selecting, busy }) {
+  const { responseId, isSelected, earning } = response;
+
+  /* No id to post means no button — see `responseId` in `quoteCompareApi`.
+     Nothing else on the card changes: a response that cannot be chosen is
+     still a quote worth reading and comparing. */
+  const selectable = Boolean(responseId) && Boolean(onSelect);
+
+  return (
+    <div className="mt-auto">
+      <Earning earning={earning} />
+
+      {isSelected ? (
+        <p className="font-body-md text-body-md mt-4 flex items-center gap-1.5 rounded-lg bg-orange-50 px-3 py-2 text-orange-700">
+          <Check aria-hidden="true" className="size-4 shrink-0" />
+          This is the selected policy for this quotation.
+        </p>
+      ) : (
+        selectable && (
+          <CustomButton
+            variant="primary"
+            size="md"
+            fullWidth
+            className="mt-4"
+            loading={selecting}
+            /* Every button on the panel goes quiet while any one of them is
+               working — two selections in flight on the same quote is a race
+               whose loser is whichever request the server happens to finish
+               second. */
+            disabled={busy && !selecting}
+            onClick={() => onSelect(responseId)}
+          >
+            {selecting ? 'Selecting' : 'Select this policy'}
+          </CustomButton>
+        )
+      )}
+    </div>
+  );
+}
+
 /** One insurer's answer. */
-function ResponseCard({ response }) {
+function ResponseCard({ response, onSelect, selecting, busy }) {
   const {
     premium,
     idv,
@@ -82,7 +143,6 @@ function ResponseCard({ response }) {
     insurerId,
     isSelected,
     quoteDocPath,
-    earning,
     extras,
   } = response;
 
@@ -158,12 +218,22 @@ function ResponseCard({ response }) {
         ))}
       </dl>
 
-      <Earning earning={earning} />
+      <CardFoot response={response} onSelect={onSelect} selecting={selecting} busy={busy} />
     </li>
   );
 }
 
-function InsurerResponsePanel({ responses = [], loading, error, onRetry }) {
+function InsurerResponsePanel({
+  responses = [],
+  loading,
+  error,
+  onRetry,
+  onSelect,
+  selectingId,
+}) {
+  /** True while any card's selection is in flight — see `CardFoot`. */
+  const busy = Boolean(selectingId);
+
   return (
     <section className="anim-fade-d2 rounded-xl border border-gray-200 bg-white p-4 sm:p-gutter">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
@@ -239,7 +309,13 @@ function InsurerResponsePanel({ responses = [], loading, error, onRetry }) {
            row the same height, which is what lets the earning strips line up. */
         <ul className="mt-4 grid gap-3 md:grid-cols-2">
           {responses.map((response) => (
-            <ResponseCard key={response.key} response={response} />
+            <ResponseCard
+              key={response.key}
+              response={response}
+              onSelect={onSelect}
+              selecting={Boolean(response.responseId) && response.responseId === selectingId}
+              busy={busy}
+            />
           ))}
         </ul>
       )}

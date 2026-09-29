@@ -40,8 +40,8 @@ function QuotationFilters({
         <label htmlFor="quotation-search" className="sr-only">
           Search loaded quotations
         </label>
-        <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 transition-all duration-300 focus-within:border-orange-500 focus-within:ring-4 focus-within:ring-orange-500/20">
-          <Search aria-hidden="true" className="size-4 shrink-0 text-slate-400" />
+        <div className="flex items-center gap-2 rounded-xl border border-hairline-cool bg-white px-3 py-2 transition-all duration-300 focus-within:border-orange-500 focus-within:ring-4 focus-within:ring-focus/20">
+          <Search aria-hidden="true" className="size-4 shrink-0 text-ink-faint" />
           <input
             id="quotation-search"
             type="text"
@@ -51,14 +51,14 @@ function QuotationFilters({
             /* `type="text"`, not `type="search"` — the browser's own clear
                affordance sits at a different size in every engine and would
                land beside the button below. */
-            className="w-full bg-transparent text-sm text-slate-900 placeholder-slate-400 outline-none"
+            className="w-full bg-transparent text-sm text-ink placeholder-slate-400 outline-none"
           />
           {query && (
             <button
               type="button"
               onClick={() => onQueryChange('')}
               aria-label="Clear search"
-              className="shrink-0 rounded-md p-0.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40"
+              className="shrink-0 rounded-md p-0.5 text-ink-faint transition-colors hover:bg-well-deep hover:text-ink-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus/40"
             >
               <X aria-hidden="true" className="size-3.5" />
             </button>
@@ -92,10 +92,10 @@ function QuotationFilters({
                  race. The active chip stays lit throughout, so the toolbar
                  still says what is being fetched. */
               disabled={disabled && !active}
-              className={`inline-flex shrink-0 items-center rounded-full border px-3 py-1.5 text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40 disabled:cursor-not-allowed disabled:opacity-50 ${
+              className={`inline-flex shrink-0 items-center rounded-full border px-3 py-1.5 text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus/40 disabled:cursor-not-allowed disabled:opacity-50 ${
                 active
                   ? 'border-orange-200 bg-orange-50 text-orange-700'
-                  : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900'
+                  : 'border-hairline-cool bg-white text-slate-600 hover:border-hairline-strong hover:text-ink'
               }`}
             >
               {chip.label}

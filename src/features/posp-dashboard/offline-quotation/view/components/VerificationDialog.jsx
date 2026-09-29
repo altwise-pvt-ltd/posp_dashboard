@@ -45,7 +45,7 @@ function VerificationDialog({ open, reference, submitting, onCancel, onConfirm }
             aria-modal="true"
             aria-labelledby="verification-dialog-title"
             onClick={(event) => event.stopPropagation()}
-            className="relative w-full max-w-md rounded-xl border border-gray-200 bg-white p-6 shadow-[0_16px_48px_rgba(15,23,42,0.18)]"
+            className="relative w-full max-w-md rounded-xl border border-hairline bg-white p-6 shadow-[0_16px_48px_rgba(15,23,42,0.18)]"
           >
             <div className="mb-4 flex size-11 items-center justify-center rounded-xl border border-primary/25 bg-primary/8 text-primary">
               <ShieldCheck size={22} strokeWidth={2} aria-hidden="true" />
