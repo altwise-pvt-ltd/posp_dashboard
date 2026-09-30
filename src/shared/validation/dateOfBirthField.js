@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const MIN_AGE = 18;
+export const MIN_AGE = 18;
 
 /* Strict dd/mm/yyyy → Date, or null when it isn't a real calendar day. The
    round-trip check is what rejects rollovers like 31/02/2000, which `new Date`

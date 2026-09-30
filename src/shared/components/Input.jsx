@@ -1,4 +1,4 @@
-function Input({ id, label, error, ref, className = '', labelClassName = '', ...props }) {
+function Input({ id, label, error, ref, trailing, className = '', labelClassName = '', ...props }) {
   return (
     <div className="mb-2.75 sm:mb-3.25">
       <label
@@ -13,14 +13,19 @@ function Input({ id, label, error, ref, className = '', labelClassName = '', ...
       >
         {label}
       </label>
-      <input
-        id={id}
-        ref={ref}
-        className={`w-full px-2.75 py-1.75 sm:px-3.25 sm:py-2.25 rounded-xl border bg-slate-50 hover:bg-slate-100/50 focus:bg-white text-[0.8125rem] sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-orange-500/20 focus:border-orange-500 transition-all duration-300 ${
-          error ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'border-slate-200'
-        } ${className}`}
-        {...props}
-      />
+      {/* `trailing` sits inside the field's right edge (an icon button, say); the
+          wrapper is what it positions against, so the error line below stays put. */}
+      <div className="relative">
+        <input
+          id={id}
+          ref={ref}
+          className={`w-full px-2.75 py-1.75 sm:px-3.25 sm:py-2.25 rounded-xl border bg-slate-50 hover:bg-slate-100/50 focus:bg-white text-[0.8125rem] sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-orange-500/20 focus:border-orange-500 transition-all duration-300 ${
+            error ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'border-slate-200'
+          } ${trailing ? 'pr-10' : ''} ${className}`}
+          {...props}
+        />
+        {trailing}
+      </div>
       {error && (
         <p className="mt-1 sm:mt-1.25 text-[0.6875rem] sm:text-[0.8125rem] font-medium text-red-500 animate-in fade-in slide-in-from-top-1 duration-300" role="alert">
           {error}

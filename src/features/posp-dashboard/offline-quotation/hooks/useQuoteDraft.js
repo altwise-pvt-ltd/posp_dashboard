@@ -17,7 +17,7 @@ const IDLE = { phase: 'idle', draft: null, error: '', uploads: null };
 
 const message = (error, fallback) => error?.message || fallback;
 
-export function useQuoteDraft({ productId, subProductId }) {
+export function useQuoteDraft({ quoteId = null, productId, subProductId }) {
   const [state, setState] = useState(IDLE);
 
   /**
@@ -130,7 +130,7 @@ export function useQuoteDraft({ productId, subProductId }) {
       let draft;
 
       try {
-        draft = await saveQuoteDraft({ productId, subProductId, fields, values });
+        draft = await saveQuoteDraft({ quoteId, productId, subProductId, fields, values });
       } catch (error) {
         if (runRef.current === token) {
           setState({
@@ -145,10 +145,14 @@ export function useQuoteDraft({ productId, subProductId }) {
 
       if (runRef.current !== token) return;
 
+      // An update may answer without the uuid; the quote being edited is the
+      // one any documents belong to, so it stands in.
+      if (quoteId && !draft.id) draft = { ...draft, id: quoteId };
+
       draftRef.current = draft;
       await runUploads(token, draft, fields, values);
     },
-    [productId, subProductId, runUploads]
+    [quoteId, productId, subProductId, runUploads]
   );
 
   /**

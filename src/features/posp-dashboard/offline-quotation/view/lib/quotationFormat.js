@@ -31,6 +31,12 @@ export const formatProduct = (row) =>
   [row?.lob, row?.product].filter(Boolean).join(' · ') || '—';
 
 /**
+ * "Motor" — the line of business alone, for the list's rows and cards. The
+ * product under it is left to the detail page.
+ */
+export const formatLob = (row) => row?.lob || '—';
+
+/**
  * How long this quote has been sitting — "today", "yesterday", "13 days old".
  *
  * `ageDays` is computed server-side, which is the right place for it: the

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import SearchBar from '@/shared/components/SearchBar';
+import logo from "@/assets/let'sInsuranceLogo.svg";
 import NotificationBell from './NotificationBell';
 import UserMenu from './UserMenu';
 
@@ -9,12 +9,16 @@ function Topbar() {
 
   return (
     <div className="h-full flex items-center justify-between gap-3">
-      {/* Left — search. Caps at the old fixed 18rem but shrinks below it, so on
-          a phone it yields room to the actions instead of pushing them out. */}
-      <SearchBar className="min-w-0 flex-1 max-w-72" />
+      {/* Shown only while the sidebar (and its logo) is a hidden drawer. */}
+      <img
+        src={logo}
+        alt="LetsInsurance"
+        width={172}
+        height={40}
+        className="h-auto w-32 min-w-0 lg:hidden"
+      />
 
-      {/* Right — actions */}
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex items-center gap-2 shrink-0 ml-auto">
         <NotificationBell
           isOpen={openMenu === 'notif'}
           onToggle={() => toggle('notif')}

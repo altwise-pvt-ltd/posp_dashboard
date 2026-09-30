@@ -13,10 +13,8 @@ import CustomButton from "@/shared/components/CustomButton";
 import FileUpload from "@/shared/components/FileUpload";
 import { fileField } from "@/shared/upload/schema";
 import { personNameField, NAME_MAX_LENGTH } from "@/shared/validation/nameField";
-import {
-  dateOfBirthField,
-  formatDobInput,
-} from "@/shared/validation/dateOfBirthField";
+import DobInput from "@/shared/components/DobInput";
+import { dateOfBirthField } from "@/shared/validation/dateOfBirthField";
 import { maskedField, upperAlnumMask } from "@/shared/validation/inputMask";
 import { alertOnInvalid } from "@/shared/store/alertStore";
 import { reportFormError } from "@/shared/api/formErrors";
@@ -150,15 +148,12 @@ export default function PanStep({ onNext, initialValues }) {
           {...form.register("fullName")}
         />
 
-        <Input
+        <DobInput
+          form={form}
+          name="dateOfBirth"
           id="dateOfBirth"
           label="Date of Birth *"
-          placeholder="dd/mm/yyyy"
-          inputMode="numeric"
-          autoComplete="off"
-          maxLength={10}
           error={form.formState.errors.dateOfBirth?.message}
-          {...maskedField(form, "dateOfBirth", formatDobInput)}
         />
 
         <Controller

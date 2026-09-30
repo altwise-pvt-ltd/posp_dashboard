@@ -253,12 +253,14 @@ export default function SelfieStep({ onNext, initialValues }) {
           </p>
         )}
 
-        {/* Hidden file input shared by the upload buttons */}
+        {/* Hidden file input behind "Upload from device". No `capture`: on
+            mobile it skips the gallery and opens the camera directly, which
+            made this button a second, broken camera button. "Take photo now"
+            is the camera path. */}
         <input
           ref={fileInputRef}
           type="file"
           accept={acceptAttribute(SELFIE)}
-          capture={SELFIE.capture}
           className="hidden"
           onChange={handleUpload}
         />

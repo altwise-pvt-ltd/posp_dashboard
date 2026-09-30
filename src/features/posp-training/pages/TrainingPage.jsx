@@ -12,6 +12,7 @@ import {
   useTrainingPlanStore,
 } from '@/shared/store/trainingPlanStore';
 import { useCountdown } from '../hooks/useCountdown';
+import { useMatchMedia, MOBILE_QUERY } from '@/shared/hooks/useMatchMedia';
 import { useCourseMaterial } from '../hooks/useCourseMaterial';
 import { useExamEligibility } from '../hooks/useExamEligibility';
 import { useInsuranceTypes } from '../hooks/useInsuranceTypes';
@@ -238,6 +239,10 @@ function TrainingProgramme() {
    * others.
    */
   const material = useCourseMaterial(plan?.id ?? null);
+
+  /* Same reason as the comment above — unconditional, because `renderStage`
+     picks a different screen on nearly every render. */
+  const isMobile = useMatchMedia(MOBILE_QUERY);
 
   /**
    * The examiner's verdict, asked once on the way in — `GET /exam/eligibility`.
@@ -766,11 +771,24 @@ function TrainingProgramme() {
        grid collapses on a phone: the countdown is worth seeing before the file
        list. */
     return (
-      <div className="mx-auto grid w-full max-w-7xl gap-8 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-x-10 lg:gap-y-10">
+      /* `min-w-0` on the grid and on each of its children: a grid item's default
+         `min-width: auto` is its *content's* minimum, so one unbreakable string
+         — a long chapter title, the mono countdown — sizes the column wider
+         than the screen and takes the whole page with it. Pinned here rather
+         than patched where it shows up, because the column is what blows out. */
+      <div className="mx-auto grid w-full min-w-0 max-w-7xl gap-8 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-x-10 lg:gap-y-10">
         {/* One header, two readings of it. The dot stops pulsing once the hours
             are served — nothing is running any more — and the copy stops
-            promising the exam and starts pointing at it. */}
-        <header className="anim-fade lg:col-start-1 lg:row-start-1">
+            promising the exam and starts pointing at it.
+
+            Phones don't get it. A phone screen holds about one card, and this
+            is three paragraphs of encouragement above the only thing the POSP
+            opened the page for — the clock, and the material under it. The
+            status it carries isn't lost: the rail directly below says how long
+            is left and how far in they are, which is the same news in the form
+            they came for. */}
+        {!isMobile && (
+        <header className="anim-fade min-w-0 lg:col-start-1 lg:row-start-1">
           <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-orange-600">
             <span
               aria-hidden="true"
@@ -800,11 +818,12 @@ function TrainingProgramme() {
             )}
           </p>
         </header>
+        )}
 
         {/* `self-start` keeps the rail its own height inside the two-row span —
             a stretched grid item has nothing left to slide against and sticky
             would never engage. top-24 clears the brand bar. */}
-        <aside className="anim-fade-d1 self-start lg:sticky lg:top-24 lg:col-start-2 lg:row-span-2 lg:row-start-1">
+        <aside className="anim-fade-d1 min-w-0 self-start lg:sticky lg:top-24 lg:col-start-2 lg:row-span-2 lg:row-start-1">
           {/* The one thing the served hours change. Everything to the left of
               this — title, material, downloads — is the same page it was a
               second before the clock hit zero. */}
@@ -826,7 +845,7 @@ function TrainingProgramme() {
           )}
         </aside>
 
-        <div className="anim-fade-d1 lg:col-start-1 lg:row-start-2">
+        <div className="anim-fade-d1 min-w-0 lg:col-start-1 lg:row-start-2">
           <StudyMaterial
             courses={material.courses}
             loading={material.loading}

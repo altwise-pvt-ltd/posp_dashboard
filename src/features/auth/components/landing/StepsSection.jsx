@@ -9,6 +9,7 @@ import Section from "./ui/Section";
 import SectionHeading from "./ui/SectionHeading";
 import Highlight from "./ui/Highlight";
 import BrandButton from "./ui/BrandButton";
+import { useMatchMedia, MOBILE_QUERY } from "@/shared/hooks/useMatchMedia";
 
 const STEPS = [
   {
@@ -32,8 +33,12 @@ const STEPS = [
    swap is decided in JS rather than with `md:hidden` on two copies of the list,
    because the deck's positioning comes from motion transforms (inline styles a
    breakpoint class can't undo) — and rendering both layouts would put every
-   step heading in the document twice. */
-const DECK_QUERY = "(max-width: 47.99rem)";
+   step heading in the document twice.
+
+   The line itself is `MOBILE_QUERY`, shared with the login page — both screens
+   are answering the same question, and a deck that starts one breakpoint away
+   from where the page decides it's on a phone is a bug waiting to happen. */
+const DECK_QUERY = MOBILE_QUERY;
 
 /* Deck geometry. These are plain pixel numbers because they end up in
    transforms, which the landing page's <640px rescale (`.landing-scale` in
@@ -63,22 +68,6 @@ const CARD_VARIANTS = {
     transition: { duration: 0.3, ease: "easeIn", zIndex: { duration: 0 } },
   }),
 };
-
-function useMatchMedia(query) {
-  const [matches, setMatches] = useState(
-    () => typeof window !== "undefined" && window.matchMedia(query).matches,
-  );
-
-  useEffect(() => {
-    const list = window.matchMedia(query);
-    const update = () => setMatches(list.matches);
-    update();
-    list.addEventListener("change", update);
-    return () => list.removeEventListener("change", update);
-  }, [query]);
-
-  return matches;
-}
 
 function StepCard({ num, icon, title, desc, className = "" }) {
   return (

@@ -243,7 +243,6 @@ export default function BankStep({ onNext, initialValues }) {
           inputMode="numeric"
           autoComplete="off"
           maxLength={18}
-          onPaste={(e) => e.preventDefault()} /* force a manual re-type */
           className="font-mono tracking-wide"
           error={form.formState.errors.confirmAccountNumber?.message}
           {...maskedField(form, "confirmAccountNumber", digitMask(18))}

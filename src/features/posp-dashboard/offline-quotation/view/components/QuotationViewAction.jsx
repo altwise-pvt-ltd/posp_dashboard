@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import { ChevronRight } from 'lucide-react';
 
 /**
  * The per-row "open this quote" affordance.
@@ -39,7 +38,6 @@ function QuotationViewAction({ quotation, className = '' }) {
         className={`${SHELL} cursor-default text-ink-faint ${className}`}
       >
         View
-        <ChevronRight aria-hidden="true" className="size-4" />
       </button>
     );
   }
@@ -51,7 +49,6 @@ function QuotationViewAction({ quotation, className = '' }) {
       className={`${SHELL} text-ink-subtle hover:bg-orange-50 hover:text-orange-700 ${className}`}
     >
       View
-      <ChevronRight aria-hidden="true" className="size-4" />
     </Link>
   );
 }

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Check, RefreshCw, Save, ShieldAlert } from 'lucide-react';
 import DynamicForm from '@/features/dynamic-form/components/DynamicForm';
 import { useDynamicFormValues } from '@/features/dynamic-form/hooks/useDynamicFormValues';
-import { useLookupOptions } from '@/features/dynamic-form/hooks/useLookupOptions';
+import { useLookupState } from '@/features/dynamic-form/hooks/useLookupOptions';
 import { resolveVisibleSections } from '@/features/dynamic-form/lib/visibleSections';
 import {
   isFieldAnswered,
@@ -158,7 +158,7 @@ function QuoteFormFields({ metadata, onBack }) {
 
   // Lookups are prefetched for the whole form, not just the section on screen --
   // the hook dedupes by `source|parent`, so walking forward costs no requests.
-  const lookupOptions = useLookupOptions(fields, values, fetchLookupOptions);
+  const lookups = useLookupState(fields, values, fetchLookupOptions);
 
   const requiredCodes = useMemo(() => new Set(directives.requiredFields ?? []), [directives]);
 
@@ -502,7 +502,9 @@ function QuoteFormFields({ metadata, onBack }) {
             errors={visibleErrors}
             onChange={handleChange}
             onBlur={handleBlur}
-            lookupOptions={lookupOptions}
+            lookupOptions={lookups.options}
+            lookupStatus={lookups.status}
+            onLookupRetry={lookups.retry}
           />
         )}
       </div>

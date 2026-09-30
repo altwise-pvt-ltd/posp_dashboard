@@ -1,6 +1,6 @@
 import QuotationStatusPill from './QuotationStatusPill';
 import QuotationViewAction from './QuotationViewAction';
-import { formatAge, formatDate, formatProduct, formatSumInsured } from '../lib/quotationFormat';
+import { formatAge, formatDate, formatLob, formatSumInsured } from '../lib/quotationFormat';
 
 /**
  * One queued quote on a phone.
@@ -27,7 +27,7 @@ function QuotationCard({ quotation }) {
       </div>
 
       <p className="font-body-md text-body-md mt-2 text-on-surface-variant">
-        {formatProduct(quotation)}
+        {formatLob(quotation)}
       </p>
 
       {/* A workflow note when there is one. `line-clamp-2` because a remark is

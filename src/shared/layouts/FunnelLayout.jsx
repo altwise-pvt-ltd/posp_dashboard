@@ -1,3 +1,4 @@
+import { useMatchMedia, MOBILE_QUERY } from '@/shared/hooks/useMatchMedia';
 import Topbar from '@/features/onboarding/components/Topbar';
 import OnboardingFooter from '@/features/onboarding/components/OnboardingFooter';
 import BrandTopbar from './BrandTopbar';
@@ -34,6 +35,14 @@ export const FUNNEL_SHELL =
  *
  * `header` and `footer` are separate props rather than one `chrome` flag
  * because training hides both together while other states may not.
+ *
+ * The footer is dropped on phones whatever the prop says. Every page in here
+ * is a task the user is part-way through — a wizard step, a wait, an exam —
+ * and the footer is the landing page's: three groups of links that don't lead
+ * anywhere yet (see LINK_COLUMNS in OnboardingFooter), plus socials and a
+ * legal row, all of it taller than the form it sits under. It's dropped here
+ * rather than per page so the funnel's chrome doesn't change shape as the user
+ * moves from the wizard to the verification wait to training.
  */
 export default function FunnelLayout({
   header = 'brand',
@@ -42,6 +51,8 @@ export default function FunnelLayout({
   mainClassName = 'flex-1',
   children,
 }) {
+  const isMobile = useMatchMedia(MOBILE_QUERY);
+
   return (
     <div className={`flex min-h-screen flex-col ${className}`}>
       {header === 'auto' && <Topbar />}
@@ -49,7 +60,7 @@ export default function FunnelLayout({
 
       <main className={mainClassName}>{children}</main>
 
-      {footer && <OnboardingFooter />}
+      {footer && !isMobile && <OnboardingFooter />}
     </div>
   );
 }

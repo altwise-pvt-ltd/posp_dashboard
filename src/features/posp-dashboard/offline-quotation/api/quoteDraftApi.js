@@ -143,8 +143,21 @@ ${JSON.stringify(body, null, 2)}`);
   console.groupEnd();
 }
 
-export async function saveQuoteDraft({ productId, subProductId, fields, values } = {}) {
+/**
+ * Create a draft, or — given a `quoteId` — update the quote it names.
+ *
+ * One route for both: the same `POST /quote/draft`, with the quote's uuid added
+ * to the body when an existing quote is being corrected. Left out entirely on a
+ * create rather than sent as `null`, so a new quote posts exactly the body it
+ * always has.
+ *
+ * ⚠ CONFIRM WITH BACKEND — that a `quoteId` in the body updates that quote in
+ * place rather than opening a second one, and whether the status moves on its
+ * own afterwards or the quote still has to be sent for verification.
+ */
+export async function saveQuoteDraft({ quoteId, productId, subProductId, fields, values } = {}) {
   const body = {
+    ...(quoteId ? { quoteId } : {}),
     productId,
     subProductId: subProductId || null,
     values: buildDraftValues(fields, values),

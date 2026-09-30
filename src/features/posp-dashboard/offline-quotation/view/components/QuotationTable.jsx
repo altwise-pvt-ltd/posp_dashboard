@@ -1,6 +1,6 @@
 import QuotationStatusPill from './QuotationStatusPill';
 import QuotationViewAction from './QuotationViewAction';
-import { formatAge, formatDate, formatProduct, formatSumInsured } from '../lib/quotationFormat';
+import { formatAge, formatDate, formatLob, formatSumInsured } from '../lib/quotationFormat';
 
 /**
  * The desktop layout. A real <table>, not a grid of divs — these are rows of
@@ -21,7 +21,7 @@ import { formatAge, formatDate, formatProduct, formatSumInsured } from '../lib/q
  */
 
 /** Index 2 is Sum insured — its header follows the figures under it right. */
-const HEADINGS = ['Reference', 'Product', 'Sum insured', 'Status', 'Raised', ''];
+const HEADINGS = ['Reference', 'Line of business', 'Sum insured', 'Status', 'Raised', ''];
 
 function QuotationTable({ quotations }) {
   return (
@@ -72,7 +72,7 @@ function QuotationTable({ quotations }) {
                 </td>
 
                 <td className="font-body-md text-body-md px-3 py-3 text-on-surface-variant">
-                  {formatProduct(quotation)}
+                  {formatLob(quotation)}
                 </td>
 
                 <td className="font-data-currency text-data-currency px-3 py-3 text-right text-on-surface">

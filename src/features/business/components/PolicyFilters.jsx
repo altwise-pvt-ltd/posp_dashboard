@@ -16,9 +16,8 @@ import { SORT, SORT_ORDER } from '../lib/policyFilters';
  * Placing it inline with no separation would imply the row partitions the book,
  * and the counts would then look like they fail to add up.
  *
- * The field is built here rather than reusing `shared/components/SearchBar`:
- * that one is uncontrolled and submits nothing, and `shared/components/Input`
- * carries a form row's label block and bottom margin. A toolbar needs a
+ * The field is built here rather than reusing `shared/components/Input`: that
+ * one carries a form row's label block and bottom margin. A toolbar needs a
  * controlled value and no margin.
  */
 function PolicyFilters({ query, onQueryChange, status, onStatusChange, counts, sort, onSortChange }) {

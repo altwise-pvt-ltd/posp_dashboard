@@ -1,25 +1,32 @@
-import { useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useCallback, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   FileQuestion,
   Info,
   Loader2,
+  Pencil,
   RefreshCw,
   ShieldCheck,
   TriangleAlert,
-} from 'lucide-react';
-import DashboardLayout from '@/shared/layouts/DashboardLayout';
-import CustomButton from '@/shared/components/CustomButton';
-import { daysUntil } from '@/shared/lib/format';
-import QuoteNotice from '../../components/QuoteNotice';
-import InsurerResponsePanel from '../components/InsurerResponsePanel';
-import QuotationStatusPill from '../components/QuotationStatusPill';
-import VerificationDialog from '../components/VerificationDialog';
-import { useQuoteDetail } from '../hooks/useQuoteDetail';
-import { useQuoteResponses } from '../hooks/useQuoteResponses';
-import { formatAge, formatDate, formatProduct, formatSumInsured } from '../lib/quotationFormat';
-import { canApplyForVerification } from '../lib/quotationStatus';
+} from "lucide-react";
+import DashboardLayout from "@/shared/layouts/DashboardLayout";
+import CustomButton from "@/shared/components/CustomButton";
+import { daysUntil } from "@/shared/lib/format";
+import QuoteNotice from "../../components/QuoteNotice";
+import InsurerResponsePanel from "../components/InsurerResponsePanel";
+import QuotationStatusPill from "../components/QuotationStatusPill";
+import QuoteEditForm from "../components/QuoteEditForm";
+import VerificationDialog from "../components/VerificationDialog";
+import { useQuoteDetail } from "../hooks/useQuoteDetail";
+import { useQuoteResponses } from "../hooks/useQuoteResponses";
+import {
+  formatAge,
+  formatDate,
+  formatProduct,
+  formatSumInsured,
+} from "../lib/quotationFormat";
+import { canApplyForVerification, canEditQuote } from "../lib/quotationStatus";
 
 /**
  * One quote, opened from the list — `GET /quote/<quoteId>` joined to
@@ -42,7 +49,9 @@ function Fact({ label, children }) {
       <dt className="font-label-caps text-label-caps font-semibold uppercase text-on-surface-variant">
         {label}
       </dt>
-      <dd className="font-body-lg text-body-lg mt-0.5 break-words text-on-surface">{children}</dd>
+      <dd className="font-body-lg text-body-lg mt-0.5 break-words text-on-surface">
+        {children}
+      </dd>
     </div>
   );
 }
@@ -51,9 +60,13 @@ function Fact({ label, children }) {
 function AnswerPanel({ title, caption, entries }) {
   return (
     <section className="anim-fade-d2 rounded-xl border border-hairline bg-white p-4 sm:p-gutter">
-      <h3 className="font-headline-md text-headline-md text-on-surface">{title}</h3>
+      <h3 className="font-headline-md text-headline-md text-on-surface">
+        {title}
+      </h3>
       {caption && (
-        <p className="font-body-md text-body-md mt-0.5 text-on-surface-variant">{caption}</p>
+        <p className="font-body-md text-body-md mt-0.5 text-on-surface-variant">
+          {caption}
+        </p>
       )}
 
       <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-4 sm:grid-cols-3">
@@ -72,6 +85,7 @@ function QuotationDetailPage() {
   const navigate = useNavigate();
   const {
     quote,
+    metadata,
     answers,
     unlabelled,
     loading,
@@ -91,6 +105,20 @@ function QuotationDetailPage() {
   const insurer = useQuoteResponses(quoteId, quote?.statusCode);
 
   const [confirming, setConfirming] = useState(false);
+
+  /**
+   * Correcting a returned quote. Offered only in the state a reviewer sends a
+   * quote back in, and only once the form it was raised on has loaded — the
+   * editor renders from that form, so without it there is nothing to edit.
+   */
+  const [editing, setEditing] = useState(false);
+  const canEdit = Boolean(quote && metadata) && canEditQuote(quote.statusCode);
+
+  /** Saved: re-read the quote so the page shows what the server now holds. */
+  const finishEditing = useCallback(() => {
+    setEditing(false);
+    refresh();
+  }, [refresh]);
 
   /**
    * Accepting a response changes two things, and the hook that posts it can
@@ -129,7 +157,7 @@ function QuotationDetailPage() {
        unmounts behind us, so arriving there mounts `useQuotationList` fresh
        and fetches page 1: the quote appears in its new state with nothing to
        invalidate. A failure stays put, where the button still is. */
-    if (sent) navigate('/offline-quotation/view');
+    if (sent) navigate("/offline-quotation/view");
   };
 
   /**
@@ -175,7 +203,7 @@ function QuotationDetailPage() {
                 <CustomButton
                   variant="secondary"
                   size="md"
-                  onClick={() => navigate('/offline-quotation/view')}
+                  onClick={() => navigate("/offline-quotation/view")}
                   className="mt-2"
                 >
                   Back to the list
@@ -188,7 +216,10 @@ function QuotationDetailPage() {
             <QuoteNotice
               icon={<TriangleAlert size={20} />}
               title="Couldn't load this quotation"
-              body={error?.message || 'The quote could not be fetched. Please try again.'}
+              body={
+                error?.message ||
+                "The quote could not be fetched. Please try again."
+              }
               action={
                 <CustomButton
                   variant="primary"
@@ -210,7 +241,7 @@ function QuotationDetailPage() {
               <header className="flex flex-wrap items-start justify-between gap-3 border-b border-hairline-soft pb-4">
                 <div className="min-w-0">
                   <h1 className="font-data-mono text-headline-lg font-semibold text-on-surface">
-                    {quote.quoteNumber ?? '—'}
+                    {quote.quoteNumber ?? "—"}
                   </h1>
                   <p className="font-body-md text-body-md mt-1 text-on-surface-variant">
                     {formatProduct(quote)}
@@ -222,6 +253,17 @@ function QuotationDetailPage() {
                     the thing that states it. */}
                 <div className="flex flex-col items-start gap-3 sm:items-end">
                   <QuotationStatusPill quotation={quote} />
+
+                  {canEdit && !editing && (
+                    <CustomButton
+                      variant="primary"
+                      size="md"
+                      leftIcon={<Pencil />}
+                      onClick={() => setEditing(true)}
+                    >
+                      Edit
+                    </CustomButton>
+                  )}
 
                   {canApply && (
                     <CustomButton
@@ -237,21 +279,33 @@ function QuotationDetailPage() {
               </header>
 
               <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-4 sm:grid-cols-3">
-                <Fact label="Sum insured">{formatSumInsured(quote.sumInsured)}</Fact>
-                <Fact label="Expected premium">{formatSumInsured(quote.expectedPremium)}</Fact>
-                {quote.fileType && <Fact label="Case type">{quote.fileType}</Fact>}
+                <Fact label="Sum insured">
+                  {formatSumInsured(quote.sumInsured)}
+                </Fact>
+                <Fact label="Expected premium">
+                  {formatSumInsured(quote.expectedPremium)}
+                </Fact>
+                {quote.fileType && (
+                  <Fact label="Case type">{quote.fileType}</Fact>
+                )}
 
                 <Fact label="Raised">
                   {formatDate(quote.createdAt)}
                   {age && (
                     <span className="font-body-md text-body-md text-on-surface-variant">
-                      {' · '}
+                      {" · "}
                       {age}
                     </span>
                   )}
                 </Fact>
-                {quote.updatedAt && <Fact label="Last updated">{formatDate(quote.updatedAt)}</Fact>}
-                {quote.originatorName && <Fact label="Raised by">{quote.originatorName}</Fact>}
+                {quote.updatedAt && (
+                  <Fact label="Last updated">
+                    {formatDate(quote.updatedAt)}
+                  </Fact>
+                )}
+                {quote.originatorName && (
+                  <Fact label="Raised by">{quote.originatorName}</Fact>
+                )}
               </dl>
 
               {quote.lastRemark && (
@@ -266,74 +320,94 @@ function QuotationDetailPage() {
               )}
             </section>
 
-            {/* Above the answers, not below them: on a quote that has been
+            {editing ? (
+              <QuoteEditForm
+                quote={{ ...quote, id: quote.id ?? quoteId }}
+                metadata={metadata}
+                onCancel={() => setEditing(false)}
+                onSaved={finishEditing}
+              />
+            ) : (
+              <>
+                {/* Above the answers, not below them: on a quote that has been
                 answered, what the insurers said is the reason the agent opened
                 the page, and the form they filled in themselves is the
                 reference underneath it. Absent entirely on every other status,
                 rather than rendered empty. */}
-            {insurer.expected && (
-              <InsurerResponsePanel
-                responses={insurer.responses}
-                loading={insurer.loading}
-                error={insurer.error}
-                onRetry={insurer.retry}
-                /* The choice is posted, then both the comparison and the
+                {insurer.expected && (
+                  <InsurerResponsePanel
+                    responses={insurer.responses}
+                    loading={insurer.loading}
+                    error={insurer.error}
+                    onRetry={insurer.retry}
+                    /* The choice is posted, then both the comparison and the
                    quote itself are re-read — the panel holds no selection of
                    its own. See `acceptResponse` above. */
-                onSelect={acceptResponse}
-                selectingId={insurer.selectingId}
-              />
-            )}
+                    onSelect={acceptResponse}
+                    selectingId={insurer.selectingId}
+                  />
+                )}
 
-            {/* The questions couldn't be fetched, so every label below is a
+                {/* The questions couldn't be fetched, so every label below is a
                 field code made readable rather than the wording the agent
                 actually saw. Said plainly, because the difference is not
                 otherwise visible. */}
-            {unlabelled && (
-              <p className="anim-fade-d2 font-body-md text-body-md flex items-start gap-2 rounded-xl border border-warning-outline bg-warning-container px-3 py-2 text-on-warning-container">
-                <Info aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-                The question list for this product couldn&apos;t be loaded, so the answers below are
-                labelled by field code.
-              </p>
-            )}
+                {unlabelled && (
+                  <p className="anim-fade-d2 font-body-md text-body-md flex items-start gap-2 rounded-xl border border-warning-outline bg-warning-container px-3 py-2 text-on-warning-container">
+                    <Info
+                      aria-hidden="true"
+                      className="mt-0.5 size-4 shrink-0"
+                    />
+                    The question list for this product couldn&apos;t be loaded,
+                    so the answers below are labelled by field code.
+                  </p>
+                )}
 
-            {answers.sections.map((section) =>
-              section.rows.map((row) => (
-                <AnswerPanel
-                  key={`${section.code}-${row.index}`}
-                  title={section.name}
-                  /* Only when a repeatable section actually repeated — "Entry 1"
+                {answers.sections.map((section) =>
+                  section.rows.map((row) => (
+                    <AnswerPanel
+                      key={`${section.code}-${row.index}`}
+                      title={section.name}
+                      /* Only when a repeatable section actually repeated — "Entry 1"
                      over a section that has exactly one is a label for a
                      structure the user never made. */
-                  caption={section.rows.length > 1 ? `Entry ${row.index + 1}` : null}
-                  entries={row.entries}
-                />
-              ))
-            )}
+                      caption={
+                        section.rows.length > 1
+                          ? `Entry ${row.index + 1}`
+                          : null
+                      }
+                      entries={row.entries}
+                    />
+                  )),
+                )}
 
-            {answers.orphans.length > 0 && (
-              <AnswerPanel
-                title="Other answers"
-                caption="Stored on this quote, but no longer part of this product's form."
-                entries={answers.orphans}
-              />
-            )}
+                {answers.orphans.length > 0 && (
+                  <AnswerPanel
+                    title="Other answers"
+                    caption="Stored on this quote, but no longer part of this product's form."
+                    entries={answers.orphans}
+                  />
+                )}
 
-            {answers.sections.length === 0 && answers.orphans.length === 0 && (
-              <section className="anim-fade-d2 rounded-xl border border-hairline bg-white p-4 sm:p-gutter">
-                <QuoteNotice
-                  icon={<FileQuestion size={20} />}
-                  title="No answers recorded"
-                  body="This quote was created but none of its questions were answered."
-                />
-              </section>
-            )}
+                {answers.sections.length === 0 &&
+                  answers.orphans.length === 0 && (
+                    <section className="anim-fade-d2 rounded-xl border border-hairline bg-white p-4 sm:p-gutter">
+                      <QuoteNotice
+                        icon={<FileQuestion size={20} />}
+                        title="No answers recorded"
+                        body="This quote was created but none of its questions were answered."
+                      />
+                    </section>
+                  )}
 
-            {answers.blanks > 0 && (
-              <p className="font-body-md text-body-md text-on-surface-variant">
-                {answers.blanks} further {answers.blanks === 1 ? 'question was' : 'questions were'}{' '}
-                left blank.
-              </p>
+                {answers.blanks > 0 && (
+                  <p className="font-body-md text-body-md text-on-surface-variant">
+                    {answers.blanks} further{" "}
+                    {answers.blanks === 1 ? "question was" : "questions were"}{" "}
+                    left blank.
+                  </p>
+                )}
+              </>
             )}
           </>
         )}

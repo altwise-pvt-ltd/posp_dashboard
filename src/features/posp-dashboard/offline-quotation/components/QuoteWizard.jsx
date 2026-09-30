@@ -18,14 +18,22 @@ const STEPS = [{ name: 'Line of business' }, { name: 'Product' }, { name: 'Quote
 
 const FORM_STEP = 2;
 
-function QuoteWizard({ catalog }) {
-  const [lob, setLob] = useState('');
+// Uses the line of business from the link if it exists and has products;
+// otherwise the wizard starts empty.
+const resolveInitialLob = (catalog, initialLob) => {
+  if (!initialLob) return '';
+  const match = catalog.find((entry) => entry.id === initialLob || entry.code === initialLob);
+  return match?.products.length ? entryKey(match) : '';
+};
+
+function QuoteWizard({ catalog, initialLob = null }) {
+  const [lob, setLob] = useState(() => resolveInitialLob(catalog, initialLob));
   const [product, setProduct] = useState('');
   const [subProduct, setSubProduct] = useState('');
   const [quoteScope, setQuoteScope] = useState(null);
 
-  const [stepIndex, setStepIndex] = useState(0);
-  const [furthestIndex, setFurthestIndex] = useState(0);
+  const [stepIndex, setStepIndex] = useState(() => (lob ? 1 : 0));
+  const [furthestIndex, setFurthestIndex] = useState(() => (lob ? 1 : 0));
   const [catalogError, setCatalogError] = useState('');
 
   const topRef = useRef(null);

@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { getFieldComponent, isValuelessControl } from './fields/registry';
 import { resolveVisibleSections } from '../lib/visibleSections';
-import { useLookupOptions } from '../hooks/useLookupOptions';
+import { useLookupState } from '../hooks/useLookupOptions';
 
 const WIDE_CONTROLS = new Set(['textarea', 'multiselect', 'radio', 'label', 'file']);
 
@@ -14,6 +14,8 @@ function DynamicForm({
   onBlur,
   fetchOptions,
   lookupOptions = null,
+  lookupStatus = null,
+  onLookupRetry,
 }) {
   const visibleSections = useMemo(
     () => resolveVisibleSections(sections, directives),
@@ -25,13 +27,11 @@ function DynamicForm({
     [visibleSections]
   );
 
-  const ownLookupOptions = useLookupOptions(
-    allFields,
-    values,
-    lookupOptions ? undefined : fetchOptions
-  );
+  const ownLookups = useLookupState(allFields, values, lookupOptions ? undefined : fetchOptions);
 
-  const resolvedLookups = lookupOptions ?? ownLookupOptions;
+  const resolvedLookups = lookupOptions ?? ownLookups.options;
+  const resolvedStatus = lookupOptions ? (lookupStatus ?? {}) : ownLookups.status;
+  const retryLookup = lookupOptions ? onLookupRetry : ownLookups.retry;
 
   const requiredFields = new Set(directives?.requiredFields ?? []);
   const disabledFields = new Set(directives?.disabledFields ?? []);
@@ -50,6 +50,7 @@ function DynamicForm({
             {section.fields.map((field) => {
               const Component = getFieldComponent(field.control);
               const valueless = isValuelessControl(field.control);
+              const lookupState = field.lookupSource ? resolvedStatus[field.code] : null;
 
               const resolved = {
                 ...field,
@@ -57,6 +58,8 @@ function DynamicForm({
                 options: field.lookupSource
                   ? (resolvedLookups[field.code] ?? field.options)
                   : field.options,
+                loading: lookupState === 'loading',
+                loadError: lookupState === 'error',
               };
 
               return (
@@ -71,6 +74,11 @@ function DynamicForm({
                     disabled={disabledFields.has(field.code)}
                     onChange={(next) => onChange?.(field.code, next)}
                     onBlur={() => onBlur?.(field.code)}
+                    onRetry={
+                      lookupState === 'error' && retryLookup
+                        ? () => retryLookup(field.code)
+                        : undefined
+                    }
                   />
                 </div>
               );

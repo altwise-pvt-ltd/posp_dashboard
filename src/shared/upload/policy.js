@@ -110,13 +110,15 @@ export const DOCUMENT = {
 };
 
 /**
- * The selfie. Same formats, but the picker opens the front camera and there is
- * no reason to ever accept a scan here.
+ * The selfie. Same formats as a document.
+ *
+ * `capture` stays null: SelfieStep has its own live camera, and its upload
+ * button has to open the gallery. Setting `capture` would make mobile browsers
+ * skip the file chooser and open the camera instead.
  */
 export const SELFIE = {
   ...DOCUMENT,
   name: "selfie",
-  capture: "user",
   // Tolerates a lower floor than a document: an old phone's front camera is
   // 480×640, which is a perfectly usable selfie and would fail the document
   // threshold.

@@ -29,6 +29,8 @@ import { buildAnswerView } from '../lib/quoteAnswers';
 export function useQuoteDetail(quoteId) {
   const [quote, setQuote] = useState(null);
   const [sections, setSections] = useState([]);
+  /** The form the quote was raised on, whole — what the edit mode renders. */
+  const [metadata, setMetadata] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   /** A metadata failure. Soft — it costs labels, not the page. */
@@ -51,6 +53,7 @@ export function useQuoteDetail(quoteId) {
     setShown(quoteId);
     setQuote(null);
     setSections([]);
+    setMetadata(null);
     setError(null);
     setFormError(null);
     setLoading(true);
@@ -75,6 +78,7 @@ export function useQuoteDetail(quoteId) {
         // rendered from its own fields alone.
         if (!result?.productId) {
           setSections([]);
+          setMetadata(null);
           return;
         }
 
@@ -90,10 +94,12 @@ export function useQuoteDetail(quoteId) {
           // The same builder the create wizard uses, so add-ons and documents
           // arrive labelled rather than as loose codes.
           setSections(buildQuoteSections(metadata));
+          setMetadata(metadata);
           setFormError(null);
         } catch (err) {
           if (!live || signal.aborted) return;
           setSections([]);
+          setMetadata(null);
           setFormError(err);
         }
       })
@@ -194,6 +200,8 @@ export function useQuoteDetail(quoteId) {
 
   return {
     quote,
+    /** The product's form as `/quote/metadata` gave it; null if it couldn't be fetched. */
+    metadata,
     /** `{ sections, orphans, blanks }` — see `buildAnswerView`. */
     answers,
     /** True when the questions couldn't be fetched, so labels are codes. */

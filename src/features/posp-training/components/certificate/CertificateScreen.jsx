@@ -1,4 +1,5 @@
-import { ArrowRight, BadgeCheck, Clock, ExternalLink, Loader2, TriangleAlert } from 'lucide-react';
+import { ArrowRight, BadgeCheck, Clock, ExternalLink, FileText, Loader2, TriangleAlert } from 'lucide-react';
+import { useMatchMedia, MOBILE_QUERY } from '@/shared/hooks/useMatchMedia';
 import { useCertificate } from '../../hooks/useCertificate';
 import { formatCertificateDate } from '../../data/certificate';
 
@@ -76,6 +77,11 @@ function CertificateScreen({
   onAction,
 }) {
   const { certificate, file, issued, loading, error, retry } = useCertificate();
+  /* Above the early returns below — it's a hook, so it can't sit next to the
+     one branch that reads it. An image certificate renders inline at any width
+     and is left alone; only the PDF is handed off. */
+  const isMobile = useMatchMedia(MOBILE_QUERY);
+  const handOff = isMobile && file?.kind !== 'image';
 
   if (loading) {
     return (
@@ -214,21 +220,60 @@ function CertificateScreen({
       </div>
 
       <div className="anim-fade flex w-full flex-1 justify-center px-4 py-8 md:py-10">
-        <div className="w-full max-w-5xl overflow-hidden rounded-2xl border border-slate-300/70 bg-white shadow-[0_18px_44px_-24px_rgba(15,23,42,0.28)]">
-          {file.kind === 'image' ? (
-            <img src={file.src} alt="Your POSP certificate" className="block w-full" />
-          ) : (
-            /* A4 is taller than it is wide, so the frame is sized off the
-               viewport rather than an aspect ratio — a full sheet fitted to this
-               column's width would leave most of a tall screen empty and most of
-               a short one scrolled. */
-            <iframe
-              src={file.src}
-              title="Your POSP certificate"
-              className="block h-[78vh] min-h-125 w-full"
-            />
-          )}
-        </div>
+        {handOff ? (
+          /* Phones get the file, not a frame around it. An A4 PDF in a 360px
+             column is unreadable at any zoom the frame allows, and a mobile
+             browser won't give an iframed PDF a viewer it can scroll — iOS
+             Safari renders page one and stops. So the sheet is handed to the
+             device's own viewer, which scrolls, zooms, prints and saves it.
+
+             `self-start` because this card is a fraction of the height the
+             sheet was: centred in a `flex-1` row it would sit marooned in the
+             middle of the screen. */
+          <div className="w-full max-w-sm self-start rounded-2xl border border-slate-300/70 bg-white p-6 text-center shadow-[0_18px_44px_-24px_rgba(15,23,42,0.28)]">
+            <span className="mx-auto flex size-10 items-center justify-center rounded-xl bg-orange-50 text-orange-600">
+              <FileText className="size-5" strokeWidth={2.25} aria-hidden="true" />
+            </span>
+
+            <h2 className="mt-4 text-base font-extrabold tracking-tight text-slate-900">
+              Your certificate is ready
+            </h2>
+            <p className="mt-2 text-xs leading-5 text-slate-500">
+              It opens as a PDF in your browser's viewer, where you can zoom,
+              print or save it.
+            </p>
+
+            {/* Same href as the bar's link above — one file, reached two ways.
+                Full-width and inside the content, because on a phone this is
+                the screen's job rather than a secondary action tucked into the
+                header beside the page title. */}
+            <a
+              href={file.src}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-orange-600 px-4 py-3 text-sm font-bold text-white shadow-md shadow-orange-600/20 transition-all duration-200 hover:bg-orange-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-orange-500/30 active:scale-[0.98]"
+            >
+              <ExternalLink className="size-4" strokeWidth={2.25} aria-hidden="true" />
+              Open certificate
+            </a>
+          </div>
+        ) : (
+          <div className="w-full max-w-5xl overflow-hidden rounded-2xl border border-slate-300/70 bg-white shadow-[0_18px_44px_-24px_rgba(15,23,42,0.28)]">
+            {file.kind === 'image' ? (
+              <img src={file.src} alt="Your POSP certificate" className="block w-full" />
+            ) : (
+              /* A4 is taller than it is wide, so the frame is sized off the
+                 viewport rather than an aspect ratio — a full sheet fitted to
+                 this column's width would leave most of a tall screen empty and
+                 most of a short one scrolled. */
+              <iframe
+                src={file.src}
+                title="Your POSP certificate"
+                className="block h-[78vh] min-h-125 w-full"
+              />
+            )}
+          </div>
+        )}
       </div>
     </CertificateShell>
   );

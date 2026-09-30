@@ -215,3 +215,57 @@ export function buildAnswerView(sections = [], values = []) {
 
   return { sections: answered, orphans, blanks };
 }
+
+/**
+ * The stored answers as the form's own values, ready to seed the edit mode.
+ *
+ * The inverse of `buildDraftValues`: every value arrives as a string, and each
+ * control wants its own shape back — a tick-box a boolean, a multiselect an
+ * array. Anything else stays the string it was stored as.
+ *
+ * Only row 0. The form edits one entry per section, and a repeatable section's
+ * later rows have nowhere to go on it.
+ *
+ * File fields are left out: what was uploaded lives on the server as a file,
+ * not in `values`, so there is nothing here to put back into the picker.
+ */
+export function storedFormValues(sections = [], values = []) {
+  const byField = indexValues(values);
+  const seeded = {};
+
+  for (const section of sections) {
+    for (const field of section.fields ?? []) {
+      if (field.control === 'file' || !byField.has(field.code)) continue;
+
+      const raw = byField.get(field.code).get(0);
+      if (raw === null || raw === undefined) continue;
+
+      const value = String(raw);
+
+      switch (field.control) {
+        case 'checkbox':
+        case 'toggle':
+          seeded[field.code] = value.trim().toLowerCase() === 'true';
+          break;
+
+        // Mapped back onto the option's own value, which may be a number —
+        // the control ticks a box by strict equality with it.
+        case 'multiselect':
+          seeded[field.code] = value
+            .split(',')
+            .map((entry) => entry.trim())
+            .filter(Boolean)
+            .map(
+              (entry) =>
+                field.options?.find((option) => String(option.value) === entry)?.value ?? entry
+            );
+          break;
+
+        default:
+          seeded[field.code] = value;
+      }
+    }
+  }
+
+  return seeded;
+}

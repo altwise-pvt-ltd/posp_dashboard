@@ -1,4 +1,5 @@
 import { Loader2, PackageOpen, RefreshCw, TriangleAlert } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 import DashboardLayout from '@/shared/layouts/DashboardLayout';
 import CustomButton from '@/shared/components/CustomButton';
 import { useQuoteCatalog } from '../hooks/useQuoteCatalog';
@@ -15,6 +16,7 @@ function Panel({ children, className = '' }) {
 
 function OfflineQuotationPage() {
   const { catalog, loading, error, retry } = useQuoteCatalog();
+  const [searchParams] = useSearchParams();
 
   return (
     <DashboardLayout>
@@ -68,7 +70,7 @@ function OfflineQuotationPage() {
               }
             />
           ) : (
-            <QuoteWizard catalog={catalog} />
+            <QuoteWizard catalog={catalog} initialLob={searchParams.get('lob')} />
           )}
         </Panel>
       </div>
