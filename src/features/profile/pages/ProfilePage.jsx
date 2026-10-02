@@ -6,7 +6,12 @@ import KycComplianceCard from "./../components/KycComplianceCard";
 import PersonalInfoCard from "./../components/PersonalInfoCard";
 import CertificatePreviewBox from "../components/CertificatePreviewBox";
 import BusinessCardBox from "../components/BusinessCardBox";
+import {
+  BankAccountCard,
+  IdentityCard,
+} from "../components/ProfileSections";
 import { useProfileRecord } from "../hooks/useProfileRecord";
+import { useMatchMedia, MOBILE_QUERY } from "@/shared/hooks/useMatchMedia";
 
 /* Every width on this screen is decided here. The four cards are `w-full` and
    fill whatever track they are handed — same rule as the onboarding wizard. */
@@ -70,6 +75,7 @@ function ProfileError({ error, onRetry }) {
  */
 function ProfilePage() {
   const { profile, loading, error, retry } = useProfileRecord();
+  const isMobile = useMatchMedia(MOBILE_QUERY);
 
   return (
     <DashboardLayout>
@@ -80,7 +86,20 @@ function ProfilePage() {
           <ProfileError error={error} onRetry={retry} />
         ) : null}
 
-        {profile ? (
+        {/* Phone: one column, details first, manager before bank, KYC and support collapsed at the end. */}
+        {profile && isMobile ? (
+          <div className="anim-fade flex flex-col gap-gutter">
+            <IdentityCard profile={profile} />
+            <SupportCard profile={profile} only="manager" />
+            <BankAccountCard profile={profile} />
+            <CertificatePreviewBox />
+            <BusinessCardBox profile={profile} />
+            <KycComplianceCard profile={profile} collapsible />
+            <SupportCard profile={profile} only="support" collapsible />
+          </div>
+        ) : null}
+
+        {profile && !isMobile ? (
           <div className={STACK}>
             <aside className={`anim-fade ${RAIL}`}>
               <ProfileCard profile={profile} />

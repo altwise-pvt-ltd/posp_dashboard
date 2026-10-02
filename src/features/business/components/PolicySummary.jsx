@@ -18,21 +18,24 @@ import { EXPIRY_WINDOW_DAYS } from '../lib/policyFilters';
  * and needs no endpoint of its own.
  */
 
-function Tile({ icon: Icon, tone, label, value, note }) {
+function Tile({ icon: Icon, tone, label, shortLabel, value, note }) {
   return (
-    <div className="flex items-start gap-3 rounded-xl border border-gray-200 bg-white p-3.5 sm:p-4">
-      <span className={`flex size-9 shrink-0 items-center justify-center rounded-xl ${tone}`}>
+    // On a phone the tile is label and value only; icon and note return from `sm`.
+    <div className="flex gap-3 rounded-xl border border-gray-200 bg-white p-2.5 sm:items-start sm:p-4">
+      <span className={`hidden size-9 shrink-0 items-center justify-center rounded-xl sm:flex ${tone}`}>
         <Icon aria-hidden="true" className="size-4.5" />
       </span>
 
       <div className="min-w-0">
-        <p className="font-label-caps text-label-caps uppercase text-on-surface-variant">
-          {label}
+        {/* Short label below `sm`, full label from `sm` up. */}
+        <p className="font-label-caps text-label-caps truncate uppercase text-on-surface-variant">
+          <span className="sm:hidden">{shortLabel}</span>
+          <span className="hidden sm:inline">{label}</span>
         </p>
         {/* `font-data-currency` carries the tabular-figure setting, so the three
             tiles' numbers share a baseline grid even at different lengths. */}
         <p className="font-data-currency text-headline-md text-on-surface">{value}</p>
-        <p className="font-body-md text-body-md truncate text-on-surface-variant">{note}</p>
+        <p className="font-body-md text-body-md hidden truncate text-on-surface-variant sm:block">{note}</p>
       </div>
     </div>
   );
@@ -42,11 +45,12 @@ function PolicySummary({ summary }) {
   const { booked, active, expiring, total } = summary;
 
   return (
-    <div className="grid grid-cols-1 gap-unit sm:grid-cols-3 md:gap-gutter">
+    <div className="grid grid-cols-3 gap-2 sm:gap-unit md:gap-gutter">
       <Tile
         icon={Wallet}
         tone="bg-sky-50 text-sky-600"
         label="Premium booked"
+        shortLabel="Booked"
         value={formatCompactCurrency(booked)}
         note={`Across ${total} ${total === 1 ? 'policy' : 'policies'}`}
       />
@@ -55,6 +59,7 @@ function PolicySummary({ summary }) {
         icon={ShieldCheck}
         tone="bg-emerald-50 text-emerald-600"
         label="Cover in force"
+        shortLabel="In force"
         // Premium, not a count — the Active chip below already carries the
         // count, and this is the figure it cannot show.
         value={formatCompactCurrency(active)}
@@ -65,6 +70,7 @@ function PolicySummary({ summary }) {
         icon={CalendarClock}
         tone="bg-orange-50 text-primary"
         label="Renewals due"
+        shortLabel="Renewals"
         value={expiring}
         note={`Expiring within ${EXPIRY_WINDOW_DAYS} days`}
       />

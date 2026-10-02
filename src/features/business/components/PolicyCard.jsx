@@ -1,4 +1,3 @@
-import { ChevronRight } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/shared/lib/format';
 import { expiryLabel } from '../lib/policyFilters';
 import { formatProduct } from '../lib/policyFormat';
@@ -10,9 +9,8 @@ import ExpiryFlag from './ExpiryFlag';
  *
  * A card rather than a horizontally scrolling table: six columns on a 390px
  * screen means either a scroll nobody discovers or type nobody can read. The
- * same facts are here, reordered for the smaller surface — policy number and
- * status first because that is what an agent scans for, premium given the most
- * weight because it is what they are asked on the call.
+ * same facts are here in three tight lines: customer and premium, product and
+ * status, then policy number and end date.
  *
  * A <button> and not a <div> with a handler: this is the mobile equivalent of
  * the table's clickable row, and the element that already answers Enter, Space
@@ -29,40 +27,31 @@ function PolicyCard({ policy, now, onSelect }) {
       type="button"
       onClick={() => onSelect(policy)}
       aria-label={`View policy ${policy.policyNumber}`}
-      className="w-full rounded-xl border border-slate-200 bg-white p-3.5 text-left transition-colors hover:border-slate-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40"
+      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-left transition-colors hover:border-slate-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40"
     >
-      <div className="flex items-start justify-between gap-3">
-        <span className="font-data-mono text-data-mono font-semibold text-on-surface">
-          {policy.policyNumber}
-        </span>
+      {/* Customer and premium share the first line; long names truncate. */}
+      <div className="flex items-baseline justify-between gap-3">
+        <p className="min-w-0 truncate text-sm font-semibold text-on-surface">
+          {policy.customerName}
+        </p>
+        <p className="font-data-currency text-data-currency shrink-0 text-on-surface">
+          {formatCurrency(policy.premium)}
+        </p>
+      </div>
+
+      <div className="mt-0.5 flex items-center justify-between gap-3">
+        <p className="font-body-md text-body-md min-w-0 truncate text-on-surface-variant">
+          {formatProduct(policy)}
+          {policy.insurer && ` · ${policy.insurer}`}
+        </p>
         <PolicyStatusPill status={policy.status} />
       </div>
 
-      <p className="mt-2 text-sm font-semibold text-on-surface">{policy.customerName}</p>
-      <p className="font-body-md text-body-md text-on-surface-variant">
-        {formatProduct(policy)}
-        {policy.insurer && ` · ${policy.insurer}`}
+      <p className="font-data-mono text-data-mono mt-1 truncate text-on-surface-variant">
+        {policy.policyNumber} · Ends {formatDate(policy.endDate)}
       </p>
 
-      {/* The footer rule is the card's only internal divider — premium and
-          cover dates are a different kind of fact from the identity above. */}
-      <div className="mt-3 flex items-end justify-between gap-3 border-t border-slate-100 pt-3">
-        <div className="min-w-0">
-          <p className="font-data-currency text-data-currency text-on-surface">
-            {formatCurrency(policy.premium)}
-          </p>
-          <p className="font-body-md text-body-md text-on-surface-variant">
-            Ends {formatDate(policy.endDate)}
-          </p>
-        </div>
-
-        <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-slate-400" />
-      </div>
-
-      {/* Below the rule rather than beside the status pill: on a phone the top
-          row has no width to spare, and the urgency reads better as the card's
-          last word than squeezed against the policy number. */}
-      {expiry && <ExpiryFlag label={expiry} className="mt-2.5" />}
+      {expiry && <ExpiryFlag label={expiry} className="mt-1.5" />}
     </button>
   );
 }

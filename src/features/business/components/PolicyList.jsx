@@ -15,16 +15,13 @@ import PolicyTable from './PolicyTable';
  * because what arrives here is one page of rows, not the whole book — see
  * `PAGE_SIZE` in `usePolicyList` and the pager in `PolicyPagination`.
  *
- * The scroll behaviour differs between the two on purpose. The table clips to
- * its own box with a sticky header (`PolicyTable`); the cards keep scrolling
- * the page. A phone has no room to spend on a nested scroller, the cards carry
- * their own labels so nothing goes missing off the top, and two scrollable
- * areas under one thumb is the pattern that traps the gesture in the wrong one.
+ * Both layouts scroll inside their own box. The cards cap at 60vh and hand the
+ * scroll back to the page at either end, so the gesture is never trapped.
  */
 function PolicyList({ policies, now, onSelect }) {
   return (
     <>
-      <div className="flex flex-col gap-2.5 md:hidden">
+      <div className="flex max-h-[60vh] flex-col gap-2 overflow-y-auto md:hidden">
         {policies.map((policy) => (
           <PolicyCard
             key={policy.policyId}

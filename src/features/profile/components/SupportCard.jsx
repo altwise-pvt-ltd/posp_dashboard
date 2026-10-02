@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 import { formatMobile, initials, telHref } from '../lib/profileFields';
 
 /* Small inline icons — no extra dependency, matches ProfileCard's icon-free style. */
@@ -59,26 +61,46 @@ function ContactRow({ label, value, href }) {
  * photograph (initials stand in) and the desk's working hours, which would be a
  * promise about when somebody answers the phone.
  */
-const SupportCard = ({ profile }) => {
+/* `only` narrows the card to one half: 'manager' or 'support'. */
+const SupportCard = ({ profile, collapsible = false, only = null }) => {
+  // Only the phone layout collapses; everywhere else the card is always open.
+  const [toggled, setToggled] = useState(false);
+  const open = !collapsible || toggled;
   const rmName = profile?.rmName;
   const rmPhone = formatMobile(profile?.rmMobile);
   const supportPhone = formatMobile(profile?.supportMobile);
 
-  const hasManager = Boolean(rmName || rmPhone || profile?.rmEmail);
-  const hasSupport = Boolean(supportPhone || profile?.supportEmail);
+  const hasManager = only !== 'support' && Boolean(rmName || rmPhone || profile?.rmEmail);
+  const hasSupport = only !== 'manager' && Boolean(supportPhone || profile?.supportEmail);
+  const supportTitle = profile?.supportName || 'POSP Platform Support';
 
   /* Nothing to show at all — better no card than a card of empty headings. */
   if (!hasManager && !hasSupport) return null;
 
   return (
     <div className="w-full bg-white rounded-2xl shadow-sm overflow-hidden border border-slate-200">
-      {/* ─── Section: Relationship Manager ─── */}
-      {hasManager ? (
-        <div className="p-6">
-          <p className="text-xs font-bold uppercase tracking-widest text-orange-600 mb-4">
-            Relationship Manager
-          </p>
+      {/* The header is the toggle, and doubles as the first section's heading. */}
+      <button
+        type="button"
+        onClick={() => setToggled((prev) => !prev)}
+        disabled={!collapsible}
+        aria-expanded={collapsible ? open : undefined}
+        className={`flex w-full items-center justify-between gap-2 px-6 pt-6 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-orange-500/40 ${open ? 'pb-4' : 'pb-6'}`}
+      >
+        <span className="text-xs font-bold uppercase tracking-widest text-orange-600 truncate">
+          {hasManager ? 'Relationship Manager' : supportTitle}
+        </span>
+        {collapsible ? (
+          <ChevronDown
+            aria-hidden="true"
+            className={`size-4 shrink-0 text-slate-400 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+          />
+        ) : null}
+      </button>
 
+      {/* ─── Section: Relationship Manager ─── */}
+      {open && hasManager ? (
+        <div className="px-6 pb-6">
           <div className="flex items-center gap-3">
             <span className="flex items-center justify-center w-12 h-12 rounded-full bg-orange-50 text-orange-400 text-base font-bold shrink-0 select-none">
               {initials(rmName)}
@@ -116,11 +138,13 @@ const SupportCard = ({ profile }) => {
       ) : null}
 
       {/* ─── Section: POSP Platform Support ─── */}
-      {hasSupport ? (
-        <div className={`px-6 pb-6 pt-6 ${hasManager ? 'border-t border-slate-100' : ''}`}>
-          <p className="text-xs font-bold uppercase tracking-widest text-orange-600 mb-4">
-            {profile?.supportName || 'POSP Platform Support'}
-          </p>
+      {open && hasSupport ? (
+        <div className={`px-6 pb-6 ${hasManager ? 'pt-6 border-t border-slate-100' : ''}`}>
+          {hasManager ? (
+            <p className="text-xs font-bold uppercase tracking-widest text-orange-600 mb-4">
+              {supportTitle}
+            </p>
+          ) : null}
 
           <ul className="space-y-3">
             <ContactRow label="Helpline" value={supportPhone} href={telHref(profile?.supportMobile)} />

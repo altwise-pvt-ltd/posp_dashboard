@@ -38,3 +38,34 @@ export async function loadTrainingRecord() {
 
   return fetchTrainingProgress(profile.id);
 }
+
+/* What each `/lms/status/me` value says about the record. Whole words only;
+   a value not listed here changes nothing. */
+const STATUS_FACTS = {
+  TRAININGCOMPLETED: { hoursSettled: true },
+};
+
+const factsFor = (status) =>
+  typeof status === 'string' ? STATUS_FACTS[status.trim().toUpperCase()] : undefined;
+
+/**
+ * Correct the training record where `/lms/status/me` disagrees with it.
+ * A null `status` (the call failed or was empty) leaves the record as it is.
+ */
+export function reconcileTrainingRecord(record, status) {
+  if (!status) return record;
+
+  // No record, but the server names a training: the choice screen would enrol
+  // them a second time, so fail and let them retry.
+  if (!record) {
+    if (!status.trainingId) return null;
+    throw new ApiError({ message: 'Could not load your training record. Please try again.' });
+  }
+
+  // The server has closed the hours even though the record has not caught up.
+  if (factsFor(status.status)?.hoursSettled && !record.hoursComplete) {
+    return { ...record, hoursComplete: true };
+  }
+
+  return record;
+}

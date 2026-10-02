@@ -10,6 +10,7 @@ import iconPolicies from '@/assets/sidebar/Policies.webp';
 import iconReports from '@/assets/sidebar/Reports.webp';
 import renewal from '@/assets/sidebar/renewal.webp';
 import Profile from '@/assets/sidebar/profile.webp';
+import iconMarketing from '@/assets/sidebar/marketing.webp';
 import iconTraining from '@/assets/sidebar/iconTraining.webp';
 
 // `to` is the route path each link navigates to. 'Home', 'My Business',
@@ -38,7 +39,7 @@ const NAV_ITEMS = [
   { label: 'Reports', to: '/reports', icon: iconReports },
   { label: 'Renewal', to: '/renewal', icon: renewal },
   { label: 'Profile', to: '/profile', icon: Profile },
-  { label: 'Marketing Kit', to: '/marketing-kit', icon: iconCustomer },
+  { label: 'Marketing Kit', to: '/marketing-kit', icon: iconMarketing },
   { label: 'POSP Training', to: '/posp-training', icon: iconTraining },
 ];
 

@@ -2,6 +2,8 @@ import { useRef, useState, useCallback, useEffect } from "react";
 import { UploadCloud, X, CheckCircle2, FileImage, AlertCircle, Loader2 } from "lucide-react";
 import { DOCUMENT, acceptAttribute, policyCaption } from "@/shared/upload/policy";
 import { prepareFile } from "@/shared/upload/validate";
+import { useMatchMedia, MOBILE_QUERY } from "@/shared/hooks/useMatchMedia";
+import UploadSourceSheet from "@/shared/components/UploadSourceSheet";
 
 export default function FileUpload({
   id,
@@ -20,6 +22,11 @@ export default function FileUpload({
   const [dragging, setDragging] = useState(false);
   const [busy, setBusy] = useState(false);
   const [rejection, setRejection] = useState(null);
+
+  // Phones get a sheet to choose between the camera and files.
+  const isMobile = useMatchMedia(MOBILE_QUERY);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const closeSheet = useCallback(() => setSheetOpen(false), []);
 
   const selectionRef = useRef(0);
   const mountedRef = useRef(true);
@@ -154,7 +161,11 @@ export default function FileUpload({
       </label>
 
       <div
-        onClick={() => interactive && inputRef.current?.click()}
+        onClick={() => {
+          if (!interactive) return;
+          if (isMobile) setSheetOpen(true);
+          else inputRef.current?.click();
+        }}
         onDragOver={(e) => { e.preventDefault(); if (interactive) setDragging(true); }}
         onDragLeave={() => setDragging(false)}
         onDrop={handleDrop}
@@ -237,9 +248,11 @@ export default function FileUpload({
             </div>
             <div>
               <span className={`text-[0.75rem] font-semibold ${dragging ? "text-orange-500" : "text-slate-600"}`}>
-                {dragging ? "Drop it here" : "Click to browse"}
+                {dragging ? "Drop it here" : isMobile ? "Tap to capture" : "Click to browse"}
               </span>
-              <span className="text-[0.75rem] text-slate-400"> or drag & drop</span>
+              <span className="text-[0.75rem] text-slate-400">
+                {isMobile ? " or choose a file" : " or drag & drop"}
+              </span>
             </div>
             {/* Derived from the profile, so it can never advertise a format the
                 validator rejects. */}
@@ -259,6 +272,21 @@ export default function FileUpload({
       ) : hint ? (
         <p className="mt-0.5 text-[0.6875rem] text-slate-400">{hint}</p>
       ) : null}
+
+      {/* A captured photo goes through the same checks as a picked file. */}
+      <UploadSourceSheet
+        open={sheetOpen}
+        title={label}
+        onClose={closeSheet}
+        onPickFiles={() => {
+          closeSheet();
+          inputRef.current?.click();
+        }}
+        onCapture={(captured) => {
+          closeSheet();
+          processFile(captured);
+        }}
+      />
     </div>
   );
 }

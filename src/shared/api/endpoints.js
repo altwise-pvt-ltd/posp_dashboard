@@ -248,6 +248,15 @@ export const ENDPOINTS = {
     progress: (pospId) => `/lms/progress/${encodeURIComponent(pospId)}`,
 
     /**
+     * GET (bearer) → `{ pospId, status, insuranceTypeId, insuranceTypeName,
+     * currentTrainingId }` — the training stage, for the POSP the token names.
+     *
+     * Carries stages the sign-in reply and `/posp/me` do not. No hours and no
+     * dates, so it sits beside `progress` rather than replacing it.
+     */
+    status: "/lms/status/me",
+
+    /**
      * POST (bearer) { hoursToAdd } → the same training record, with the hours
      * added.
      *

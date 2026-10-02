@@ -204,6 +204,23 @@ export async function fetchTrainingProgress(pospId) {
 }
 
 /**
+ * The training stage — `GET /lms/status/me`. Null when the server sends nothing.
+ */
+export async function fetchTrainingStatus() {
+  const response = await api.get(ENDPOINTS.lms.status);
+  const data = unwrap(response);
+  if (!data) return null;
+
+  return {
+    pospId: data.pospId ?? null,
+    status: data.status ?? null,
+    insuranceTypeId: data.insuranceTypeId ?? null,
+    insuranceTypeName: data.insuranceTypeName ?? '',
+    trainingId: data.currentTrainingId ?? null,
+  };
+}
+
+/**
  * Add served hours — `POST /lms/update-progress` { hoursToAdd }.
  *
  * ⚠ A delta. Two sends of the same hour count it twice, and nothing on the

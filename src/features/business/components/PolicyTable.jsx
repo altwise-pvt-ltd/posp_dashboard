@@ -5,43 +5,6 @@ import { formatProduct } from '../lib/policyFormat';
 import PolicyStatusPill from './PolicyStatusPill';
 import ExpiryFlag from './ExpiryFlag';
 
-/**
- * The desktop layout. A real <table>, not a grid of divs — these are rows of
- * the same record type and the header cells genuinely label their columns, so
- * the semantics are free and a screen reader announces "Premium, ₹14,250"
- * instead of a bare figure.
- *
- * Rendered from `md` up only; below that `PolicyCard` takes over. See
- * `PolicyList`.
- *
- * Premium is right-aligned and set in the tabular-figure token
- * (`font-data-currency`), so the rupee amounts line up digit-for-digit down the
- * column. That is the whole reason those tokens exist in the theme.
- *
- * The whole row is the click target, via a <tr> carrying button semantics
- * rather than a trailing "View" action: every column here is a fact about one
- * policy and there is exactly one thing to do with it. Keyboard users get the
- * same target — `tabIndex` plus the Enter/Space handler — because a clickable
- * row that only answers a mouse is a row half the users cannot open.
- *
- * ── The scroller ──
- *
- * The rows scroll inside their own box rather than moving the page, and the
- * header row sticks to the top of it. Reading down a long list otherwise
- * scrolls the summary tiles, the trend chart and the toolbar off the top, and
- * takes the column labels with them — by the tenth row the reader is looking
- * at six unlabelled columns and has no way back to the filters without
- * scrolling up through everything they just read.
- *
- * The height is `min(60vh, 30rem)`: a share of the viewport so short laptop
- * screens don't get a box taller than they are, capped so a tall monitor
- * doesn't stretch a page of ten rows into a 900px run.
- *
- * Sticky cells need `border-separate` — with `border-collapse: collapse` the
- * header's bottom border belongs to the table's border grid, not the cell, and
- * it is left behind at the top of the scroller as the sticky row moves. So the
- * rules live on the cells: the header's on its <th>, each row's on its <td>.
- */
 function PolicyTable({ policies, now, onSelect }) {
   const headings = ['Policy no.', 'Customer', 'Product', 'Premium', 'Status', 'Cover ends'];
 

@@ -329,11 +329,6 @@ function QuotationDetailPage() {
               />
             ) : (
               <>
-                {/* Above the answers, not below them: on a quote that has been
-                answered, what the insurers said is the reason the agent opened
-                the page, and the form they filled in themselves is the
-                reference underneath it. Absent entirely on every other status,
-                rather than rendered empty. */}
                 {insurer.expected && (
                   <InsurerResponsePanel
                     responses={insurer.responses}

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { hydrateTrainingPlan } from '@/shared/store/trainingPlanStore';
-import { loadTrainingRecord } from '../api/trainingRecord';
+import { fetchTrainingStatus } from '../api/trainingApi';
+import { loadTrainingRecord, reconcileTrainingRecord } from '../api/trainingRecord';
 
 /**
  * Fetch the training record and hold it in the plan store. No React state of its
@@ -15,7 +16,13 @@ import { loadTrainingRecord } from '../api/trainingRecord';
  * that had nothing to do with it.
  */
 async function loadTrainingProgress() {
-  hydrateTrainingPlan(await loadTrainingRecord());
+  // The status is a second opinion: failing to fetch it must not fail the page.
+  const [record, status] = await Promise.all([
+    loadTrainingRecord(),
+    fetchTrainingStatus().catch(() => null),
+  ]);
+
+  hydrateTrainingPlan(reconcileTrainingRecord(record, status));
 }
 
 /**

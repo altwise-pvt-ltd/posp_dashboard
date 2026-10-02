@@ -1,3 +1,6 @@
+import { useState } from 'react';
+import BankEditDialog from './BankEditDialog';
+import { EditButton } from './ProfileSections';
 import {
   composeAddress,
   formatLongDate,
@@ -28,7 +31,7 @@ function Field({ label, value, wide = false }) {
  * heading over a blank grid reads as a loading failure, and this screen has a
  * real one of those to show instead.
  */
-function Section({ title, rows }) {
+function Section({ title, rows, action = null }) {
   const present = rows.filter((row) => row.value);
   if (!present.length) return null;
 
@@ -39,6 +42,7 @@ function Section({ title, rows }) {
         <p className="text-xs font-bold uppercase tracking-widest text-orange-600">
           {title}
         </p>
+        {action ? <div className="ml-auto">{action}</div> : null}
       </div>
       <div className="grid grid-cols-1 @lg:grid-cols-2 gap-3">
         {present.map((row) => (
@@ -64,6 +68,7 @@ function Section({ title, rows }) {
  * reason: `/posp/me` does not carry them.
  */
 const PersonalInfoCard = ({ profile }) => {
+  const [editingBank, setEditingBank] = useState(false);
   const verdict = verdictOf(profile);
 
   const identity = [
@@ -109,8 +114,18 @@ const PersonalInfoCard = ({ profile }) => {
       <div className="px-6 flex flex-col divide-y divide-slate-100">
         <Section title="Identity" rows={identity} />
         <Section title="Registration" rows={registration} />
-        <Section title="Bank Account" rows={bank} />
+        <Section
+          title="Bank Account"
+          rows={bank}
+          action={<EditButton onClick={() => setEditingBank(true)} />}
+        />
       </div>
+
+      <BankEditDialog
+        open={editingBank}
+        profile={profile}
+        onClose={() => setEditingBank(false)}
+      />
     </div>
   );
 };

@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 import { maskAadhaar, maskAccount, maskPan, verdictOf } from '../lib/profileFields';
 
 function CheckIcon({ className = 'w-4 h-4' }) {
@@ -13,14 +15,6 @@ function ClockIcon({ className = 'w-4 h-4' }) {
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="10" />
       <path d="M12 6v6l4 2" />
-    </svg>
-  );
-}
-
-function ShieldIcon({ className = 'w-4 h-4' }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
     </svg>
   );
 }
@@ -83,11 +77,13 @@ function ChecklistRow({ label, value }) {
  * `IRDAI-POSP-2024-88172`, issued March 2024, 284 days to renewal, with a
  * progress bar and a "Renew License" button — was invented end to end. There is
  * no licence endpoint, no issue or expiry date anywhere in the API, and nothing
- * to renew against. It is replaced by the registration facts the record does
- * carry.
+ * to renew against.
  */
-const KycComplianceCard = ({ profile }) => {
+const KycComplianceCard = ({ profile, collapsible = false }) => {
   const verdict = verdictOf(profile);
+  // Only the phone layout collapses; everywhere else the card is always open.
+  const [toggled, setToggled] = useState(false);
+  const open = !collapsible || toggled;
 
   const documents = [
     { label: 'PAN Card', value: maskPan(profile?.pancardNumber) },
@@ -108,20 +104,37 @@ const KycComplianceCard = ({ profile }) => {
   return (
     <div className="card-lift w-full bg-white rounded-2xl shadow-sm overflow-hidden border border-slate-200">
       {/* ── Document checklist ── */}
-      <div className="p-6">
-        <div className="flex items-center justify-between gap-2 mb-4">
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="w-0.5 h-4 rounded-full bg-orange-400 shrink-0" />
-            <p className="text-xs font-bold uppercase tracking-widest text-orange-600 truncate">
-              KYC &amp; Compliance
-            </p>
-          </div>
+      {/* The header is the toggle; the verdict stays visible when collapsed. */}
+      <button
+        type="button"
+        onClick={() => setToggled((prev) => !prev)}
+        disabled={!collapsible}
+        aria-expanded={collapsible ? open : undefined}
+        className={`flex w-full items-center justify-between gap-2 px-6 pt-6 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-orange-500/40 ${open ? 'pb-4' : 'pb-6'}`}
+      >
+        <span className="flex items-center gap-2 min-w-0">
+          <span className="w-0.5 h-4 rounded-full bg-orange-400 shrink-0" />
+          <span className="text-xs font-bold uppercase tracking-widest text-orange-600 truncate">
+            KYC &amp; Compliance
+          </span>
+        </span>
+        <span className="flex shrink-0 items-center gap-2">
           {/* The one verdict the server actually gives, for the record as a whole. */}
-          <span className={`shrink-0 px-2.5 py-1 rounded-full text-status-pill font-bold uppercase tracking-wide ${verdict.pill}`}>
+          <span className={`px-2.5 py-1 rounded-full text-status-pill font-bold uppercase tracking-wide ${verdict.pill}`}>
             {verdict.label}
           </span>
-        </div>
+          {collapsible ? (
+            <ChevronDown
+              aria-hidden="true"
+              className={`size-4 text-slate-400 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+            />
+          ) : null}
+        </span>
+      </button>
 
+      {open ? (
+      <>
+      <div className="px-6 pb-6">
         <ul className="space-y-1">
           {documents.map((doc) => (
             <ChecklistRow key={doc.label} {...doc} />
@@ -132,42 +145,8 @@ const KycComplianceCard = ({ profile }) => {
           {onFile} of {documents.length} documents on file
         </p>
       </div>
-
-      {/* ── Registration ── */}
-      <div className="px-6 pb-6 pt-6 border-t border-slate-100">
-        <div className="flex items-center gap-2 mb-4">
-          <div className="w-0.5 h-4 rounded-full bg-orange-400 shrink-0" />
-          <p className="text-xs font-bold uppercase tracking-widest text-orange-600">
-            POSP Registration
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3 bg-slate-50 rounded-xl px-3 py-2.5">
-          <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-orange-50 text-orange-600 shrink-0">
-            <ShieldIcon />
-          </span>
-          <div className="min-w-0">
-            <span className="block text-field-label uppercase tracking-wide text-slate-400 font-semibold">
-              POSP Code
-            </span>
-            <span className="block text-sm font-semibold text-slate-700 font-data-mono truncate">
-              {/* ⚠ NOT gated on the KYC. A record comes back `status:
-                  "KycApproved"` with `pospCode: null` — allocation happens at
-                  some later point the back office owns, and this card prints
-                  "Record status: KycApproved" a few lines below, so promising
-                  the code on approval contradicts itself on screen. Say only
-                  what is true: there is no code yet. */}
-              {profile?.pospCode || 'Not yet allocated'}
-            </span>
-          </div>
-        </div>
-
-        {profile?.status ? (
-          <p className="mt-3 text-xs font-medium text-slate-500">
-            Record status: <span className="font-semibold text-slate-700">{profile.status}</span>
-          </p>
-        ) : null}
-      </div>
+      </>
+      ) : null}
     </div>
   );
 };
