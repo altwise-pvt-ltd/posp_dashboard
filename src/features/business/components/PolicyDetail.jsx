@@ -1,9 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { X } from 'lucide-react';
+import { FileText, Loader2, RefreshCw, X } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/shared/lib/format';
 import { expiryLabel } from '../lib/policyFilters';
 import { formatPeriod, formatProduct } from '../lib/policyFormat';
+import { usePolicyDetail } from '../hooks/usePolicyDetail';
 import PolicyStatusPill from './PolicyStatusPill';
 import ExpiryFlag from './ExpiryFlag';
 
@@ -36,8 +37,31 @@ function Field({ label, value, mono = false }) {
   );
 }
 
+/** A titled group of fields, ruled off from the one above. */
+function Section({ title, children }) {
+  return (
+    <section className="mt-5 border-t border-slate-100 pt-4">
+      <h3 className="font-label-caps text-label-caps mb-3 font-semibold uppercase text-on-surface">
+        {title}
+      </h3>
+      {children}
+    </section>
+  );
+}
+
+// "PolicySchedule" → "Policy schedule".
+const documentLabel = (type) => {
+  if (!type) return 'Document';
+  const words = type.replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase();
+  return words.charAt(0).toUpperCase() + words.slice(1);
+};
+
 function PolicyDetail({ policy, now, onClose }) {
   const closeRef = useRef(null);
+  const { detail, loading, error, retry } = usePolicyDetail(policy?.policyId ?? null);
+
+  // The list row draws the drawer at once; the full record replaces it when it lands.
+  const record = detail ?? policy;
 
   /**
    * Escape closes, and the page behind stops scrolling while the panel is up.
@@ -104,14 +128,14 @@ function PolicyDetail({ policy, now, onClose }) {
             <header className="flex items-start justify-between gap-3 border-b border-slate-200 px-4 py-4 sm:px-gutter">
               <div className="min-w-0">
                 <p className="font-data-mono text-data-mono font-semibold text-on-surface">
-                  {policy.policyNumber}
+                  {record.policyNumber}
                 </p>
                 <h2 className="font-headline-md text-headline-md truncate text-on-surface">
-                  {policy.customerName}
+                  {record.customerName}
                 </h2>
                 <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                  <PolicyStatusPill status={policy.status} />
-                  <ExpiryFlag label={expiryLabel(policy, now)} />
+                  <PolicyStatusPill status={record.status} />
+                  <ExpiryFlag label={expiryLabel(record, now)} />
                 </div>
               </div>
 
@@ -137,34 +161,123 @@ function PolicyDetail({ policy, now, onClose }) {
                   Premium
                 </p>
                 <p className="font-data-currency text-headline-lg text-on-surface">
-                  {formatCurrency(policy.premium)}
+                  {formatCurrency(record.premium)}
                 </p>
                 <p className="font-body-md text-body-md text-on-surface-variant">
-                  Sum insured {formatCurrency(policy.sumInsured)}
+                  Sum insured {formatCurrency(record.sumInsured)}
                 </p>
               </div>
 
               <div className="mt-4 grid grid-cols-2 gap-4">
-                <Field label="Product" value={formatProduct(policy)} />
-                <Field label="Insurer" value={policy.insurer || '—'} />
-                <Field label="Mobile" value={policy.customerMobile || '—'} mono />
-                <Field label="Issued" value={formatDate(policy.issuedAt)} />
+                <Field label="Product" value={formatProduct(record)} />
+                <Field label="Insurer" value={record.insurer || '—'} />
+                <Field label="Mobile" value={record.customerMobile || '—'} mono />
+                <Field label="Issued" value={formatDate(record.issuedAt)} />
                 {/* Full width: the period is two dates and wraps badly in half
                     a row at this panel's width. */}
                 <div className="col-span-2">
-                  <Field label="Cover period" value={formatPeriod(policy)} />
+                  <Field label="Cover period" value={formatPeriod(record)} />
                 </div>
               </div>
 
-              {/*
-                ⚠ Remove with the mock. Renew, download and endorse are the
-                three actions this panel is missing, and every one of them needs
-                an endpoint that does not exist. Saying so here is better than a
-                row of buttons that do nothing.
-              */}
+              {loading ? (
+                <p className="font-body-md text-body-md mt-5 flex items-center gap-2 text-on-surface-variant">
+                  <Loader2 aria-hidden="true" className="size-4 animate-spin" />
+                  Loading policy details…
+                </p>
+              ) : error ? (
+                <div className="mt-5 rounded-xl border border-rose-100 bg-rose-50 px-3 py-2.5">
+                  <p className="font-body-md text-body-md text-rose-800">
+                    {error?.message || "Couldn't load the rest of this policy."}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={retry}
+                    className="mt-1.5 inline-flex items-center gap-1.5 text-sm font-semibold text-rose-800 hover:underline"
+                  >
+                    <RefreshCw aria-hidden="true" className="size-3.5" />
+                    Try again
+                  </button>
+                </div>
+              ) : (
+                detail && (
+                  <>
+                    <Section title="Insured">
+                      <div className="grid grid-cols-2 gap-4">
+                        <Field label="Name" value={detail.customerName || '—'} />
+                        <Field label="Date of birth" value={formatDate(detail.insuredDob)} />
+                      </div>
+                    </Section>
+
+                    <Section title="Nominee">
+                      <div className="grid grid-cols-2 gap-4">
+                        <Field label="Name" value={detail.nomineeName || '—'} />
+                        <Field label="Relation" value={detail.nomineeRelation || '—'} />
+                      </div>
+                    </Section>
+
+                    {(detail.cancelledAt || detail.cancellationReason) && (
+                      <Section title="Cancellation">
+                        <div className="grid grid-cols-2 gap-4">
+                          <Field label="Cancelled on" value={formatDate(detail.cancelledAt)} />
+                          <div className="col-span-2">
+                            <Field label="Reason" value={detail.cancellationReason || '—'} />
+                          </div>
+                        </div>
+                      </Section>
+                    )}
+
+                    {detail.renewedFromPolicyId && (
+                      <Section title="Renewal">
+                        <Field label="Renewed from" value={detail.renewedFromPolicyId} mono />
+                      </Section>
+                    )}
+
+                    {detail.notes && (
+                      <Section title="Notes">
+                        <p className="font-body-md text-body-md whitespace-pre-line text-on-surface">
+                          {detail.notes}
+                        </p>
+                      </Section>
+                    )}
+
+                    <Section title="Documents">
+                      {detail.documents.length === 0 ? (
+                        <p className="font-body-md text-body-md text-on-surface-variant">
+                          No documents on this policy.
+                        </p>
+                      ) : (
+                        // ⚠ No route serves these keys yet, so they are listed, not linked.
+                        <ul className="flex flex-col gap-2">
+                          {detail.documents.map((doc) => (
+                            <li
+                              key={doc.documentId}
+                              className="flex items-center gap-3 rounded-xl border border-slate-200 px-3 py-2.5"
+                            >
+                              <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-orange-50 text-primary">
+                                <FileText aria-hidden="true" className="size-4" />
+                              </span>
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium text-on-surface">
+                                  {documentLabel(doc.documentType)}
+                                </p>
+                                <p className="font-body-md text-body-md text-on-surface-variant">
+                                  Uploaded {formatDate(doc.uploadedAt)}
+                                </p>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </Section>
+                  </>
+                )
+              )}
+
+              {/* Renew, download and endorse need endpoints that do not exist yet. */}
               <p className="font-body-md text-body-md mt-5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-on-surface-variant">
-                Renewing, downloading the policy document and raising an
-                endorsement will appear here once the policy service is connected.
+                Renewing, downloading documents and raising an endorsement will
+                appear here once the policy service supports them.
               </p>
             </div>
           </motion.aside>

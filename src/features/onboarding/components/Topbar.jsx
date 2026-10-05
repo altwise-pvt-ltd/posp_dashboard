@@ -1,4 +1,7 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { LogOut } from "lucide-react";
+import { useAuthStore } from "@/shared/store/authStore";
 import logo from "@/assets/let'sInsuranceLogo.svg";
 
 // Header height (h-16 = 64px). Also the scroll depth we allow before hiding, so
@@ -7,7 +10,7 @@ const HEADER_H = 64;
 
 /**
  * Topbar — auto-hiding header for the onboarding flow.
- * Shows the brand logo.
+ * Shows the brand logo and a Log out button.
  *
  * Stays sticky, but slides out of the way once the user scrolls down past the
  * header's own height, and slides back in the moment they scroll up. On long
@@ -16,6 +19,16 @@ const HEADER_H = 64;
 export default function Topbar() {
   const [hidden, setHidden] = useState(false);
   const lastY = useRef(0);
+  const signOut = useAuthStore((s) => s.signOut);
+  const navigate = useNavigate();
+  const [signingOut, setSigningOut] = useState(false);
+
+  const handleSignOut = async () => {
+    if (signingOut) return;
+    setSigningOut(true);
+    await signOut();
+    navigate("/login", { replace: true });
+  };
 
   useEffect(() => {
     lastY.current = window.scrollY;
@@ -59,10 +72,20 @@ export default function Topbar() {
         Keep this max-w value IDENTICAL across Topbar, Stepper, and OnboardingScreen
         so the header, steps, and content all line up at the same left/right edges.
       */}
-      <div className="flex h-16 items-center justify-start px-4 sm:px-6 lg:px-10 2xl:px-12 max-w-7xl 2xl:max-w-384 mx-auto">
+      <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-10 2xl:px-12 max-w-7xl 2xl:max-w-384 mx-auto">
 
         {/* Brand logo */}
         <img src={logo} alt="POSP" width={172} height={40} className="h-10 w-auto" />
+
+        <button
+          type="button"
+          onClick={handleSignOut}
+          disabled={signingOut}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500/30 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <LogOut size={16} strokeWidth={2} aria-hidden="true" />
+          {signingOut ? "Logging out…" : "Log out"}
+        </button>
 
       </div>
     </header>

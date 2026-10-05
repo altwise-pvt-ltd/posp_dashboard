@@ -153,7 +153,7 @@ function BusinessCardFront({
             <img
               src={logoLockup}
               alt="Lets Insurance — Altsure Insurance Brokers"
-              className="h-[88px] w-[255px] shrink-0 object-cover"
+              className="h-[88px] w-[255px] shrink-0 object-contain"
             />
 
             <div className="flex w-[320px] shrink-0 flex-col items-start gap-[24px]">

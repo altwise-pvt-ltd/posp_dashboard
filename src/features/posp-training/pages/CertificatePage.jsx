@@ -1,4 +1,3 @@
-import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import CertificateScreen from '../components/certificate/CertificateScreen';
 
@@ -25,7 +24,6 @@ function CertificatePage() {
   return (
     <CertificateScreen
       actionLabel="Back to profile"
-      actionIcon={ArrowLeft}
       onAction={() => navigate('/profile')}
     />
   );

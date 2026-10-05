@@ -6,10 +6,9 @@
  * — an unknown status from the server falls back to a neutral pill rather than
  * being pattern-matched into the wrong one.
  *
- * ⚠ Provisional. There is no policy endpoint yet (see `data/mockPolicies.js`),
- * so these four are the states a general-insurance book actually distinguishes.
- * Reconcile with the backend's vocabulary the day the endpoint exists; that is
- * a change to this table and nothing else.
+ * ⚠ Only "Active" has been seen from `GET /policies` so far (`policyApi.js`
+ * upper-cases it). The other three are assumed; reconcile with the backend's
+ * vocabulary here and nowhere else.
  *
  * Note what is deliberately NOT here: "expiring soon". That is not a state a
  * server stores, it is `endDate` minus today, and putting it in this table

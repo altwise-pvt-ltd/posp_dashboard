@@ -1,11 +1,11 @@
-import { ClipboardCheck, FilePlus, FileX, Files, PenLine } from 'lucide-react';
+import { ClipboardCheck, FilePlus, FileX, Files, PenLine, Wallet } from 'lucide-react';
 import iconMarketing from '@/assets/sidebar/marketing.webp';
 import iconReports from '@/assets/sidebar/Reports.webp';
 import iconRenewal from '@/assets/sidebar/renewal.webp';
 import iconClaim from '@/assets/sidebar/claim.webp';
 import iconTicket from '@/assets/sidebar/support-ticket.webp';
 
-// The two choices behind the Quote tab.
+// The choices behind the Quote tab.
 export const QUOTE_ITEMS = [
   {
     label: 'Create Quotation',
@@ -18,6 +18,12 @@ export const QUOTE_ITEMS = [
     description: 'See the quotes you have raised',
     to: '/offline-quotation/view',
     icon: Files,
+  },
+  {
+    label: 'Payment History',
+    description: 'Premiums paid against your quotes',
+    to: '/offline-quotation/payments',
+    icon: Wallet,
   },
 ];
 

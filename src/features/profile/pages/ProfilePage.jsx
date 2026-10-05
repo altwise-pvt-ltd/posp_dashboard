@@ -13,8 +13,6 @@ import {
 import { useProfileRecord } from "../hooks/useProfileRecord";
 import { useMatchMedia, MOBILE_QUERY } from "@/shared/hooks/useMatchMedia";
 
-/* Every width on this screen is decided here. The four cards are `w-full` and
-   fill whatever track they are handed — same rule as the onboarding wizard. */
 const STACK =
   "mx-auto w-full max-w-4xl xl:max-w-none flex flex-col xl:flex-row gap-gutter";
 const RAIL =
@@ -41,14 +39,6 @@ function ProfileSkeleton() {
   );
 }
 
-/**
- * Nothing to show and a reason why.
- *
- * Deliberately not a partially-drawn page: every card on this screen states
- * something about a person's identity and KYC, and a card rendered from a
- * failed fetch would be a set of blanks and "Not on file" pills that read as
- * facts about the POSP rather than as a broken request.
- */
 function ProfileError({ error, onRetry }) {
   return (
     <div className="max-w-md mx-auto mt-8 rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm">
@@ -67,12 +57,6 @@ function ProfileError({ error, onRetry }) {
   );
 }
 
-/**
- * The record is fetched once here and handed down, rather than each card
- * subscribing for itself: four cards reading one store is four re-render paths
- * for one fact, and passing it as a prop keeps the cards pure enough to render
- * from a fixture.
- */
 function ProfilePage() {
   const { profile, loading, error, retry } = useProfileRecord();
   const isMobile = useMatchMedia(MOBILE_QUERY);
@@ -86,7 +70,6 @@ function ProfilePage() {
           <ProfileError error={error} onRetry={retry} />
         ) : null}
 
-        {/* Phone: one column, details first, manager before bank, KYC and support collapsed at the end. */}
         {profile && isMobile ? (
           <div className="anim-fade flex flex-col gap-gutter">
             <IdentityCard profile={profile} />

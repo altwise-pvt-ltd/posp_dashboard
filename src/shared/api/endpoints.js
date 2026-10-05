@@ -432,16 +432,35 @@ export const ENDPOINTS = {
      *
      * `certificateUrl` is the server's own rendering of the document, and it is
      * *the* document — the app no longer draws a sheet of its own. See
-     * `fetchCertificateFile`, which resolves it either way: an absolute URL goes
-     * straight to the browser, anything else is fetched through the API client
-     * because the route behind it is authenticated.
+     * `fetchCertificateFile`, which fetches it through the API client with the
+     * bearer token, because the route behind it is authenticated.
      *
-     * ⚠ Its form is not in the swagger — `CertificateResponse` is referenced but
-     * its properties are not published — so both readings are handled rather
-     * than assumed. An empty value is treated as "not rendered yet", which is
-     * also what a POSP sees if the backend never populates it.
+     * An empty value is treated as "not rendered yet", which is also what a
+     * POSP sees if the backend never populates it.
      */
     me: "/certificates/me",
+  },
+
+  /**
+   * Policies issued under the signed-in POSP's code.
+   */
+  policy: {
+    /**
+     * GET (bearer) `?page=&pageSize=` → `{ items, totalCount, page, pageSize,
+     * totalPages, hasPreviousPage, hasNextPage }`. Each item carries
+     * `insurerId` / `productId` / `customerId` only, no display names.
+     */
+    list: "/policies",
+
+    /**
+     * GET (bearer) → one policy: the list fields plus `nomineeName`,
+     * `nomineeRelation`, `insuredDob`, `notes`, `cancellationReason`,
+     * `cancelledAt`, `renewedFromPolicyId` and `documents[]`.
+     *
+     * A document's `documentUrl` is a storage key, not a URL, and no route
+     * that serves policy documents is known yet.
+     */
+    detail: (policyId) => `/policies/${encodeURIComponent(policyId)}`,
   },
 
   /**
@@ -610,6 +629,34 @@ export const ENDPOINTS = {
      * own message answer, rather than hiding a control on a guess.
      */
     accept: (quoteId) => `/quote/${encodeURIComponent(quoteId)}/accept`,
+
+    /**
+     * GET (bearer) `/quote/<quoteId>/payment-instruction` → how the customer
+     * pays, once the RM has published it on a `PROPOSAL_CREATED` quote.
+     * `data: null` (still a success) until then. `method` is "BankTransfer"
+     * (bank fields) or "PaymentLink" (`paymentLink`, `linkExpiresAt`).
+     */
+    paymentInstruction: (quoteId) =>
+      `/quote/${encodeURIComponent(quoteId)}/payment-instruction`,
+
+    /**
+     * POST (bearer, multipart) `/quote/<quoteId>/payment-receipt` → the agent's
+     * proof of payment against that instruction. Parts: `file`,
+     * `amountClaimed`, `referenceNo`, `paidOn`, `agentNote`.
+     */
+    paymentReceipt: (quoteId) =>
+      `/quote/${encodeURIComponent(quoteId)}/payment-receipt`,
+
+    /**
+     * GET (bearer) `?page=&pageSize=` → the agent's premium payments across
+     * all quotes: `{ items: [{ paymentId, proposalId, proposalNumber, quoteId,
+     * quoteNumber, amount, payee, method, status, utrNo, paidAt, receivedAt }],
+     * totalCount, page, pageSize, totalPages, hasPreviousPage, hasNextPage }`.
+     *
+     * ⚠ Only `status: "Success"`, `payee: "Insurer"` and `method: "NEFT_RTGS"`
+     * have been seen. A Success row can still have null `utrNo`/`receivedAt`.
+     */
+    paymentsMine: "/quote/payments/my",
 
     /**
      * GET (bearer) ?productId=<uuid>[&subProductId=<uuid>][&fileType=] → the

@@ -1,5 +1,5 @@
 import { useRef, useState, useCallback, useEffect } from "react";
-import { UploadCloud, X, CheckCircle2, FileImage, AlertCircle, Loader2 } from "lucide-react";
+import { UploadCloud, X, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import { DOCUMENT, acceptAttribute, policyCaption } from "@/shared/upload/policy";
 import { prepareFile } from "@/shared/upload/validate";
 import { useMatchMedia, MOBILE_QUERY } from "@/shared/hooks/useMatchMedia";
@@ -102,8 +102,26 @@ export default function FileUpload({
   const hasFile = !!file;
   const interactive = !hasFile && !busy;
 
+  // Counts enter/leave pairs so moving over the zone's own children doesn't end the drag.
+  const dragDepthRef = useRef(0);
+
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    dragDepthRef.current += 1;
+    if (interactive) setDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    dragDepthRef.current -= 1;
+    if (dragDepthRef.current <= 0) {
+      dragDepthRef.current = 0;
+      setDragging(false);
+    }
+  };
+
   const handleDrop = (e) => {
     e.preventDefault();
+    dragDepthRef.current = 0;
     setDragging(false);
     // Same guard the click path uses. A filled zone shows no browse affordance,
     // so accepting a drop onto it would silently replace a file the user can't
@@ -113,8 +131,24 @@ export default function FileUpload({
     if (dropped) processFile(dropped);
   };
 
+  // Label and zone share one entry point, so both respect the same guard.
+  const openPicker = () => {
+    if (!interactive) return;
+    if (isMobile) setSheetOpen(true);
+    else inputRef.current?.click();
+  };
+
+  const handleZoneKeyDown = (e) => {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    // Stops Space from scrolling the page.
+    e.preventDefault();
+    openPicker();
+  };
+
   const handleInputChange = (e) => {
     const selected = e.target.files?.[0];
+    // Reset so picking the same file again (e.g. after a rejection) still fires onChange.
+    e.target.value = "";
     if (selected) processFile(selected);
   };
 
@@ -126,9 +160,7 @@ export default function FileUpload({
     setFile(null);
     showPreview(null);
     setRejection(null);
-    setBusy(false);
     onChange?.(null);
-    if (inputRef.current) inputRef.current.value = "";
   };
 
   // Rejection first: a file the validator just refused is newer information than
@@ -155,21 +187,31 @@ export default function FileUpload({
   return (
     <div className="flex flex-col gap-1.5">
       {/* Label */}
-      <label htmlFor={id} className="block text-[0.8125rem] font-semibold text-slate-700">
+      <label
+        id={`${id}-label`}
+        htmlFor={id}
+        onClick={(e) => {
+          e.preventDefault();
+          openPicker();
+        }}
+        className="block text-[0.8125rem] font-semibold text-slate-700"
+      >
         {label}
         {required && <span className="ml-1 text-orange-500">*</span>}
       </label>
 
+      {/* Only a button while empty, so the clear button is never nested inside one. */}
       <div
-        onClick={() => {
-          if (!interactive) return;
-          if (isMobile) setSheetOpen(true);
-          else inputRef.current?.click();
-        }}
-        onDragOver={(e) => { e.preventDefault(); if (interactive) setDragging(true); }}
-        onDragLeave={() => setDragging(false)}
+        role={interactive ? "button" : undefined}
+        tabIndex={interactive ? 0 : undefined}
+        aria-labelledby={interactive ? `${id}-label` : undefined}
+        onClick={openPicker}
+        onKeyDown={interactive ? handleZoneKeyDown : undefined}
+        onDragEnter={handleDragEnter}
+        onDragOver={(e) => e.preventDefault()}
+        onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className={`relative flex min-h-25 items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed transition-all duration-200 ${zoneBorder} ${zoneBg} ${
+        className={`relative flex min-h-25 items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed outline-none transition-all duration-200 focus-visible:ring-2 focus-visible:ring-orange-500/40 ${zoneBorder} ${zoneBg} ${
           interactive ? "cursor-pointer" : "cursor-default"
         }`}
       >
@@ -179,8 +221,9 @@ export default function FileUpload({
           id={id}
           type="file"
           accept={acceptAttribute(profile)}
-          {...(profile.capture ? { capture: profile.capture } : {})}
           className="hidden"
+          // Keeps the programmatic click from bubbling to the zone and reopening the sheet.
+          onClick={(e) => e.stopPropagation()}
           onChange={handleInputChange}
         />
 
@@ -201,13 +244,9 @@ export default function FileUpload({
         ) : hasFile ? (
           /* ── File preview state ── */
           <div className="flex w-full items-center gap-3 px-3.5 py-3">
-            {/* Thumbnail — always renders now that everything is JPG or PNG */}
-            <div className="flex h-15 w-15 shrink-0 items-center justify-center overflow-hidden rounded-[10px] border border-slate-200 bg-slate-100">
-              {preview ? (
-                <img src={preview} alt="preview" className="h-full w-full object-cover" />
-              ) : (
-                <FileImage size={25} className="text-slate-400" />
-              )}
+            {/* Thumbnail — every stored file is JPG or PNG, so it always renders */}
+            <div className="h-15 w-15 shrink-0 overflow-hidden rounded-[10px] border border-slate-200 bg-slate-100">
+              <img src={preview} alt="preview" className="h-full w-full object-cover" />
             </div>
 
             {/* File info */}
@@ -220,7 +259,7 @@ export default function FileUpload({
               </div>
               <div className="mt-1.75 inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.25 py-0.75 text-[0.625rem] font-semibold text-emerald-600">
                 <CheckCircle2 size={10} />
-                Uploaded
+                Added
               </div>
             </div>
 

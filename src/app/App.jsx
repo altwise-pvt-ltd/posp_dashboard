@@ -21,6 +21,9 @@ const ViewQuotationsPage = lazy(() =>
 const QuotationDetailPage = lazy(() =>
   import('@/features/posp-dashboard/offline-quotation/view/page/QuotationDetailPage')
 );
+const PaymentHistoryPage = lazy(() =>
+  import('@/features/posp-dashboard/offline-quotation/payments/page/PaymentHistoryPage')
+);
 const MarketingKitPage = lazy(() => import('@/features/marketing-kit/pages/MarketingKitPage'));
 const BusinessPage = lazy(() => import('@/features/business/pages/BusinessPage'));
 
@@ -120,6 +123,11 @@ function App() {
           <Route
             path="/offline-quotation/view/:quoteId"
             element={<RequireFunnel through="training"><QuotationDetailPage /></RequireFunnel>}
+          />
+          {/* Premium payments across all quotes — `GET /quote/payments/my`. */}
+          <Route
+            path="/offline-quotation/payments"
+            element={<RequireFunnel through="training"><PaymentHistoryPage /></RequireFunnel>}
           />
 
           {/* Marketing Kit — the cards and brochures a POSP sends out. Behind

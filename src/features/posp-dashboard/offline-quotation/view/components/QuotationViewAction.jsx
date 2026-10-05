@@ -45,6 +45,7 @@ function QuotationViewAction({ quotation, className = '' }) {
   return (
     <Link
       to={`/offline-quotation/view/${quotation.id}`}
+      state={{ fromList: true }}
       aria-label={`View ${reference}`}
       className={`${SHELL} text-ink-subtle hover:bg-orange-50 hover:text-orange-700 ${className}`}
     >

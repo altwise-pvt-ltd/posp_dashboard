@@ -105,17 +105,9 @@ export const DOCUMENT = {
    * anything a real capture or a DigiLocker screenshot produces.
    */
   minDimension: 500,
-
-  capture: null,
 };
 
-/**
- * The selfie. Same formats as a document.
- *
- * `capture` stays null: SelfieStep has its own live camera, and its upload
- * button has to open the gallery. Setting `capture` would make mobile browsers
- * skip the file chooser and open the camera instead.
- */
+/** The selfie. Same formats as a document. */
 export const SELFIE = {
   ...DOCUMENT,
   name: "selfie",

@@ -274,3 +274,11 @@ const EDITABLE = ['RETURNED_FOR_CORRECTION'];
 
 /** Whether to offer "Edit" on a quote in this state. */
 export const canEditQuote = (statusCode) => EDITABLE.includes(statusCode);
+
+/* ── Payment instruction ───────────────────────────────────────────────── */
+
+/** The state in which the RM's payment instruction is fetched and offered. */
+export const PROPOSAL_CREATED = 'PROPOSAL_CREATED';
+
+/** Whether to ask for this quote's payment instruction at all. */
+export const hasPaymentInstruction = (statusCode) => statusCode === PROPOSAL_CREATED;

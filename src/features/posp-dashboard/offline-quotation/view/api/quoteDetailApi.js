@@ -39,6 +39,27 @@ const normalizeValue = (entry = {}) => ({
   value: typeof entry.value === 'string' ? entry.value : entry.value ?? null,
 });
 
+/** The insurer response the agent accepted, with the proposal raised on it. */
+const normalizeSelectedOffer = (offer) => {
+  if (!offer || typeof offer !== 'object' || Array.isArray(offer)) return null;
+
+  return {
+    responseId: text(offer.responseId),
+    insurerId: text(offer.insurerId),
+    insurerName: text(offer.insurerName),
+    premium: number(offer.premium),
+    idv: number(offer.idv),
+    odPremium: number(offer.odPremium),
+    tpPremium: number(offer.tpPremium),
+    insurerQuoteRef: text(offer.insurerQuoteRef),
+    validTill: offer.validTill ?? null,
+    proposalId: text(offer.proposalId),
+    proposalNumber: text(offer.proposalNumber),
+    proposalStatus: text(offer.proposalStatus),
+    acceptedAt: offer.acceptedAt ?? null,
+  };
+};
+
 /**
  * The quote, in the shape the screen renders.
  *
@@ -79,6 +100,9 @@ export const normalizeQuote = (data = {}) => ({
    * payload that does start using it is not silently dropped.
    */
   addOns: Array.isArray(data.addOns) ? data.addOns : [],
+
+  /** Null until the agent has accepted an insurer response. */
+  selectedOffer: normalizeSelectedOffer(data.selectedOffer),
 });
 
 /**

@@ -100,7 +100,7 @@ export function useCertificate() {
 
   return {
     certificate,
-    /** `{ src, kind }` — `kind` is 'pdf' or 'image', and picks the element. */
+    /** `{ src, kind }` — `kind` is 'pdf', 'html' or 'image', and picks the element. */
     file,
     /** Settled, no error, and the server has no certificate for them *yet*. */
     issued: Boolean(certificate),

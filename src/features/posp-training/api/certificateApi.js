@@ -77,8 +77,6 @@ export async function fetchMyCertificate() {
   }
 }
 
-const ABSOLUTE_URL = /^https?:\/\//i;
-
 const KIND_BY_EXTENSION = {
   pdf: 'pdf',
   png: 'image',
@@ -94,36 +92,90 @@ const kindFromPath = (value) => {
   return KIND_BY_EXTENSION[extension] ?? 'pdf';
 };
 
+/* The sheet is a fixed A4 width (210mm ≈ 794px). These shrink each page to fit
+   a narrower frame and drop the scaling for print. */
+const FIT_CSS = `
+  .document-page, .expired-banner { zoom: var(--fit, 1); }
+  @media print { .document-page { zoom: 1 !important; } }
+`;
+
+const FIT_SCRIPT = `
+  (function () {
+    function fit() {
+      var scale = Math.min(1, (window.innerWidth - 16) / 794);
+      document.documentElement.style.setProperty('--fit', String(scale));
+    }
+    fit();
+    window.addEventListener('resize', fit);
+  })();
+`;
+
+/**
+ * Make the server's certificate HTML render from an object URL.
+ *
+ * Its asset paths are root-relative (`/_content/...`, `/api/...`), which would
+ * resolve against this app instead of the API host, so a `<base>` points them
+ * back. Images under `/api/` (the photo) need the bearer token, so they are
+ * fetched through the client and swapped for object URLs. A failed image is
+ * left as it was rather than failing the whole certificate.
+ */
+async function prepareHtml(blob, fileUrl) {
+  const origin = new URL(fileUrl, api.defaults.baseURL).origin;
+  const doc = new DOMParser().parseFromString(await blob.text(), 'text/html');
+
+  const base = doc.createElement('base');
+  base.href = `${origin}/`;
+  doc.head.prepend(base);
+
+  const fitStyle = doc.createElement('style');
+  fitStyle.textContent = FIT_CSS;
+  const fitScript = doc.createElement('script');
+  fitScript.textContent = FIT_SCRIPT;
+  doc.head.append(fitStyle, fitScript);
+
+  const urls = [];
+  const images = [...doc.querySelectorAll('img[src^="/api/"]')];
+
+  await Promise.allSettled(
+    images.map(async (img) => {
+      const response = await api.get(`${origin}${img.getAttribute('src')}`, { responseType: 'blob' });
+      const url = URL.createObjectURL(response.data);
+      urls.push(url);
+      img.setAttribute('src', url);
+    })
+  );
+
+  const html = `<!DOCTYPE html>\n${doc.documentElement.outerHTML}`;
+  urls.push(URL.createObjectURL(new Blob([html], { type: 'text/html' })));
+
+  return { src: urls.at(-1), urls };
+}
+
 /**
  * The certificate document itself, ready to put in a frame.
  *
- * `certificateUrl` arrives in one of two forms and the swagger describes
- * neither, so both are handled rather than assumed:
- *
- *   absolute  — object storage, already signed or already public. Handed to the
- *               browser as-is; fetching it through the API client would send
- *               this app's bearer token to a host that is not the API.
- *   otherwise — a path on the API, which is authenticated. The browser attaches
- *               no Authorization header to a `src`, so the bytes come through
- *               the axios client and become an object URL — the same dance
- *               `fetchDocumentBlob` does for onboarding thumbnails.
+ * `certificateUrl` (e.g. `https://ibmsapi.shrisoft.co.in/Certificate/View/<pospId>`)
+ * needs the bearer token. A `src` can't send one, so the bytes come through the
+ * API client (which attaches it, absolute URL or not) and become an object URL.
+ * Today it answers with an HTML page, which `prepareHtml` fixes up first.
  *
  * The caller owns `revoke` and must call it when the source is replaced or the
- * screen goes away; an object URL pins the blob in memory until it does. It is
- * null for the absolute case, where there is nothing to release.
+ * screen goes away; an object URL pins the blob in memory until it does.
  */
 export async function fetchCertificateFile(fileUrl) {
-  if (ABSOLUTE_URL.test(fileUrl)) {
-    return { src: fileUrl, kind: kindFromPath(fileUrl), revoke: null };
-  }
-
   const response = await api.get(fileUrl, { responseType: 'blob' });
   const blob = response.data;
+
+  if (blob.type?.includes('text/html')) {
+    const { src, urls } = await prepareHtml(blob, fileUrl);
+    return { src, kind: 'html', revoke: () => urls.forEach((url) => URL.revokeObjectURL(url)) };
+  }
+
   const src = URL.createObjectURL(blob);
 
-  return {
-    src,
-    kind: blob.type?.startsWith('image/') ? 'image' : kindFromPath(fileUrl),
-    revoke: () => URL.revokeObjectURL(src),
-  };
+  let kind = kindFromPath(fileUrl);
+  if (blob.type?.startsWith('image/')) kind = 'image';
+  else if (blob.type === 'application/pdf') kind = 'pdf';
+
+  return { src, kind, revoke: () => URL.revokeObjectURL(src) };
 }

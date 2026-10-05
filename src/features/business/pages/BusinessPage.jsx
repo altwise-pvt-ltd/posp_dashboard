@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileSearch, Info, Loader2, Plus, RefreshCw, ShieldCheck, TriangleAlert } from 'lucide-react';
+import { FileSearch, Loader2, Plus, RefreshCw, ShieldCheck, TriangleAlert } from 'lucide-react';
 import DashboardLayout from '@/shared/layouts/DashboardLayout';
 import CustomButton from '@/shared/components/CustomButton';
 import BusinessNotice from '../components/BusinessNotice';
@@ -89,16 +89,6 @@ function BusinessPage() {
           </CustomButton>
         </header>
 
-        {/*
-          ⚠ Remove with the mock. Until `usePolicyList` is reading a real
-          endpoint, the rows below are invented, and a book of plausible-looking
-          policies with no label on it is the kind of thing that reaches a demo
-          and gets believed.
-        */}
-        <p className="anim-fade-d1 font-body-md text-body-md flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900">
-          <Info aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-          Sample data — the policy service isn't connected yet, so nothing here is real.
-        </p>
 
         {/* Only drawn when there is a book to summarise: three tiles reading
             ₹0, ₹0, 0 above an empty state is noise in front of the one message

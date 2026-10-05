@@ -33,6 +33,7 @@ const NAV_ITEMS = [
     children: [
       { label: 'Create Quotation', to: '/offline-quotation/create' },
       { label: 'View Quotations', to: '/offline-quotation/view' },
+      { label: 'Payment History', to: '/offline-quotation/payments' },
     ],
   },
   { label: 'My Business', to: '/business', icon: iconPolicies },

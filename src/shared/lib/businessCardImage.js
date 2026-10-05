@@ -145,7 +145,10 @@ export async function renderBusinessCard(fields) {
   ctx.textAlign = 'left';
 
   const logo = await loadImage(logoLockup);
-  ctx.drawImage(logo, 36, 36, 255, 88);
+  const logoScale = Math.min(255 / logo.width, 88 / logo.height);
+  const logoW = logo.width * logoScale;
+  const logoH = logo.height * logoScale;
+  ctx.drawImage(logo, 36 + (255 - logoW) / 2, 36 + (88 - logoH) / 2, logoW, logoH);
 
   /* Identity block: 36 + 88 (logo) + 33 (gap) = 157, matching the design. */
   ctx.fillStyle = CARD_PALETTE.ink;

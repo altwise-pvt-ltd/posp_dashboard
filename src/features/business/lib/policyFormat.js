@@ -15,7 +15,7 @@ import { formatDate } from '@/shared/lib/format';
  * a trailing separator.
  */
 export const formatProduct = (policy) =>
-  [policy?.product, policy?.subProduct].filter(Boolean).join(' · ');
+  [policy?.product, policy?.subProduct].filter(Boolean).join(' · ') || '—';
 
 /**
  * "12 Oct 2025 — 11 Oct 2026", the cover period as one string.

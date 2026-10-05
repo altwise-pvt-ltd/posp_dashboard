@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   FileQuestion,
@@ -9,17 +9,24 @@ import {
   RefreshCw,
   ShieldCheck,
   TriangleAlert,
+  Wallet,
 } from "lucide-react";
 import DashboardLayout from "@/shared/layouts/DashboardLayout";
 import CustomButton from "@/shared/components/CustomButton";
 import { daysUntil } from "@/shared/lib/format";
+import { showAlert } from "@/shared/store/alertStore";
 import QuoteNotice from "../../components/QuoteNotice";
 import InsurerResponsePanel from "../components/InsurerResponsePanel";
+import MarkPaymentDrawer from "../components/MarkPaymentDrawer";
+import PaymentInstructionDrawer from "../components/PaymentInstructionDrawer";
 import QuotationStatusPill from "../components/QuotationStatusPill";
+import SelectedOfferPanel from "../components/SelectedOfferPanel";
 import QuoteEditForm from "../components/QuoteEditForm";
 import VerificationDialog from "../components/VerificationDialog";
 import { useQuoteDetail } from "../hooks/useQuoteDetail";
 import { useQuoteResponses } from "../hooks/useQuoteResponses";
+import { usePaymentInstruction } from "../hooks/usePaymentInstruction";
+import { submitPaymentReceipt } from "../api/paymentInstructionApi";
 import {
   formatAge,
   formatDate,
@@ -83,6 +90,7 @@ function AnswerPanel({ title, caption, entries }) {
 function QuotationDetailPage() {
   const { quoteId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const {
     quote,
     metadata,
@@ -105,6 +113,36 @@ function QuotationDetailPage() {
   const insurer = useQuoteResponses(quoteId, quote?.statusCode);
 
   const [confirming, setConfirming] = useState(false);
+
+  /** The RM's payment instruction; null until one is published. */
+  const { instruction: paymentInstruction } = usePaymentInstruction(quoteId, quote?.statusCode);
+  /** Which payment drawer is open: "instruction", "mark", or null. */
+  const [paymentView, setPaymentView] = useState(null);
+  const closePayment = useCallback(() => setPaymentView(null), []);
+  const backToInstruction = useCallback(() => setPaymentView("instruction"), []);
+
+  /**
+   * Back to the list after a receipt is accepted, without leaving this page
+   * behind in history: pop it when we came from the list, else replace it.
+   */
+  const leaveToList = () => {
+    if (location.state?.fromList) navigate(-1);
+    else navigate("/offline-quotation/view", { replace: true });
+  };
+
+  /** Errors are rethrown so the form can show them against its fields. */
+  const submitPayment = async (values) => {
+    const { message } = await submitPaymentReceipt(quote?.id ?? quoteId, values);
+
+    showAlert({
+      variant: "success",
+      title: "Payment submitted",
+      message: message || "Your RM will verify the payment receipt.",
+    });
+
+    leaveToList();
+    return true;
+  };
 
   /**
    * Correcting a returned quote. Offered only in the state a reviewer sends a
@@ -265,6 +303,17 @@ function QuotationDetailPage() {
                     </CustomButton>
                   )}
 
+                  {paymentInstruction && (
+                    <CustomButton
+                      variant="primary"
+                      size="md"
+                      leftIcon={<Wallet />}
+                      onClick={() => setPaymentView("instruction")}
+                    >
+                      View payment instruction
+                    </CustomButton>
+                  )}
+
                   {canApply && (
                     <CustomButton
                       variant="primary"
@@ -329,6 +378,10 @@ function QuotationDetailPage() {
               />
             ) : (
               <>
+                {quote.selectedOffer && (
+                  <SelectedOfferPanel offer={quote.selectedOffer} />
+                )}
+
                 {insurer.expected && (
                   <InsurerResponsePanel
                     responses={insurer.responses}
@@ -407,6 +460,23 @@ function QuotationDetailPage() {
           </>
         )}
       </div>
+
+      <PaymentInstructionDrawer
+        open={paymentView === "instruction"}
+        instruction={paymentInstruction}
+        reference={quote?.quoteNumber}
+        onClose={closePayment}
+        onMarkPayment={() => setPaymentView("mark")}
+      />
+
+      <MarkPaymentDrawer
+        open={paymentView === "mark"}
+        amount={paymentInstruction?.amount}
+        reference={quote?.quoteNumber}
+        onClose={closePayment}
+        onBack={backToInstruction}
+        onSubmit={submitPayment}
+      />
 
       <VerificationDialog
         open={confirming}

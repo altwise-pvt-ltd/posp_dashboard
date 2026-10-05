@@ -133,20 +133,28 @@ function CameraView({ onCapture, onBack }) {
 function SheetPanel({ title, onCapture, onPickFiles, onClose }) {
   const [mode, setMode] = useState("choose"); // "choose" | "camera"
 
+  const heading = mode === "camera" ? "Take a photo" : title;
+
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-
-    const onKeyDown = (event) => {
-      if (event.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKeyDown);
-
     return () => {
       document.body.style.overflow = previousOverflow;
-      document.removeEventListener("keydown", onKeyDown);
     };
-  }, [onClose]);
+  }, []);
+
+  // Escape steps back out of the camera first, matching the Back button.
+  // Capture phase + stopPropagation so a dialog underneath doesn't also close.
+  useEffect(() => {
+    const onKeyDown = (event) => {
+      if (event.key !== "Escape") return;
+      event.stopPropagation();
+      if (mode === "camera") setMode("choose");
+      else onClose();
+    };
+    document.addEventListener("keydown", onKeyDown, true);
+    return () => document.removeEventListener("keydown", onKeyDown, true);
+  }, [mode, onClose]);
 
   return (
     <motion.div
@@ -156,7 +164,7 @@ function SheetPanel({ title, onCapture, onPickFiles, onClose }) {
       transition={{ duration: 0.18 }}
       role="dialog"
       aria-modal="true"
-      aria-label={title}
+      aria-label={heading}
       onClick={onClose}
       className="fixed inset-0 z-50 flex items-end bg-slate-900/60"
     >
@@ -171,9 +179,7 @@ function SheetPanel({ title, onCapture, onPickFiles, onClose }) {
         <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-slate-200" />
 
         <div className="mb-3 flex items-center justify-between gap-3">
-          <h3 className="truncate text-sm font-bold text-slate-800">
-            {mode === "camera" ? "Take a photo" : title}
-          </h3>
+          <h3 className="truncate text-sm font-bold text-slate-800">{heading}</h3>
           <button
             type="button"
             onClick={onClose}

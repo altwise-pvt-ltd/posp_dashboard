@@ -1,4 +1,4 @@
-import { ArrowRight, BadgeCheck, Clock, ExternalLink, FileText, Loader2, TriangleAlert } from 'lucide-react';
+import { ChevronLeft, Clock, ExternalLink, FileText, Loader2, TriangleAlert } from 'lucide-react';
 import { useMatchMedia, MOBILE_QUERY } from '@/shared/hooks/useMatchMedia';
 import { useCertificate } from '../../hooks/useCertificate';
 import { formatCertificateDate } from '../../data/certificate';
@@ -51,8 +51,8 @@ const EXIT_CLASS =
  *
  * That also removes the print seam. The old sheet was DOM, so printing meant
  * `window.print()` plus CSS that hid the rest of the page. A file in a frame is
- * not this document's to print — the browser's own viewer prints and saves it,
- * and the bar links out to it rather than pretending otherwise.
+ * not this document's to print — the server's sheet carries its own print button,
+ * and the bar holds only the back button.
  *
  * Five states, and four of them are cards rather than sheets:
  *   loading     — the record, then the file
@@ -65,7 +65,7 @@ const EXIT_CLASS =
  * them — `/certificate`, the exam portal after a pass, and the training page for
  * a POSP who was already certified — and none has anything to add to it.
  *
- * Where the exit button goes is the caller's to say, because they are reached
+ * Where the back button goes is the caller's to say, because they are reached
  * from different places: the post-exam paths are the end of the funnel and lead
  * forward to the dashboard, while `/certificate` is opened from the profile and
  * has to lead back to it. A hardcoded "Go to Dashboard" was the only way off
@@ -73,15 +73,14 @@ const EXIT_CLASS =
  */
 function CertificateScreen({
   actionLabel = 'Go to Dashboard',
-  actionIcon: ActionIcon = ArrowRight,
   onAction,
 }) {
   const { certificate, file, issued, loading, error, retry } = useCertificate();
   /* Above the early returns below — it's a hook, so it can't sit next to the
      one branch that reads it. An image certificate renders inline at any width
-     and is left alone; only the PDF is handed off. */
+     and so does the HTML sheet (it scrolls in the frame); only a PDF is handed off. */
   const isMobile = useMatchMedia(MOBILE_QUERY);
-  const handOff = isMobile && file?.kind !== 'image';
+  const handOff = isMobile && file?.kind === 'pdf';
 
   if (loading) {
     return (
@@ -160,18 +159,18 @@ function CertificateScreen({
   return (
     <CertificateShell>
       <div className="sticky top-0 z-30 border-b border-slate-300/70 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between md:px-6">
-          <div className="flex min-w-0 items-center gap-3">
-            <span
-              className={`grid size-10 shrink-0 place-items-center rounded-xl ring-1 ${
-                certificate.expired
-                  ? 'bg-amber-50 text-amber-600 ring-amber-100'
-                  : 'bg-emerald-50 text-emerald-600 ring-emerald-100'
-              }`}
-            >
-              <BadgeCheck className="size-5" strokeWidth={2.25} aria-hidden="true" />
-            </span>
-            <div className="min-w-0">
+        <div className="mx-auto flex w-full max-w-5xl items-center gap-3 px-4 py-3 md:px-6">
+          <button
+            type="button"
+            onClick={onAction}
+            aria-label={actionLabel}
+            title={actionLabel}
+            className="grid size-10 shrink-0 place-items-center rounded-xl border border-slate-200 bg-white text-slate-600 transition-colors hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600 focus:outline-none focus-visible:ring-4 focus-visible:ring-orange-500/25 active:scale-[0.96]"
+          >
+            <ChevronLeft className="size-5" strokeWidth={2.5} aria-hidden="true" />
+          </button>
+
+          <div className="min-w-0">
               <h1 className="truncate text-base font-extrabold tracking-tight text-slate-900 sm:text-lg">
                 Your POSP certificate
               </h1>
@@ -188,33 +187,6 @@ function CertificateScreen({
                   </>
                 )}
               </p>
-            </div>
-          </div>
-
-          <div className="flex shrink-0 items-center gap-2.5">
-            {/* A link, not a print button. The document is a file in a frame,
-                and the viewer that opens it is what prints and saves it. */}
-            <a
-              href={file.src}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 transition-colors hover:border-orange-200 hover:text-orange-600 focus:outline-none focus-visible:ring-4 focus-visible:ring-orange-500/25"
-            >
-              <ExternalLink className="size-4" strokeWidth={2.25} aria-hidden="true" />
-              Open / Print
-            </a>
-
-            <button
-              type="button"
-              onClick={onAction}
-              className="group flex items-center gap-2 rounded-xl bg-orange-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-orange-600/20 transition-all duration-200 hover:bg-orange-700 hover:shadow-orange-700/30 focus:outline-none focus-visible:ring-4 focus-visible:ring-orange-500/30 active:scale-[0.98]"
-            >
-              {actionLabel}
-              <ActionIcon
-                className="size-4 transition-transform duration-200 group-hover:translate-x-0.5"
-                aria-hidden="true"
-              />
-            </button>
           </div>
         </div>
       </div>
