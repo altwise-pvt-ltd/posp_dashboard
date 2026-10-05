@@ -2,7 +2,7 @@ import CustomInput from './CustomInput';
 import CustomTextarea from './CustomTextarea';
 import CustomNumber from './CustomNumber';
 import CustomDate from './CustomDate';
-import CustomSelect from './CustomSelect';
+import CustomSelect from './SearchableSelect';
 import CustomRadio from './CustomRadio';
 import CustomCheckbox from './CustomCheckbox';
 import CustomMultiSelect from './CustomMultiSelect';
