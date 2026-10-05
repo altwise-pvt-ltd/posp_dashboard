@@ -19,9 +19,9 @@ export const bankSchema = z
     confirmAccountNumber: z.string().min(1, "Please re-enter the account number."),
     // Real IFSC shape: 4 bank letters, a 0, then 6 branch alphanumerics.
     ifsc: z.string().regex(/^[A-Z]{4}0[A-Z0-9]{6}$/, "Enter a valid 11-character IFSC code."),
-    bankName: bankNameField({ label: "Bank name" }),
+    bankName: bankNameField({ label: "Bank name" ,required: true}),
     /* Optional, matching the server. */
-    branchName: bankNameField({ label: "Branch name", required: false }),
+    branchName: bankNameField({ label: "Branch name", required: true }),
     passbookImage: fileField({ message: "Please upload your passbook photo." }),
     chequeImage: fileField({ message: "Please upload a cancelled cheque." }),
   })

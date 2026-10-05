@@ -233,9 +233,10 @@ export default function BankStep({ onNext, initialValues }) {
 
         <Input
           id="branchName"
-          label="Branch Name"
+          label="Branch Name *"
           placeholder="e.g. Shivaji Nagar"
           maxLength={NAME_MAX_LENGTH}
+          // required={true}
           error={form.formState.errors.branchName?.message}
           {...form.register("branchName")}
         />
