@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -55,7 +56,7 @@ const aadhaarSchema = z.object({
   aadhaarBackImage:  fileField({ message: "Please upload the back of your Aadhaar." }),
 });
 
-export default function AadhaarStep({ onNext, initialValues }) {
+export default function AadhaarStep({ onNext, initialValues, suggestedName }) {
   const form = useForm({
     resolver: zodResolver(aadhaarSchema),
     defaultValues: {
@@ -70,6 +71,13 @@ export default function AadhaarStep({ onNext, initialValues }) {
     },
     mode: "onTouched",
   });
+
+  // Pre-fill the name from PAN; never overwrite one already there or being typed.
+  useEffect(() => {
+    if (!suggestedName || form.getValues("fullName")) return;
+    if (form.getFieldState("fullName").isDirty) return;
+    form.setValue("fullName", suggestedName);
+  }, [suggestedName, form]);
 
   /* Both Aadhaar images, fetched back from the record so an edit to a text
      field doesn't force the applicant to re-pick them. */

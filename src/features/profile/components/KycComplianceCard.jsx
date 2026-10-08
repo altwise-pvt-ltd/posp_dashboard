@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
-import { maskAadhaar, maskAccount, maskPan, verdictOf } from '../lib/profileFields';
+import { formatAccount, formatPan, maskAadhaar, verdictOf } from '../lib/profileFields';
 
 function CheckIcon({ className = 'w-4 h-4' }) {
   return (
@@ -86,12 +86,12 @@ const KycComplianceCard = ({ profile, collapsible = false }) => {
   const open = !collapsible || toggled;
 
   const documents = [
-    { label: 'PAN Card', value: maskPan(profile?.pancardNumber) },
+    { label: 'PAN Card', value: formatPan(profile?.pancardNumber) },
     { label: 'Aadhaar', value: maskAadhaar(profile?.aadhaarNumber) },
     {
       label: 'Bank Account',
       value: (() => {
-        const account = maskAccount(profile?.accountNumber);
+        const account = formatAccount(profile?.accountNumber);
         if (!account) return null;
         return profile?.bankName ? `${profile.bankName} ${account}` : account;
       })(),

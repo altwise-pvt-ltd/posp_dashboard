@@ -1,5 +1,5 @@
 import { useRef, useState, useCallback, useEffect } from "react";
-import { UploadCloud, X, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { UploadCloud, X, CheckCircle2, AlertCircle, Loader2, FileText } from "lucide-react";
 import { DOCUMENT, acceptAttribute, policyCaption } from "@/shared/upload/policy";
 import { prepareFile } from "@/shared/upload/validate";
 import { useMatchMedia, MOBILE_QUERY } from "@/shared/hooks/useMatchMedia";
@@ -235,7 +235,7 @@ export default function FileUpload({
               <Loader2 size={20} className="animate-spin text-orange-500" />
             </div>
             <span className="text-[0.75rem] font-semibold text-slate-600">
-              Checking your photo…
+              Checking your file…
             </span>
             <span className="text-[0.625rem] text-slate-400">
               Large or iPhone photos take a moment.
@@ -244,9 +244,13 @@ export default function FileUpload({
         ) : hasFile ? (
           /* ── File preview state ── */
           <div className="flex w-full items-center gap-3 px-3.5 py-3">
-            {/* Thumbnail — every stored file is JPG or PNG, so it always renders */}
-            <div className="h-15 w-15 shrink-0 overflow-hidden rounded-[10px] border border-slate-200 bg-slate-100">
-              <img src={preview} alt="preview" className="h-full w-full object-cover" />
+            {/* Images get a thumbnail; a PDF gets a file icon */}
+            <div className="flex h-15 w-15 shrink-0 items-center justify-center overflow-hidden rounded-[10px] border border-slate-200 bg-slate-100">
+              {file.type.startsWith("image/") ? (
+                <img src={preview} alt="preview" className="h-full w-full object-cover" />
+              ) : (
+                <FileText size={22} className="text-slate-400" />
+              )}
             </div>
 
             {/* File info */}

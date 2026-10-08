@@ -7,8 +7,8 @@ import {
   formatLongDate,
   formatMobile,
   initials,
-  maskAccount,
-  maskPan,
+  formatAccount,
+  formatPan,
 } from '../lib/profileFields';
 
 const CARD = 'w-full bg-white rounded-2xl shadow-sm border border-slate-200 p-6';
@@ -168,10 +168,10 @@ export function BankAccountCard({ profile }) {
   const rows = [
     { label: 'Bank Name', value: profile?.bankName },
     { label: 'Branch', value: profile?.branchName },
-    { label: 'Account Number', value: maskAccount(profile?.accountNumber) },
+    { label: 'Account Number', value: formatAccount(profile?.accountNumber) },
     { label: 'IFSC Code', value: profile?.ifscCode },
     { label: 'Account Type', value: profile?.accountType },
-    { label: 'PAN', value: maskPan(profile?.pancardNumber) },
+    { label: 'PAN', value: formatPan(profile?.pancardNumber) },
   ];
 
   return (

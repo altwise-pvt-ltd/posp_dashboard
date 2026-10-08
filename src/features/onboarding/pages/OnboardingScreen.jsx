@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Loader2, RotateCcw } from "lucide-react";
 import { showAlert } from "@/shared/store/alertStore";
@@ -7,7 +7,7 @@ import { useOnboardingStatusStore } from "@/shared/store/onboardingStatusStore";
 import { submitForReview } from "@/shared/store/verificationStore";
 import FunnelLayout, { FUNNEL_SHELL } from "@/shared/layouts/FunnelLayout";
 import { STEPS, REVIEW_INDEX } from "../model/steps";
-import { submitApplication } from "../api/onboardingApi";
+import { fetchReviewDetails, submitApplication } from "../api/onboardingApi";
 import Stepper from "../components/Stepper";
 import OnboardingSidebar from "../components/OnboardingSidebar";
 import StepPlaceholder from "../components/StepPlaceholder";
@@ -112,6 +112,24 @@ export default function OnboardingScreen() {
     ensureLoaded();
   }, [ensureLoaded]);
 
+  // PAN name, used to pre-fill the Aadhaar name.
+  const [panName, setPanName] = useState("");
+
+  // Resumed straight onto Aadhaar: this sitting never saw the PAN step, so read
+  // the name back from the server.
+  useEffect(() => {
+    if (currentStep !== 2 || panName) return;
+    let cancelled = false;
+    fetchReviewDetails()
+      .then((review) => {
+        if (!cancelled) setPanName(review.sections.pan.fullName ?? "");
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [currentStep, panName]);
+
   const goNext = () => goToStep(currentStep + 1);
 
   /**
@@ -123,7 +141,8 @@ export default function OnboardingScreen() {
    * whole application back from `GET /onboarding/review`. Holding a second copy
    * would only be a second answer to a question the server already answers.
    */
-  const saveAndNext = (key) => () => {
+  const saveAndNext = (key) => (data) => {
+    if (key === "pan" && data?.fullName) setPanName(data.fullName);
     markStepComplete(key);
     const saved = STEP_SAVED_ALERTS[key] ?? {
       title: "Step saved",
@@ -287,7 +306,9 @@ export default function OnboardingScreen() {
       case 1:
         return <EmailStep onNext={saveAndNext("email")} />;
       case 2:
-        return <AadhaarStep onNext={saveAndNext("aadhaar")} />;
+        return (
+          <AadhaarStep onNext={saveAndNext("aadhaar")} suggestedName={panName} />
+        );
       case 3:
         return <SelfieStep onNext={saveAndNext("selfie")} />;
       case 4:

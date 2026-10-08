@@ -18,10 +18,8 @@
  *                how agents on Android and desktop avoid downloading a WASM
  *                decoder they have no use for; 32 bytes buys that.
  *
- *   pdf        — would otherwise surface as a generic "that isn't a photo".
- *                Naming it is worth the four extra bytes: an agent holding a
- *                DigiLocker download needs to be told to photograph it, and
- *                that's the single most common wrong pick in this flow.
+ *   pdf        — stored as-is for document profiles; refused by name for
+ *                profiles that take photos only (the selfie).
  *
  * Note this is not a security boundary and never was. It runs in the browser,
  * so anything deliberate walks straight past it. The server validates; this is

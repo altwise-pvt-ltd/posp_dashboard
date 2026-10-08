@@ -18,7 +18,7 @@ const otpSchema = z.object({
   otp: z.string().trim().length(6, "Enter the 6-digit code.").regex(/^[0-9]{6}$/, "Code must be 6 digits."),
 });
 
-const RESEND_SECONDS = 30;
+const RESEND_SECONDS = 60;
 
 /**
  * The reply's `expiresInSeconds` as an absolute deadline, or null when it
@@ -92,7 +92,7 @@ export default function EmailStep({ onNext, initialValues }) {
 
   /* ── Expiry ticker ──
      Its own interval rather than a branch inside the cooldown one: the two run
-     to different deadlines (30s vs the code's whole lifetime) and stop
+     to different deadlines (60s vs the code's whole lifetime) and stop
      independently, and folding them together made the resend timer responsible
      for a clock it has nothing to do with.
 
@@ -138,7 +138,7 @@ export default function EmailStep({ onNext, initialValues }) {
       otpForm.reset({ otp: "" });
       // No argument: a successful send carries no throttle hint (its
       // `expiresInSeconds` is the code's lifetime, not a resend delay), so the
-      // local 30s stands until the server objects with a 429.
+      // local 60s stands until the server objects with a 429.
       startCooldown();
       showAlert({
         variant: "success",

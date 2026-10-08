@@ -5,6 +5,8 @@ import { formatCurrency, formatDate } from '@/shared/lib/format';
 import { expiryLabel } from '../lib/policyFilters';
 import { formatPeriod, formatProduct } from '../lib/policyFormat';
 import { usePolicyDetail } from '../hooks/usePolicyDetail';
+import { POLICY_STATUS } from '../lib/policyStatus';
+import PolicyCancellation from './PolicyCancellation';
 import PolicyStatusPill from './PolicyStatusPill';
 import ExpiryFlag from './ExpiryFlag';
 
@@ -238,6 +240,16 @@ function PolicyDetail({ policy, now, onClose }) {
                         <p className="font-body-md text-body-md whitespace-pre-line text-on-surface">
                           {detail.notes}
                         </p>
+                      </Section>
+                    )}
+
+                    {detail.status === POLICY_STATUS.ACTIVE && !detail.cancelledAt && (
+                      <Section title="Cancel policy">
+                        <PolicyCancellation
+                          key={detail.policyId}
+                          policyId={detail.policyId}
+                          onRequested={retry}
+                        />
                       </Section>
                     )}
 

@@ -270,6 +270,15 @@ export async function completeTrainingHours() {
   return data ? normalizeProgress(data) : null;
 }
 
+/* `/lms/status/me` values that mean the seat already exists. Whole words only;
+   add each new stage here as the backend confirms it. */
+const PAST_TRAINING_GATE = new Set(['TRAININGAPPLIED', 'TRAININGCOMPLETED']);
+
+const isPastTrainingGate = (status) =>
+  Boolean(status?.trainingId) ||
+  (typeof status?.status === 'string' &&
+    PAST_TRAINING_GATE.has(status.status.trim().toUpperCase()));
+
 /** The keys the handoff URL has been seen under, in the order they're trusted. */
 const URL_KEYS = ['redirectUrl', 'lmsUrl', 'trainingUrl', 'url'];
 
@@ -304,6 +313,11 @@ const firstUrl = (data) => {
  * a failure here has to stop the navigation, not be swallowed behind it.
  */
 export async function requestTrainingAccess() {
+  // The server accepts this call only once. A POSP already at a training stage
+  // (e.g. `TrainingApplied`) is rejected, so skip it and go straight in.
+  const current = await fetchTrainingStatus().catch(() => null);
+  if (isPastTrainingGate(current)) return { redirectUrl: null, data: current };
+
   const response = await api.post(ENDPOINTS.lms.verifyForTraining);
   const data = unwrap(response) ?? {};
 

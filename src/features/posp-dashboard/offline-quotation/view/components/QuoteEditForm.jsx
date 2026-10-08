@@ -29,7 +29,7 @@ const focusField = (code) => {
 };
 
 /**
- * A returned quote, reopened for correction.
+ * A draft or returned quote, reopened for editing.
  *
  * The create wizard's form — same renderers, rules, lookups and validation —
  * but every section on one page rather than one per screen. The agent is here
@@ -125,7 +125,7 @@ function QuoteEditForm({ quote, metadata, onCancel, onSaved }) {
     showAlert({
       variant: "success",
       title: "Quotation updated",
-      message: "Your corrections are saved.",
+      message: "Your changes are saved.",
     });
 
     onSaved?.();

@@ -22,10 +22,12 @@ import PaymentInstructionDrawer from "../components/PaymentInstructionDrawer";
 import QuotationStatusPill from "../components/QuotationStatusPill";
 import SelectedOfferPanel from "../components/SelectedOfferPanel";
 import QuoteEditForm from "../components/QuoteEditForm";
+import QuoteDocumentsPanel from "../components/QuoteDocumentsPanel";
 import VerificationDialog from "../components/VerificationDialog";
 import { useQuoteDetail } from "../hooks/useQuoteDetail";
 import { useQuoteResponses } from "../hooks/useQuoteResponses";
 import { usePaymentInstruction } from "../hooks/usePaymentInstruction";
+import { useQuoteDocuments } from "../hooks/useQuoteDocuments";
 import { submitPaymentReceipt } from "../api/paymentInstructionApi";
 import {
   formatAge,
@@ -114,6 +116,10 @@ function QuotationDetailPage() {
 
   const [confirming, setConfirming] = useState(false);
 
+  /** Files uploaded on this quote — `GET /quote/<quoteId>/documents`. */
+  const docs = useQuoteDocuments(quoteId);
+  const refreshDocs = docs.refresh;
+
   /** The RM's payment instruction; null until one is published. */
   const { instruction: paymentInstruction } = usePaymentInstruction(quoteId, quote?.statusCode);
   /** Which payment drawer is open: "instruction", "mark", or null. */
@@ -145,8 +151,8 @@ function QuotationDetailPage() {
   };
 
   /**
-   * Correcting a returned quote. Offered only in the state a reviewer sends a
-   * quote back in, and only once the form it was raised on has loaded — the
+   * Editing a draft or a returned quote. Offered only in those states (see
+   * `canEditQuote`), and only once the form it was raised on has loaded — the
    * editor renders from that form, so without it there is nothing to edit.
    */
   const [editing, setEditing] = useState(false);
@@ -156,7 +162,8 @@ function QuotationDetailPage() {
   const finishEditing = useCallback(() => {
     setEditing(false);
     refresh();
-  }, [refresh]);
+    refreshDocs();
+  }, [refresh, refreshDocs]);
 
   /**
    * Accepting a response changes two things, and the hook that posts it can
@@ -204,6 +211,19 @@ function QuotationDetailPage() {
    * to local midnight, so the answer doesn't change with the time of day.
    */
   const age = formatAge(quote ? -(daysUntil(quote.createdAt) ?? 0) : null);
+
+  // The first answer section (e.g. "Quote Request Info") is shown inside the
+  // summary card rather than as its own panel. Its file type repeats the case
+  // type already shown there, so that entry is dropped.
+  const [leadSection, ...laterSections] = answers?.sections ?? [];
+  const mergeLead = leadSection?.rows.length === 1;
+  const sameAsCaseType = (entry) =>
+    /file\s*type/i.test(entry.label) &&
+    String(entry.text).toLowerCase() === String(quote?.fileType ?? "").toLowerCase();
+  const leadEntries = mergeLead
+    ? leadSection.rows[0].entries.filter((entry) => !sameAsCaseType(entry))
+    : [];
+  const panelSections = mergeLead ? laterSections : answers?.sections ?? [];
 
   return (
     <DashboardLayout>
@@ -292,38 +312,40 @@ function QuotationDetailPage() {
                 <div className="flex flex-col items-start gap-3 sm:items-end">
                   <QuotationStatusPill quotation={quote} />
 
-                  {canEdit && !editing && (
-                    <CustomButton
-                      variant="primary"
-                      size="md"
-                      leftIcon={<Pencil />}
-                      onClick={() => setEditing(true)}
-                    >
-                      Edit
-                    </CustomButton>
-                  )}
+                  <div className="flex flex-wrap items-center gap-3 sm:justify-end">
+                    {canEdit && !editing && (
+                      <CustomButton
+                        variant="primary"
+                        size="md"
+                        leftIcon={<Pencil />}
+                        onClick={() => setEditing(true)}
+                      >
+                        Edit
+                      </CustomButton>
+                    )}
 
-                  {paymentInstruction && (
-                    <CustomButton
-                      variant="primary"
-                      size="md"
-                      leftIcon={<Wallet />}
-                      onClick={() => setPaymentView("instruction")}
-                    >
-                      View payment instruction
-                    </CustomButton>
-                  )}
+                    {paymentInstruction && (
+                      <CustomButton
+                        variant="primary"
+                        size="md"
+                        leftIcon={<Wallet />}
+                        onClick={() => setPaymentView("instruction")}
+                      >
+                        View payment instruction
+                      </CustomButton>
+                    )}
 
-                  {canApply && (
-                    <CustomButton
-                      variant="primary"
-                      size="md"
-                      leftIcon={<ShieldCheck />}
-                      onClick={() => setConfirming(true)}
-                    >
-                      Submit for verification
-                    </CustomButton>
-                  )}
+                    {canApply && !editing && (
+                      <CustomButton
+                        variant="primary"
+                        size="md"
+                        leftIcon={<ShieldCheck />}
+                        onClick={() => setConfirming(true)}
+                      >
+                        Submit for verification
+                      </CustomButton>
+                    )}
+                  </div>
                 </div>
               </header>
 
@@ -337,6 +359,11 @@ function QuotationDetailPage() {
                 {quote.fileType && (
                   <Fact label="Case type">{quote.fileType}</Fact>
                 )}
+                {leadEntries.map((entry) => (
+                  <Fact key={entry.code} label={entry.label}>
+                    {entry.text}
+                  </Fact>
+                ))}
 
                 <Fact label="Raised">
                   {formatDate(quote.createdAt)}
@@ -411,7 +438,7 @@ function QuotationDetailPage() {
                   </p>
                 )}
 
-                {answers.sections.map((section) =>
+                {panelSections.map((section) =>
                   section.rows.map((row) => (
                     <AnswerPanel
                       key={`${section.code}-${row.index}`}
@@ -447,6 +474,15 @@ function QuotationDetailPage() {
                       />
                     </section>
                   )}
+
+                <QuoteDocumentsPanel
+                  quoteId={quote.id ?? quoteId}
+                  documents={docs.documents}
+                  loading={docs.loading}
+                  error={docs.error}
+                  onRetry={docs.refresh}
+                  metadata={metadata}
+                />
 
                 {answers.blanks > 0 && (
                   <p className="font-body-md text-body-md text-on-surface-variant">

@@ -22,7 +22,7 @@ const toDraftValue = (value) => {
   if (value === null || value === undefined) return '';
   if (typeof value === 'object') return null;
 
-  return String(value);
+  return String(value).trim();
 };
 
 /**

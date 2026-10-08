@@ -5,8 +5,8 @@ import {
   composeAddress,
   formatLongDate,
   formatMobile,
-  maskAccount,
-  maskPan,
+  formatAccount,
+  formatPan,
   verdictOf,
 } from '../lib/profileFields';
 
@@ -92,10 +92,10 @@ const PersonalInfoCard = ({ profile }) => {
   const bank = [
     { label: 'Bank Name', value: profile?.bankName },
     { label: 'Branch', value: profile?.branchName },
-    { label: 'Account Number', value: maskAccount(profile?.accountNumber) },
+    { label: 'Account Number', value: formatAccount(profile?.accountNumber) },
     { label: 'IFSC Code', value: profile?.ifscCode },
     { label: 'Account Type', value: profile?.accountType },
-    { label: 'PAN', value: maskPan(profile?.pancardNumber) },
+    { label: 'PAN', value: formatPan(profile?.pancardNumber) },
   ];
 
   return (

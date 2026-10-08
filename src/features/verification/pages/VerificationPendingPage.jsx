@@ -179,6 +179,7 @@ export default function VerificationPendingPage() {
           <PrimaryAction
             rejected={rejected}
             verified={verified}
+            busy={starting}
             onClick={onPrimaryAction}
             className="w-full"
           />

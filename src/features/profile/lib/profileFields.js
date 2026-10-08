@@ -98,20 +98,18 @@ export function maskAccount(value) {
   return last ? `••••${last}` : null;
 }
 
-/**
- * `ABCDE••••F` — the four-digit block hidden, the alpha bookends kept.
- *
- * Only rewrites a value that is unmistakably a full PAN. Anything else is
- * passed through as sent: it is either already masked or something this app
- * doesn't recognise, and both are cases where guessing at the shape would
- * mangle it.
- */
-export function maskPan(value) {
-  const text = String(value ?? '').trim().toUpperCase();
-  if (!text) return null;
-  if (!/^[A-Z]{5}\d{4}[A-Z]$/.test(text)) return text;
+/* The profile shows the POSP their own account number and PAN in full. */
 
-  return `${text.slice(0, 5)}••••${text.slice(9)}`;
+/** The account number as sent, or null when empty. */
+export function formatAccount(value) {
+  const text = String(value ?? '').trim();
+  return text || null;
+}
+
+/** The PAN uppercased, or null when empty. */
+export function formatPan(value) {
+  const text = String(value ?? '').trim().toUpperCase();
+  return text || null;
 }
 
 /* ── Contact ───────────────────────────────────────────────────────────── */

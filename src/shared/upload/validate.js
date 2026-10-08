@@ -26,7 +26,7 @@
  *                       prepareFile.
  */
 
-import { maxMegabytes, formatList, outputMimes } from "./policy";
+import { maxMegabytes, formatList, outputMimes, acceptsPdf } from "./policy";
 import { sniffFormat } from "./signature";
 import { convertHeicToJpeg } from "./heic";
 import { readDimensions } from "./dimensions";
@@ -67,15 +67,13 @@ function tooLargeMessage(profile) {
 /**
  * What to say about something that isn't a usable image.
  *
- * PDF is called out by name because it is the most likely wrong pick in this
- * flow and the least obvious to resolve — an agent holding a DigiLocker
- * download needs to be told to photograph it, and "invalid file" sends them to
- * support instead.
+ * PDF is called out by name for profiles that don't take it (the selfie), so
+ * the user knows to pick a photo instead of seeing a generic "invalid file".
  */
 function wrongTypeMessage(profile, format) {
   const accepted = formatList(profile);
   if (format === "pdf") {
-    return `PDFs aren't accepted — please upload a photo or screenshot of the document instead (${accepted}).`;
+    return `PDFs aren't accepted here — please upload a photo instead (${accepted}).`;
   }
   return `That doesn't look like a photo. Please upload a ${accepted} file.`;
 }
@@ -127,7 +125,17 @@ export async function prepareFile(input, profile) {
   const format = await sniffFormat(input);
 
   if (format === "pdf") {
-    return fail(UPLOAD_ERROR.WRONG_TYPE, wrongTypeMessage(profile, "pdf"));
+    if (!acceptsPdf(profile)) {
+      return fail(UPLOAD_ERROR.WRONG_TYPE, wrongTypeMessage(profile, "pdf"));
+    }
+    // No dimensions to read and nothing to compress, so size is a hard limit.
+    if (input.size > profile.maxBytes) {
+      return fail(
+        UPLOAD_ERROR.TOO_LARGE,
+        `That PDF is over ${maxMegabytes(profile)} MB. Please upload a smaller PDF or a photo of the document.`
+      );
+    }
+    return { ok: true, file: retype(input, "application/pdf") };
   }
 
   let file;

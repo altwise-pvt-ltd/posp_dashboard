@@ -461,6 +461,13 @@ export const ENDPOINTS = {
      * that serves policy documents is known yet.
      */
     detail: (policyId) => `/policies/${encodeURIComponent(policyId)}`,
+
+    /**
+     * POST (bearer) `{ reason }` → raises a cancellation request on the policy.
+     * Response shape unconfirmed.
+     */
+    cancellationRequest: (policyId) =>
+      `/policies/${encodeURIComponent(policyId)}/cancellation-requests`,
   },
 
   /**
@@ -746,6 +753,18 @@ export const ENDPOINTS = {
      * Both are one-line constants in `quoteDocumentsApi.js`.
      */
     documents: (quoteId) => `/quote/${encodeURIComponent(quoteId)}/documents`,
+
+    /*
+     * GET on `documents` above lists what is stored: `[{ id, documentCode,
+     * fileName, filePath, contentType, sizeBytes, status, uploadedAt }]`.
+     * `filePath` is a storage key, not a URL.
+     *
+     * GET (bearer) `/quote/<quoteId>/documents/<documentId>` → the file itself.
+     * Found by probing, not documented. Images come back as the raw file;
+     * PDFs not yet checked.
+     */
+    documentFile: (quoteId, documentId) =>
+      `/quote/${encodeURIComponent(quoteId)}/documents/${encodeURIComponent(documentId)}`,
   },
 
   onboarding: {

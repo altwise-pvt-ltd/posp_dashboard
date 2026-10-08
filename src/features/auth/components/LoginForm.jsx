@@ -33,7 +33,7 @@ const otpSchema = z.object({
     .regex(/^\d{6}$/, "Code must be 6 digits."),
 });
 
-const RESEND_SECONDS = 30;
+const RESEND_SECONDS = 60;
 
 /* Field styling shared by the mobile and OTP inputs — flat white boxes with a
    soft orange focus ring, matching the landing card rather than the slate-50

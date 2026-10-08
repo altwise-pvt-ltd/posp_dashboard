@@ -26,6 +26,7 @@ function Topbar() {
         <UserMenu
           isOpen={openMenu === 'profile'}
           onToggle={() => toggle('profile')}
+          showProfileLink
         />
       </div>
     </div>

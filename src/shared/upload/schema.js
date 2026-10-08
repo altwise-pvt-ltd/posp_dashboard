@@ -25,7 +25,7 @@ import { checkPreparedFile } from "./validate";
  * submit always matches the ceiling quoted under the drop zone.
  *
  * Optional fields validate only when something is actually there: an untouched
- * certificate upload passes, a certificate upload holding a PDF does not.
+ * certificate upload passes, a certificate upload holding a WebP does not.
  */
 export function fileField({ profile = DOCUMENT, required = true, message } = {}) {
   const field = z.any().superRefine((value, ctx) => {

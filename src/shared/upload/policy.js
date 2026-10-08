@@ -43,6 +43,19 @@ export const OUTPUT_FORMATS = [
 ];
 
 /**
+ * PDF is stored as-is. It has no pixel size to check and can't be compressed,
+ * so an oversized PDF is refused rather than shrunk.
+ */
+export const PDF_FORMAT = {
+  key: "pdf",
+  mime: "application/pdf",
+  mimeAliases: [],
+  extensions: [".pdf"],
+  label: "PDF",
+  raster: false,
+};
+
+/**
  * Accepted at the picker, converted before the form ever holds them.
  *
  * `image/heif` is the container HEIC sits in and some platforms report it
@@ -83,7 +96,7 @@ export const HEIC_JPEG_QUALITY = 0.95;
 /** Aadhaar (front and back), PAN, passbook, cheque, education certificate. */
 export const DOCUMENT = {
   name: "document",
-  output: OUTPUT_FORMATS,
+  output: [...OUTPUT_FORMATS, PDF_FORMAT],
   inputOnly: INPUT_ONLY_FORMATS,
 
   /**
@@ -107,10 +120,11 @@ export const DOCUMENT = {
   minDimension: 500,
 };
 
-/** The selfie. Same formats as a document. */
+/** The selfie. Photos only — no PDF. */
 export const SELFIE = {
   ...DOCUMENT,
   name: "selfie",
+  output: OUTPUT_FORMATS,
   // Tolerates a lower floor than a document: an old phone's front camera is
   // 480×640, which is a perfectly usable selfie and would fail the document
   // threshold.
@@ -139,6 +153,11 @@ export function acceptAttribute(profile) {
   const mimes = formats.flatMap((f) => [f.mime, ...f.mimeAliases]);
   const extensions = formats.flatMap((f) => f.extensions);
   return [...mimes, ...extensions].join(",");
+}
+
+/** True when the profile stores PDFs. */
+export function acceptsPdf(profile) {
+  return profile.output.some((f) => f.key === "pdf");
 }
 
 /** "JPG, PNG or HEIC" — the human list, in the same order as the picker's. */

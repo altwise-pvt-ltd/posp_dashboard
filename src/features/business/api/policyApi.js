@@ -74,6 +74,14 @@ export async function fetchPolicyDetail(policyId, { signal } = {}) {
   return normalizePolicyDetail(data);
 }
 
+/** Asks for the policy to be cancelled — `POST /policies/<policyId>/cancellation-requests`. */
+export async function requestPolicyCancellation(policyId, reason) {
+  const response = await api.post(ENDPOINTS.policy.cancellationRequest(policyId), {
+    reason: reason.trim(),
+  });
+  return { message: response?.data?.message ?? null };
+}
+
 export async function fetchPolicies({ signal } = {}) {
   const policies = [];
 

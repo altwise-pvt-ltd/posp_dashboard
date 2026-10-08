@@ -56,7 +56,7 @@ function SubmitSectionDialog({ open, onCancel, onConfirm }) {
               </span>
             </p>
 
-            <div className="flex flex-col gap-2.5 sm:flex-row">
+            <div className="flex flex-col-reverse gap-2.5 sm:flex-row">
               <button
                 type="button"
                 ref={cancelButtonRef}

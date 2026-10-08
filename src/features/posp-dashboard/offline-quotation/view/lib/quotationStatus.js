@@ -262,15 +262,14 @@ export const canApplyForVerification = (statusCode) => SUBMITTABLE.includes(stat
 /**
  * The states in which the agent may reopen a quote's answers and change them.
  *
- * Only the one a reviewer sends back. A draft is edited by raising it again
- * through the wizard, and anything past verification is no longer the agent's
- * to change.
+ * A draft not yet submitted, and one a reviewer sends back. Anything past
+ * verification is no longer the agent's to change.
  *
  * ⚠ CONFIRM WITH BACKEND — the exact code. `RETURNED_FOR_CORRECTION` is read
  * off the pill's label ("Returned for Correction"), not seen in a reply. If the
  * real code differs the Edit button simply never appears; add it here.
  */
-const EDITABLE = ['RETURNED_FOR_CORRECTION'];
+const EDITABLE = ['DRAFT', 'RETURNED_FOR_CORRECTION'];
 
 /** Whether to offer "Edit" on a quote in this state. */
 export const canEditQuote = (statusCode) => EDITABLE.includes(statusCode);

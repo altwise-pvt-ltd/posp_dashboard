@@ -22,15 +22,18 @@ import AppLink from '@/shared/components/AppLink';
 function useAccount() {
   const profileName = usePospProfileStore((s) => s.profile?.fullName);
   const photoKey = usePospProfileStore((s) => s.profile?.profileImagePath);
+  const profileEmail = usePospProfileStore((s) => s.profile?.email);
   const user = useAuthStore((s) => s.user);
   const mobile = useAuthStore((s) => s.mobile);
 
   const name = profileName || user?.fullName || null;
-  return { name, mobile: mobile || user?.mobile || null, photoKey };
+  const email = profileEmail || user?.email || null;
+  return { name, mobile: mobile || user?.mobile || null, email, photoKey };
 }
 
-function UserMenu({ isOpen, onToggle }) {
-  const { name, mobile, photoKey } = useAccount();
+// `showProfileLink` is on only in the dashboard bar; funnel screens have no profile page yet.
+function UserMenu({ isOpen, onToggle, showProfileLink = false }) {
+  const { name, mobile, email, photoKey } = useAccount();
   const photo = useProfilePhoto(photoKey);
   const signOut = useAuthStore((s) => s.signOut);
   const navigate = useNavigate();
@@ -77,22 +80,21 @@ function UserMenu({ isOpen, onToggle }) {
             <p className="text-xs text-slate-500">
               {name && mobile ? mobile : 'Signed in'}
             </p>
+            {email && (
+              <p title={email} className="text-xs text-slate-500 truncate">
+                {email}
+              </p>
+            )}
           </div>
-          <AppLink
-            to="/profile"
-            onClick={onToggle}
-            className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
-          >
-            Your profile
-          </AppLink>
-          {/* Inert until the screen exists — an anchor here would only dirty
-              the URL with a hash and scroll the page to the top. */}
-          <span
-            aria-disabled="true"
-            className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 cursor-default"
-          >
-            Change Password
-          </span>
+          {showProfileLink && (
+            <AppLink
+              to="/profile"
+              onClick={onToggle}
+              className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+            >
+              Your profile
+            </AppLink>
+          )}
           <button
             type="button"
             onClick={handleSignOut}

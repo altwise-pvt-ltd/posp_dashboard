@@ -1,7 +1,32 @@
+import { useEffect, useRef } from 'react';
 import { ChevronLeft, Clock, ExternalLink, FileText, Loader2, TriangleAlert } from 'lucide-react';
 import { useMatchMedia, MOBILE_QUERY } from '@/shared/hooks/useMatchMedia';
 import { useCertificate } from '../../hooks/useCertificate';
+import { fitCertificateFrame } from '../../api/certificateApi';
 import { formatCertificateDate } from '../../data/certificate';
+
+/** The server's HTML sheet, refitted to the frame on load and on resize. */
+function HtmlCertificateFrame({ src }) {
+  const frameRef = useRef(null);
+
+  useEffect(() => {
+    const frame = frameRef.current;
+    if (!frame) return undefined;
+    const observer = new ResizeObserver(() => fitCertificateFrame(frame));
+    observer.observe(frame);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <iframe
+      ref={frameRef}
+      src={src}
+      title="Your POSP certificate"
+      onLoad={(event) => fitCertificateFrame(event.currentTarget)}
+      className="block h-[78vh] min-h-125 w-full"
+    />
+  );
+}
 
 /**
  * The shell every state below sits in — slate, so the sheet reads as paper on a
@@ -233,6 +258,8 @@ function CertificateScreen({
           <div className="w-full max-w-5xl overflow-hidden rounded-2xl border border-slate-300/70 bg-white shadow-[0_18px_44px_-24px_rgba(15,23,42,0.28)]">
             {file.kind === 'image' ? (
               <img src={file.src} alt="Your POSP certificate" className="block w-full" />
+            ) : file.kind === 'html' ? (
+              <HtmlCertificateFrame src={file.src} />
             ) : (
               /* A4 is taller than it is wide, so the frame is sized off the
                  viewport rather than an aspect ratio — a full sheet fitted to

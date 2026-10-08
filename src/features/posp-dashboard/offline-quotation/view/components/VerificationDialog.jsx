@@ -71,7 +71,7 @@ function VerificationDialog({ open, reference, submitting, onCancel, onConfirm }
               </span>
             </p>
 
-            <div className="mt-6 flex flex-col gap-2.5 sm:flex-row">
+            <div className="mt-6 flex flex-col-reverse gap-2.5 sm:flex-row">
               <CustomButton
                 variant="secondary"
                 size="md"

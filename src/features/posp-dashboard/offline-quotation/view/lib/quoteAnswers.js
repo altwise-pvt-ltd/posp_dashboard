@@ -184,6 +184,9 @@ export function buildAnswerView(sections = [], values = []) {
         if (!byField.has(field.code)) continue;
         claimed.add(field.code);
 
+        // Uploaded files are shown by the documents panel, with previews.
+        if (field.control === 'file') continue;
+
         const text = answerText(field, byField.get(field.code).get(index));
         if (text === null) {
           if (index === 0) blanks += 1;

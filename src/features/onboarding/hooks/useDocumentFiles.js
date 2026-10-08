@@ -5,6 +5,7 @@ const MIME_BY_EXTENSION = {
   jpg: "image/jpeg",
   jpeg: "image/jpeg",
   png: "image/png",
+  pdf: "application/pdf",
 };
 
 const fileNameFor = (key) => key.split("/").pop() || "document";
