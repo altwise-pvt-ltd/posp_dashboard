@@ -228,6 +228,7 @@ export default function BusinessStep({ onNext, onSkip, initialValues }) {
   const hasGst = useWatch({ control: form.control, name: "hasGst" });
   const stateValue = useWatch({ control: form.control, name: "state" });
   const pincodeValue = useWatch({ control: form.control, name: "pincode" });
+  const addressLine2Value = useWatch({ control: form.control, name: "addressLine2" });
 
   const answered = hasBusiness === true || hasBusiness === false;
 
@@ -617,18 +618,26 @@ export default function BusinessStep({ onNext, onSkip, initialValues }) {
                       Areas in {pincodeValue}
                     </span>
                     <div className="flex flex-wrap gap-1.5">
-                      {areas.map((area) => (
-                        <button
-                          key={area}
-                          type="button"
-                          onClick={() =>
-                            form.setValue("addressLine2", area, { shouldValidate: true })
-                          }
-                          className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-500 transition-all duration-150 hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600 active:scale-[0.97]"
-                        >
-                          {area}
-                        </button>
-                      ))}
+                      {areas.map((area) => {
+                        const isSelected = addressLine2Value?.trim() === area;
+                        return (
+                          <button
+                            key={area}
+                            type="button"
+                            aria-pressed={isSelected}
+                            onClick={() =>
+                              form.setValue("addressLine2", area, { shouldValidate: true })
+                            }
+                            className={`rounded-lg border px-2.5 py-1 text-xs font-medium transition-all duration-150 active:scale-[0.97] ${
+                              isSelected
+                                ? "border-orange-400 bg-orange-50 text-orange-600"
+                                : "border-slate-200 bg-slate-50 text-slate-500 hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600"
+                            }`}
+                          >
+                            {area}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 )}

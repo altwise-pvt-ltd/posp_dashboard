@@ -10,6 +10,7 @@ import { TIME_WARNINGS } from './examTiming';
 import ExamInstructions from './ExamInstructions';
 import ExamResults from './ExamResults';
 import ExamRunner from './ExamRunner';
+import ExitExamDialog from './ExitExamDialog';
 
 /** The screens the portal moves between, in the order a learner meets them. */
 const STAGE = {
@@ -65,6 +66,7 @@ function ExamPortal({ exam, planName, onExit, onFullBleedChange }) {
   const [submitError, setSubmitError] = useState(null);
   /** The graded paper from `/exam/submit` — the only verdict there is. */
   const [result, setResult] = useState(null);
+  const [isExitDialogOpen, setIsExitDialogOpen] = useState(false);
 
   /* A ref rather than the `submitting` state, because the two callers of
      `submitPaper` are a click and an interval tick, and the tick reads a closure
@@ -110,6 +112,52 @@ function ExamPortal({ exam, planName, onExit, onFullBleedChange }) {
   useEffect(() => {
     onFullBleedChange?.(isFullBleed);
   }, [isFullBleed, onFullBleedChange]);
+
+  /* While the paper is open, browser Back and keyboard refresh ask before
+     leaving. Back is caught by parking an extra history entry on the same URL
+     and re-parking it on every pop. The browser's own reload button can only
+     get the native "Leave site?" prompt, which is what beforeunload gives. */
+  const isSitting = stage === STAGE.PAPER;
+
+  useEffect(() => {
+    if (!isSitting) return undefined;
+
+    const park = () => window.history.pushState(window.history.state, '', window.location.href);
+    park();
+
+    const handlePopState = () => {
+      park();
+      setIsExitDialogOpen(true);
+    };
+    const handleKeyDown = (event) => {
+      const isReload =
+        event.key === 'F5' || ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'r');
+      if (!isReload) return;
+      event.preventDefault();
+      setIsExitDialogOpen(true);
+    };
+    const handleBeforeUnload = (event) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [isSitting]);
+
+  const stayInExam = useCallback(() => setIsExitDialogOpen(false), []);
+
+  const exitExam = () => {
+    setIsExitDialogOpen(false);
+    setIsClockRunning(false);
+    onExit?.();
+  };
 
   /**
    * The paper as `/exam/submit` wants it.
@@ -389,19 +437,23 @@ function ExamPortal({ exam, planName, onExit, onFullBleedChange }) {
   }
 
   return (
-    <ExamRunner
-      key={section.id}
-      section={section}
-      questions={questions}
-      answers={answers}
-      secondsLeft={secondsLeft}
-      totalSeconds={exam.durationSeconds}
-      toast={toast}
-      onDismissToast={dismissToast}
-      onSelectOption={selectOption}
-      onClearAnswer={clearAnswer}
-      onSubmitSection={finishPaper}
-    />
+    <>
+      <ExamRunner
+        key={section.id}
+        section={section}
+        questions={questions}
+        answers={answers}
+        secondsLeft={secondsLeft}
+        totalSeconds={exam.durationSeconds}
+        toast={toast}
+        onDismissToast={dismissToast}
+        onSelectOption={selectOption}
+        onClearAnswer={clearAnswer}
+        onSubmitSection={finishPaper}
+        inputLocked={isExitDialogOpen}
+      />
+      <ExitExamDialog open={isExitDialogOpen} onStay={stayInExam} onExit={exitExam} />
+    </>
   );
 }
 

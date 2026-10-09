@@ -8,24 +8,6 @@ import QuotationList from '../components/QuotationList';
 import { useQuotationList } from '../hooks/useQuotationList';
 import { ALL } from '../lib/quotationStatus';
 
-/**
- * "View Quotations" — the read side of the offline quotation flow, and the page
- * the sidebar's second child under Offline Quotation points at.
- *
- * The page owns the states and nothing else: every row, chip and pill below it
- * takes what it draws as props, and the data comes from `useQuotationList`,
- * which reads `GET /quote/queue/mine`.
- *
- * Five outcomes, and they are deliberately five rather than two — "the request
- * failed", "you have no quotations", "you have none in *this* state", and
- * "nothing matches what you typed" are four different things to tell someone,
- * and a single empty state covering all of them tells them nothing.
- *
- * One rule shapes the layout: the toolbar survives an empty result. Filtering
- * is server-side now, so an empty list is very often something the user just
- * did to themselves by picking a status — hiding the chips at that moment would
- * take away the only control that undoes it.
- */
 
 function ViewQuotationsPage() {
   const navigate = useNavigate();
@@ -53,10 +35,9 @@ function ViewQuotationsPage() {
   /** A failure with nothing on screen behind it — the whole panel is the error. */
   const blocked = Boolean(error) && rows.length === 0;
 
-  /**
-   * Once a status is picked the toolbar stays, even with no rows: the filter is
-   * what emptied the list, so the control that clears it has to remain in reach.
-   */
+
+
+    
   const showFilters = rows.length > 0 || status !== ALL;
 
   const hiding = query ? visible.length !== rows.length : rows.length !== totalCount;
@@ -122,9 +103,7 @@ function ViewQuotationsPage() {
               )}
 
               {rows.length === 0 ? (
-                /* Nothing came back. Which of the two reasons decides both the
-                   wording and the way out — a first-time agent needs the create
-                   screen, someone who picked "Expired" needs the filter gone. */
+               
                 status === ALL ? (
                   <QuoteNotice
                     icon={<FileText size={20} />}

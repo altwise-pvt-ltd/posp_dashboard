@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
+  ChevronDown,
   FileQuestion,
   Info,
   Loader2,
@@ -47,9 +48,8 @@ import { canApplyForVerification, canEditQuote } from "../lib/quotationStatus";
  * create wizard — a quote read back should look like the quote that was given.
  *
  * Only answered questions are rendered. A read-back of a 30-question motor form
- * where a third of the rows say "—" is a page about its own blanks; the count
- * of them goes at the bottom instead, where it is available without being in
- * the way.
+ * where a third of the rows say "—" is a page about its own blanks; the blank
+ * ones are listed at the bottom instead, collapsed by default.
  */
 
 function Fact({ label, children }) {
@@ -484,12 +484,33 @@ function QuotationDetailPage() {
                   metadata={metadata}
                 />
 
-                {answers.blanks > 0 && (
-                  <p className="font-body-md text-body-md text-on-surface-variant">
-                    {answers.blanks} further{" "}
-                    {answers.blanks === 1 ? "question was" : "questions were"}{" "}
-                    left blank.
-                  </p>
+                {answers.blanks.length > 0 && (
+                  <details className="group font-body-md text-body-md text-on-surface-variant">
+                    <summary className="inline-flex cursor-pointer list-none items-center gap-1 hover:text-on-surface [&::-webkit-details-marker]:hidden">
+                      {answers.blanks.length}{" "}
+                      {answers.blanks.length === 1
+                        ? "question was"
+                        : "questions were"}{" "}
+                      left blank
+                      <ChevronDown
+                        aria-hidden="true"
+                        className="size-4 transition-transform group-open:rotate-180"
+                      />
+                    </summary>
+                    <ul className="mt-2 list-disc space-y-1 pl-5">
+                      {answers.blanks.map((blank, i) => (
+                        <li key={`${blank.code}-${i}`}>
+                          {blank.label}
+                          {blank.section && (
+                            <span className="text-on-surface-variant/70">
+                              {" "}
+                              · {blank.section}
+                            </span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
                 )}
               </>
             )}

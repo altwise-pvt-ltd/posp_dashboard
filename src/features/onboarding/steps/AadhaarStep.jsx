@@ -39,6 +39,13 @@ const GENDERS = [
   { value: "Other", label: "Other" },
 ];
 
+// Saved genders may come back in another case ("MALE"); map to an option value
+// so the select shows it.
+const matchGender = (saved) => {
+  const wanted = String(saved ?? "").trim().toLowerCase();
+  return GENDERS.find((option) => option.value.toLowerCase() === wanted)?.value ?? saved ?? "";
+};
+
 /* ── Schema ── */
 const aadhaarSchema = z.object({
   // Stored without spaces; the field formats display as XXXX XXXX XXXX.
@@ -67,7 +74,7 @@ export default function AadhaarStep({ onNext, initialValues, suggestedName }) {
       aadhaar: formatAadhaar(initialValues?.aadhaar),
       // Optionals persist as null from the record — coerce to controlled strings.
       dateOfBirth: initialValues?.dateOfBirth ?? "",
-      gender: initialValues?.gender ?? "",
+      gender: matchGender(initialValues?.gender),
     },
     mode: "onTouched",
   });

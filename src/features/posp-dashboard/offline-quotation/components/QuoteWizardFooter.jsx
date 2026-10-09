@@ -27,29 +27,29 @@ function QuoteWizardFooter({
   children,
 }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-unit border-t border-hairline pt-gutter">
+    <div className="flex flex-wrap items-center gap-unit border-t border-hairline pt-gutter">
+      {onBack && (
+        <CustomButton
+          variant={backVariant}
+          size="md"
+          leftIcon={<ArrowLeft />}
+          disabled={backDisabled}
+          onClick={onBack}
+        >
+          {backLabel}
+        </CustomButton>
+      )}
+
+      {/* Own row above the buttons on mobile, between them from md up */}
       <p
         role={tone === 'error' ? 'alert' : tone === 'success' ? 'status' : undefined}
         aria-live={tone === 'default' ? undefined : 'polite'}
-        className={`font-body-md text-body-md min-w-0 ${TONES[tone] ?? TONES.default}`}
+        className={`font-body-md text-body-md order-first w-full min-w-0 md:order-0 md:w-auto md:flex-1 ${TONES[tone] ?? TONES.default}`}
       >
         {message}
       </p>
 
-      <div className="flex items-center gap-unit">
-        {onBack && (
-          <CustomButton
-            variant={backVariant}
-            size="md"
-            leftIcon={<ArrowLeft />}
-            disabled={backDisabled}
-            onClick={onBack}
-          >
-            {backLabel}
-          </CustomButton>
-        )}
-        {children}
-      </div>
+      {children && <div className="ml-auto flex items-center gap-unit">{children}</div>}
     </div>
   );
 }

@@ -149,7 +149,7 @@ const indexValues = (values = []) => {
  *   sections — only those with at least one answer, in metadata order, each
  *              holding one `row` per `rowIndex` that carried anything
  *   orphans  — answers whose field code is in no section at all
- *   blanks   — how many questions were asked and left empty
+ *   blanks   — the questions that were asked and left empty, as `{ code, label, section }`
  *
  * `orphans` is not a defensive flourish. The metadata is fetched for the
  * product *as it is published today*, and the quote was answered against it as
@@ -161,7 +161,7 @@ const indexValues = (values = []) => {
 export function buildAnswerView(sections = [], values = []) {
   const byField = indexValues(values);
   const claimed = new Set();
-  let blanks = 0;
+  const blanks = [];
 
   const answered = [];
 
@@ -189,7 +189,9 @@ export function buildAnswerView(sections = [], values = []) {
 
         const text = answerText(field, byField.get(field.code).get(index));
         if (text === null) {
-          if (index === 0) blanks += 1;
+          if (index === 0) {
+            blanks.push({ code: field.code, label: field.label || humaniseCode(field.code), section: section.name });
+          }
           continue;
         }
 
@@ -211,7 +213,7 @@ export function buildAnswerView(sections = [], values = []) {
 
     for (const [, raw] of rows) {
       const text = answerText(inferField(raw), raw);
-      if (text === null) blanks += 1;
+      if (text === null) blanks.push({ code, label: humaniseCode(code), section: null });
       else orphans.push({ code, label: humaniseCode(code), text });
     }
   }

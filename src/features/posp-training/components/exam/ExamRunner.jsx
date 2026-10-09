@@ -52,6 +52,7 @@ function ExamRunner({
   onSelectOption,
   onClearAnswer,
   onSubmitSection,
+  inputLocked = false,
 }) {
   const [questionIndex, setQuestionIndex] = useState(0);
   const [isSubmitDialogOpen, setIsSubmitDialogOpen] = useState(false);
@@ -86,7 +87,7 @@ function ExamRunner({
    */
   useEffect(() => {
     const handleKeyDown = (event) => {
-      if (isSubmitDialogOpen || event.metaKey || event.ctrlKey || event.altKey) return;
+      if (isSubmitDialogOpen || inputLocked || event.metaKey || event.ctrlKey || event.altKey) return;
 
       if (event.key === 'ArrowRight') {
         setQuestionIndex((index) => Math.min(questions.length - 1, index + 1));
@@ -106,7 +107,7 @@ function ExamRunner({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isSubmitDialogOpen, question, questions.length, onSelectOption]);
+  }, [isSubmitDialogOpen, inputLocked, question, questions.length, onSelectOption]);
 
   return (
     <div
