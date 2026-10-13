@@ -1,9 +1,10 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   CreditCard, Mail, Fingerprint, Camera, Landmark, GraduationCap, Building2,
-  Pencil, X, FileText, CheckCircle2, ShieldCheck, Send, AlertCircle, RotateCcw, Loader2,
+  Pencil, X, FileText, Eye, EyeOff, CheckCircle2, ShieldCheck, Send, AlertCircle, RotateCcw, Loader2,
 } from "lucide-react";
 import CustomButton from "@/shared/components/CustomButton";
+import DocumentViewer from "@/shared/components/DocumentViewer";
 import { formatAadhaar } from "@/shared/validation/aadhaarField";
 import { maskAccount } from "@/features/profile/lib/profileFields";
 import { fetchReviewDetails, fetchDocumentBlob, hasDocumentKey } from "../api/onboardingApi";
@@ -111,7 +112,7 @@ const SECTIONS = [
     rows: (d) => [
       ["Account Type", humanizeValue(d.accountType)],
       ["Account Holder", d.accountHolder],
-      ["Account Number", maskAccount(d.accountNumber)],
+      ["Account Number", d.accountNumber ? <RevealableAccount value={d.accountNumber} /> : null],
       ["IFSC Code", d.ifsc],
       ["Bank Name", d.bankName],
       /* Optional in the step, so listed only when it's actually on file. */
@@ -182,6 +183,27 @@ const SECTIONS = [
     files: () => [],
   },
 ];
+
+/* Account number, masked until the eye is tapped. */
+function RevealableAccount({ value }) {
+  const [shown, setShown] = useState(false);
+  const Icon = shown ? EyeOff : Eye;
+
+  return (
+    <span className="inline-flex items-center gap-2">
+      <span className="font-mono tracking-wide break-all">{shown ? value : maskAccount(value)}</span>
+      <button
+        type="button"
+        onClick={() => setShown((s) => !s)}
+        aria-label={shown ? "Hide account number" : "Show account number"}
+        aria-pressed={shown}
+        className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-orange-600"
+      >
+        <Icon size={15} />
+      </button>
+    </span>
+  );
+}
 
 /* Shared little "Edit" pill — same affordance the section cards use today. */
 function EditPill({ onClick }) {
@@ -256,7 +278,33 @@ function useDocumentUrl(key) {
 
   // A fetched blob carries its real content type; a key alone tells us nothing
   // until the bytes arrive, so "is it an image?" is answered from the blob.
-  return { url, isImage: Boolean(blob?.type?.startsWith("image/")) };
+  return { url, type: blob?.type ?? "", isImage: Boolean(blob?.type?.startsWith("image/")) };
+}
+
+/* Thumbnail that opens the full document. Shows the whole image, not a crop. */
+function DocumentThumb({ documentKey, label, boxClassName, iconSize }) {
+  const { url, type, isImage } = useDocumentUrl(documentKey);
+  const [open, setOpen] = useState(false);
+  const close = useCallback(() => setOpen(false), []);
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        disabled={!url}
+        aria-label={`View ${label}`}
+        className={`flex shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-white transition-all duration-150 enabled:hover:border-orange-300 enabled:active:scale-[0.97] ${boxClassName}`}
+      >
+        {isImage && url ? (
+          <img src={url} alt={label} className="h-full w-full object-contain" />
+        ) : (
+          <FileText size={iconSize} className="text-slate-400" />
+        )}
+      </button>
+      <DocumentViewer url={open ? url : null} type={type} title={label} onClose={close} />
+    </>
+  );
 }
 
 /**
@@ -274,17 +322,9 @@ const documentName = (key) => {
 
 /* ── A single uploaded file: image thumbnail, or a labelled chip for PDFs ── */
 function FilePreview({ label, documentKey }) {
-  const { url, isImage } = useDocumentUrl(documentKey);
-
   return (
     <div className="flex items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50/70 p-2">
-      <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-white">
-        {isImage && url ? (
-          <img src={url} alt={label} className="h-full w-full object-cover" />
-        ) : (
-          <FileText size={18} className="text-slate-400" />
-        )}
-      </div>
+      <DocumentThumb documentKey={documentKey} label={label} boxClassName="h-11 w-11" iconSize={18} />
       <div className="min-w-0">
         <div className="text-[0.6875rem] font-semibold uppercase tracking-wide text-slate-400">{label}</div>
         <div className="truncate text-[0.75rem] font-medium text-slate-600">{documentName(documentKey)}</div>
@@ -463,17 +503,10 @@ function DetailsPanel({ sections, onEdit }) {
 /* One uploaded document row — thumbnail + name + Edit (mirrors KYC checklist). */
 function DocumentRow({ doc, onEdit }) {
   const { label, documentKey } = doc;
-  const { url, isImage } = useDocumentUrl(documentKey);
 
   return (
     <li className="flex items-center gap-3 -mx-2 px-2 py-2 rounded-xl hover:bg-orange-50/60 transition-colors duration-200">
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-white">
-        {isImage && url ? (
-          <img src={url} alt={label} className="h-full w-full object-cover" />
-        ) : (
-          <FileText size={16} className="text-slate-400" />
-        )}
-      </span>
+      <DocumentThumb documentKey={documentKey} label={label} boxClassName="h-10 w-10" iconSize={16} />
       <div className="min-w-0">
         <span className="block text-sm font-semibold text-slate-700 leading-tight truncate">
           {label}

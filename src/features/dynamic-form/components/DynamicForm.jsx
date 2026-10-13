@@ -3,7 +3,7 @@ import { getFieldComponent, isValuelessControl } from './fields/registry';
 import { resolveVisibleSections } from '../lib/visibleSections';
 import { useLookupState } from '../hooks/useLookupOptions';
 
-const WIDE_CONTROLS = new Set(['textarea', 'multiselect', 'radio', 'label', 'file']);
+const WIDE_CONTROLS = new Set(['textarea', 'multiselect', 'radio', 'label']);
 
 function DynamicForm({
   sections = [],
@@ -46,7 +46,14 @@ function DynamicForm({
             </h3>
           )}
 
-          <div className="grid gap-gutter sm:grid-cols-2">
+          {/* A section of only documents gets a denser grid sized for square tiles. */}
+          <div
+            className={
+              section.fields.every((field) => field.control === 'file')
+                ? 'grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4'
+                : 'grid gap-gutter sm:grid-cols-2'
+            }
+          >
             {section.fields.map((field) => {
               const Component = getFieldComponent(field.control);
               const valueless = isValuelessControl(field.control);

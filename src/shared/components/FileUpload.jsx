@@ -1,9 +1,9 @@
 import { useRef, useState, useCallback, useEffect } from "react";
 import { UploadCloud, X, CheckCircle2, AlertCircle, Loader2, FileText } from "lucide-react";
-import { DOCUMENT, acceptAttribute, policyCaption } from "@/shared/upload/policy";
+import { DOCUMENT, acceptAttribute, formatList, policyCaption } from "@/shared/upload/policy";
 import { prepareFile } from "@/shared/upload/validate";
 import { useMatchMedia, MOBILE_QUERY } from "@/shared/hooks/useMatchMedia";
-import UploadSourceSheet from "@/shared/components/UploadSourceSheet";
+import DocumentViewer from "@/shared/components/DocumentViewer";
 
 export default function FileUpload({
   id,
@@ -15,7 +15,10 @@ export default function FileUpload({
   onError,
   error,
   hint,
+  // "tile" is a fixed-ratio card sized for a two-column grid.
+  variant = "row",
 }) {
+  const tile = variant === "tile";
   const inputRef = useRef(null);
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
@@ -23,10 +26,9 @@ export default function FileUpload({
   const [busy, setBusy] = useState(false);
   const [rejection, setRejection] = useState(null);
 
-  // Phones get a sheet to choose between the camera and files.
   const isMobile = useMatchMedia(MOBILE_QUERY);
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const closeSheet = useCallback(() => setSheetOpen(false), []);
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const closeViewer = useCallback(() => setViewerOpen(false), []);
 
   const selectionRef = useRef(0);
   const mountedRef = useRef(true);
@@ -134,8 +136,7 @@ export default function FileUpload({
   // Label and zone share one entry point, so both respect the same guard.
   const openPicker = () => {
     if (!interactive) return;
-    if (isMobile) setSheetOpen(true);
-    else inputRef.current?.click();
+    inputRef.current?.click();
   };
 
   const handleZoneKeyDown = (e) => {
@@ -211,9 +212,9 @@ export default function FileUpload({
         onDragOver={(e) => e.preventDefault()}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className={`relative flex min-h-25 items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed outline-none transition-all duration-200 focus-visible:ring-2 focus-visible:ring-orange-500/40 ${zoneBorder} ${zoneBg} ${
-          interactive ? "cursor-pointer" : "cursor-default"
-        }`}
+        className={`relative flex items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed outline-none transition-all duration-200 focus-visible:ring-2 focus-visible:ring-orange-500/40 ${zoneBorder} ${zoneBg} ${
+          tile ? "aspect-4/3" : "min-h-25"
+        } ${interactive ? "cursor-pointer" : "cursor-default"}`}
       >
         {/* Hidden input */}
         <input
@@ -222,7 +223,7 @@ export default function FileUpload({
           type="file"
           accept={acceptAttribute(profile)}
           className="hidden"
-          // Keeps the programmatic click from bubbling to the zone and reopening the sheet.
+          // Keeps the programmatic click from bubbling to the zone and reopening the picker.
           onClick={(e) => e.stopPropagation()}
           onChange={handleInputChange}
         />
@@ -237,21 +238,67 @@ export default function FileUpload({
             <span className="text-[0.75rem] font-semibold text-slate-600">
               Checking your file…
             </span>
-            <span className="text-[0.625rem] text-slate-400">
-              Large or iPhone photos take a moment.
-            </span>
+            {!tile && (
+              <span className="text-[0.625rem] text-slate-400">
+                Large or iPhone photos take a moment.
+              </span>
+            )}
           </div>
+        ) : hasFile && tile ? (
+          /* ── Tile preview: the whole document, tap to enlarge ── */
+          <>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setViewerOpen(true);
+              }}
+              aria-label={`View ${label}`}
+              className="flex h-full w-full items-center justify-center bg-white p-1.5"
+            >
+              {file.type.startsWith("image/") ? (
+                <img src={preview} alt={label} className="h-full w-full object-contain" />
+              ) : (
+                <span className="flex flex-col items-center gap-1 text-slate-400">
+                  <FileText size={26} />
+                  <span className="text-[0.625rem] font-semibold">PDF · Tap to view</span>
+                </span>
+              )}
+            </button>
+
+            <span className="pointer-events-none absolute bottom-1.5 left-1.5 inline-flex items-center gap-1 rounded-full bg-emerald-600/90 px-2 py-0.5 text-[0.625rem] font-semibold text-white">
+              <CheckCircle2 size={10} />
+              {(file.size / 1024).toFixed(0)} KB
+            </span>
+
+            <button
+              type="button"
+              onClick={clear}
+              aria-label={`Remove ${label}`}
+              className="absolute top-1.5 right-1.5 flex h-7 w-7 items-center justify-center rounded-full border border-slate-200 bg-white/95 text-slate-500 shadow-sm transition-all duration-150 hover:border-red-300 hover:bg-red-100 hover:text-red-500"
+            >
+              <X size={13} />
+            </button>
+          </>
         ) : hasFile ? (
           /* ── File preview state ── */
           <div className="flex w-full items-center gap-3 px-3.5 py-3">
-            {/* Images get a thumbnail; a PDF gets a file icon */}
-            <div className="flex h-15 w-15 shrink-0 items-center justify-center overflow-hidden rounded-[10px] border border-slate-200 bg-slate-100">
+            {/* Images get a thumbnail; a PDF gets a file icon. Tap opens the full view. */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setViewerOpen(true);
+              }}
+              aria-label={`View ${label}`}
+              className="flex h-15 w-15 shrink-0 items-center justify-center overflow-hidden rounded-[10px] border border-slate-200 bg-slate-100 transition-all duration-150 hover:border-orange-300 active:scale-[0.97]"
+            >
               {file.type.startsWith("image/") ? (
-                <img src={preview} alt="preview" className="h-full w-full object-cover" />
+                <img src={preview} alt="preview" className="h-full w-full object-contain" />
               ) : (
                 <FileText size={22} className="text-slate-400" />
               )}
-            </div>
+            </button>
 
             {/* File info */}
             <div className="min-w-0 flex-1">
@@ -289,22 +336,35 @@ export default function FileUpload({
                 className={`transition-colors duration-200 ${dragging ? "text-orange-500" : "text-slate-400"}`}
               />
             </div>
-            <div>
+            {tile ? (
               <span className={`text-[0.75rem] font-semibold ${dragging ? "text-orange-500" : "text-slate-600"}`}>
-                {dragging ? "Drop it here" : isMobile ? "Tap to capture" : "Click to browse"}
+                {dragging ? "Drop it here" : isMobile ? "Tap to upload" : "Click or drop"}
               </span>
-              <span className="text-[0.75rem] text-slate-400">
-                {isMobile ? " or choose a file" : " or drag & drop"}
-              </span>
-            </div>
+            ) : (
+              <div>
+                <span className={`text-[0.75rem] font-semibold ${dragging ? "text-orange-500" : "text-slate-600"}`}>
+                  {dragging ? "Drop it here" : isMobile ? "Tap to upload" : "Click to browse"}
+                </span>
+                <span className="text-[0.75rem] text-slate-400">
+                  {isMobile ? " a photo or file" : " or drag & drop"}
+                </span>
+              </div>
+            )}
             {/* Derived from the profile, so it can never advertise a format the
                 validator rejects. */}
             <div className="text-[0.625rem] text-slate-300">
-              {policyCaption(profile)}
+              {tile ? formatList(profile) : policyCaption(profile)}
             </div>
           </div>
         )}
       </div>
+
+      <DocumentViewer
+        url={viewerOpen && hasFile ? preview : null}
+        type={file?.type}
+        title={label}
+        onClose={closeViewer}
+      />
 
       {/* Hint or error */}
       {displayError ? (
@@ -315,21 +375,6 @@ export default function FileUpload({
       ) : hint ? (
         <p className="mt-0.5 text-[0.6875rem] text-slate-400">{hint}</p>
       ) : null}
-
-      {/* A captured photo goes through the same checks as a picked file. */}
-      <UploadSourceSheet
-        open={sheetOpen}
-        title={label}
-        onClose={closeSheet}
-        onPickFiles={() => {
-          closeSheet();
-          inputRef.current?.click();
-        }}
-        onCapture={(captured) => {
-          closeSheet();
-          processFile(captured);
-        }}
-      />
     </div>
   );
 }

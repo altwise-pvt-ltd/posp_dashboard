@@ -241,29 +241,33 @@ export default function BankStep({ onNext, initialValues }) {
           {...form.register("branchName")}
         />
 
-        <Controller name="passbookImage" control={form.control} render={({ field }) => (
-          <FileUpload
-            id="passbookImage"
-            label="Passbook Photo"
-            required
-            initialFile={storedFiles.passbookImage}
-            error={form.formState.errors.passbookImage?.message}
-            hint="First page showing your name, account number and IFSC."
-            onChange={field.onChange}
-          />
-        )} />
+        <div className="grid grid-cols-2 gap-3">
+          <Controller name="passbookImage" control={form.control} render={({ field }) => (
+            <FileUpload
+              id="passbookImage"
+              label="Passbook Photo"
+              required
+              variant="tile"
+              initialFile={storedFiles.passbookImage}
+              error={form.formState.errors.passbookImage?.message}
+              hint="Page with name, account no. and IFSC."
+              onChange={field.onChange}
+            />
+          )} />
 
-        <Controller name="chequeImage" control={form.control} render={({ field }) => (
-          <FileUpload
-            id="chequeImage"
-            label="Cancelled Cheque"
-            required
-            initialFile={storedFiles.chequeImage}
-            error={form.formState.errors.chequeImage?.message}
-            hint="A cheque with 'CANCELLED' written across it."
-            onChange={field.onChange}
-          />
-        )} />
+          <Controller name="chequeImage" control={form.control} render={({ field }) => (
+            <FileUpload
+              id="chequeImage"
+              label="Cancelled Cheque"
+              required
+              variant="tile"
+              initialFile={storedFiles.chequeImage}
+              error={form.formState.errors.chequeImage?.message}
+              hint="With 'CANCELLED' written across it."
+              onChange={field.onChange}
+            />
+          )} />
+        </div>
 
         <div className="flex gap-3 pt-1">
           {/* Held closed until the options land, too: submitting before then

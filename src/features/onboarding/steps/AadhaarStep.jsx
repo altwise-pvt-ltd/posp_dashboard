@@ -173,29 +173,33 @@ export default function AadhaarStep({ onNext, initialValues, suggestedName }) {
           {...form.register("gender")}
         />
 
-        <Controller name="aadhaarFrontImage" control={form.control} render={({ field }) => (
-          <FileUpload
-            id="aadhaarFrontImage"
-            label="Aadhaar Front"
-            required
-            initialFile={storedFiles.aadhaarFrontImage}
-            error={form.formState.errors.aadhaarFrontImage?.message}
-            hint="Front side showing your photo and name."
-            onChange={field.onChange}
-          />
-        )} />
+        <div className="grid grid-cols-2 gap-3">
+          <Controller name="aadhaarFrontImage" control={form.control} render={({ field }) => (
+            <FileUpload
+              id="aadhaarFrontImage"
+              label="Aadhaar Front"
+              required
+              variant="tile"
+              initialFile={storedFiles.aadhaarFrontImage}
+              error={form.formState.errors.aadhaarFrontImage?.message}
+              hint="Side with your photo and name."
+              onChange={field.onChange}
+            />
+          )} />
 
-        <Controller name="aadhaarBackImage" control={form.control} render={({ field }) => (
-          <FileUpload
-            id="aadhaarBackImage"
-            label="Aadhaar Back"
-            required
-            initialFile={storedFiles.aadhaarBackImage}
-            error={form.formState.errors.aadhaarBackImage?.message}
-            hint="Back side showing your address."
-            onChange={field.onChange}
-          />
-        )} />
+          <Controller name="aadhaarBackImage" control={form.control} render={({ field }) => (
+            <FileUpload
+              id="aadhaarBackImage"
+              label="Aadhaar Back"
+              required
+              variant="tile"
+              initialFile={storedFiles.aadhaarBackImage}
+              error={form.formState.errors.aadhaarBackImage?.message}
+              hint="Side with your address."
+              onChange={field.onChange}
+            />
+          )} />
+        </div>
 
         <div className="flex gap-3 pt-1">
           {/* Disabled while the upload is out — two images make this the longest

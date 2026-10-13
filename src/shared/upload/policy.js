@@ -107,7 +107,7 @@ export const DOCUMENT = {
    * Lower this if the backend has a smaller request limit — compression targets
    * whatever it says, so nothing else needs changing.
    */
-  maxBytes: 5 * MB,
+  maxBytes: 3 * MB,
 
   /**
    * Below this on the short edge an image is a thumbnail, not a document.
@@ -175,7 +175,7 @@ export function maxMegabytes(profile) {
 /**
  * The caption under an empty drop zone. It no longer quotes the ceiling,
  * because the ceiling isn't a rule the user has to meet any more — a big photo
- * is shrunk, not rejected, and printing "Max 5 MB" would make agents go looking
+ * is shrunk, not rejected, and printing "Max 3 MB" would make agents go looking
  * for a smaller file they don't need.
  */
 export function policyCaption(profile) {

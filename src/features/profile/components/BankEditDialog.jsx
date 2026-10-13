@@ -219,35 +219,39 @@ function BankEditForm({ profile, onClose }) {
               {...form.register('branchName')}
             />
 
-            <Controller
-              name="passbookImage"
-              control={form.control}
-              render={({ field }) => (
-                <FileUpload
-                  id="passbookImage"
-                  label="Passbook Photo"
-                  required
-                  error={errors.passbookImage?.message}
-                  hint="First page showing your name, account number and IFSC."
-                  onChange={field.onChange}
-                />
-              )}
-            />
+            <div className="grid grid-cols-2 gap-3">
+              <Controller
+                name="passbookImage"
+                control={form.control}
+                render={({ field }) => (
+                  <FileUpload
+                    id="passbookImage"
+                    label="Passbook Photo"
+                    required
+                    variant="tile"
+                    error={errors.passbookImage?.message}
+                    hint="Page with name, account no. and IFSC."
+                    onChange={field.onChange}
+                  />
+                )}
+              />
 
-            <Controller
-              name="chequeImage"
-              control={form.control}
-              render={({ field }) => (
-                <FileUpload
-                  id="chequeImage"
-                  label="Cancelled Cheque"
-                  required
-                  error={errors.chequeImage?.message}
-                  hint="A cheque with 'CANCELLED' written across it."
-                  onChange={field.onChange}
-                />
-              )}
-            />
+              <Controller
+                name="chequeImage"
+                control={form.control}
+                render={({ field }) => (
+                  <FileUpload
+                    id="chequeImage"
+                    label="Cancelled Cheque"
+                    required
+                    variant="tile"
+                    error={errors.chequeImage?.message}
+                    hint="With 'CANCELLED' written across it."
+                    onChange={field.onChange}
+                  />
+                )}
+              />
+            </div>
           </div>
 
           <div className="flex gap-3 border-t border-slate-100 px-5 py-4">

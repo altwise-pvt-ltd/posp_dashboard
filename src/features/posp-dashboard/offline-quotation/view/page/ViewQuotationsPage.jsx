@@ -42,16 +42,12 @@ function ViewQuotationsPage() {
 
   const hiding = query ? visible.length !== rows.length : rows.length !== totalCount;
 
-  /* The chip's own wording, which is the server's — so the empty state says
-     "No sent to insurer quotations", not "No SENT_TO_INSURER quotations". */
   const statusName = statuses.find((entry) => entry.code === status)?.label ?? status;
 
   return (
     <DashboardLayout>
       <div className="dashboard-scale flex flex-col gap-gutter">
-        {/* Title block and the one primary action. The action is here rather
-            than inside the panel because it leaves this page — it is the other
-            half of the sidebar group, not a control over the list. */}
+
         <header className="anim-fade flex flex-wrap items-start justify-between gap-3">
           <div>
             <h1 className="font-headline-lg text-headline-lg text-on-surface">Quotations</h1>

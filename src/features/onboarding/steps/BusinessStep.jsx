@@ -229,6 +229,7 @@ export default function BusinessStep({ onNext, onSkip, initialValues }) {
   const stateValue = useWatch({ control: form.control, name: "state" });
   const pincodeValue = useWatch({ control: form.control, name: "pincode" });
   const addressLine2Value = useWatch({ control: form.control, name: "addressLine2" });
+  const businessTypeValue = useWatch({ control: form.control, name: "businessType" });
 
   const answered = hasBusiness === true || hasBusiness === false;
 
@@ -273,12 +274,29 @@ export default function BusinessStep({ onNext, onSkip, initialValues }) {
    * the user can still fill than a submit rejected for a value no field on
    * screen can even display.
    */
+  // Until the list arrives, the saved type stands in as the only option so the
+  // field shows it instead of the placeholder. `PRIVATE_LIMITED` → "Private Limited".
+  const businessTypeOptions =
+    businessTypes.length || !businessTypeValue
+      ? businessTypes
+      : [
+          {
+            value: businessTypeValue,
+            label: businessTypeValue
+              .split("_")
+              .filter(Boolean)
+              .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+              .join(" "),
+          },
+        ];
+
   const reconcile = (name, options) => {
     if (!options.length) return;
     const current = form.getValues(name);
     if (!current) return;
-    const matched = matchMasterValue(current, options);
-    if (matched !== current) form.setValue(name, matched ?? "");
+    // Written even when unchanged: a native <select> that mounted before its
+    // options existed shows the placeholder until the value is set again.
+    form.setValue(name, matchMasterValue(current, options) ?? "");
   };
 
   useEffect(() => {
@@ -487,7 +505,7 @@ export default function BusinessStep({ onNext, onSkip, initialValues }) {
                    keeps its place in the grid, so the row doesn't reflow under
                    the user the moment the request lands. */
                 disabled={loadingTypes}
-                options={businessTypes}
+                options={businessTypeOptions}
                 placeholder={loadingTypes ? "Loading…" : "Select business type"}
                 error={form.formState.errors.businessType?.message}
                 {...form.register("businessType")}
