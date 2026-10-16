@@ -84,7 +84,7 @@ export function useQuoteResponses(quoteId, statusCode) {
     fetchQuoteResponses(target, { signal })
       .then((result) => {
         if (!live) return;
-        setResponses(result.responses);
+        setResponses(result);
         setError(null);
       })
       .catch((err) => {

@@ -15,7 +15,7 @@ import {
 import { saveBlob } from '@/shared/lib/saveFile';
 import { useDocumentBlob } from '../hooks/useDocumentBlob';
 import { formatBytes, isImage, isPdf } from '../api/quoteDocumentListApi';
-import { formatDate } from '../lib/quotationFormat';
+import { formatDate } from '@/shared/lib/format';
 import DocumentThumbnail from './DocumentThumbnail';
 
 const TOOL =

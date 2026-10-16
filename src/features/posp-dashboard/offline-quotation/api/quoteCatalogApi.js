@@ -29,6 +29,9 @@ const normalizeLob = (entry = {}) => ({
   name: entry.name ?? '',
   /** The server's icon hint for the LOB tile; null for lines that have none. */
   icon: entry.icon || null,
+  /** Uploaded icon and picture; both behind the bearer token, so load them with `fetchCatalogImage`. */
+  iconUrl: entry.iconUrl || null,
+  imageUrl: entry.imageUrl || null,
   products: (entry.products ?? []).map(normalizeProduct),
 });
 
@@ -44,6 +47,31 @@ export async function fetchQuoteCatalog() {
   if (!Array.isArray(data)) return [];
 
   return data.map(normalizeLob);
+}
+
+const catalogImageRequests = new Map();
+
+/**
+ * The bytes behind a LOB's `iconUrl` or `imageUrl`, as a Blob.
+ *
+ * Cached per URL (the `?v=` on it changes when the image does); a failed fetch
+ * is evicted so the next mount tries again. `skipAuthHandler` keeps a 401 here
+ * from renewing or ending the session over a picture.
+ */
+export function fetchCatalogImage(url) {
+  const cached = catalogImageRequests.get(url);
+  if (cached) return cached;
+
+  const request = api
+    .get(url, { responseType: 'blob', skipAuthHandler: true })
+    .then((response) => response.data)
+    .catch((error) => {
+      catalogImageRequests.delete(url);
+      throw error;
+    });
+
+  catalogImageRequests.set(url, request);
+  return request;
 }
 
 /** The products under one LOB, found by uuid or by `code`. */

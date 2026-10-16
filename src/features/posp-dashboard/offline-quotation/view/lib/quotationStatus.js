@@ -12,6 +12,8 @@
  * still a constant, and still provisional.
  */
 
+import { humaniseCode } from '../../lib/normalize';
+
 /* ── The pill's colours ────────────────────────────────────────────────── */
 
 const HEX = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i;
@@ -107,26 +109,11 @@ export const statusStyle = (colorHex) => {
 };
 
 /**
- * What to print on the pill.
- *
- * The server's label first. Failing that the code, made readable — a row with a
- * `statusCode` and no `status` is still telling us what it is, and "DRAFT" set
- * in caps beside four sentence-case pills is worse than "Draft".
- *
- * Underscores become spaces and each word is capitalised, so `IN_REVIEW` reads
- * "In Review" rather than "In_review". Codes are SCREAMING_SNAKE by convention
- * and a single-word one loses nothing by going through the same path.
+ * What to print on the pill: the server's label, else the code made readable
+ * (`IN_REVIEW` → "In Review").
  */
-export const statusLabel = ({ statusLabel: label, statusCode } = {}) => {
-  if (label) return label;
-  if (!statusCode) return 'Unknown';
-
-  return statusCode
-    .split(/[_\s-]+/)
-    .filter(Boolean)
-    .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
-    .join(' ');
-};
+export const statusLabel = ({ statusLabel: label, statusCode } = {}) =>
+  label || humaniseCode(statusCode) || 'Unknown';
 
 /* ── The toolbar's vocabulary ──────────────────────────────────────────── */
 
@@ -141,7 +128,7 @@ export const ALL = 'ALL';
  * `/quote/<id>/compare` at all — and a typo in either of two string literals
  * fails silently: the panel simply never appears.
  */
-export const RESPONSES_RECEIVED = 'RESPONSES_RECEIVED';
+const RESPONSES_RECEIVED = 'RESPONSES_RECEIVED';
 
 /**
  * Whether this quote has insurer responses to fetch.
@@ -277,7 +264,7 @@ export const canEditQuote = (statusCode) => EDITABLE.includes(statusCode);
 /* ── Payment instruction ───────────────────────────────────────────────── */
 
 /** The state in which the RM's payment instruction is fetched and offered. */
-export const PROPOSAL_CREATED = 'PROPOSAL_CREATED';
+const PROPOSAL_CREATED = 'PROPOSAL_CREATED';
 
 /** Whether to ask for this quote's payment instruction at all. */
 export const hasPaymentInstruction = (statusCode) => statusCode === PROPOSAL_CREATED;

@@ -1,15 +1,11 @@
 import { api, unwrap } from '@/shared/api/client';
 import { ENDPOINTS } from '@/shared/api/endpoints';
+import { text } from '../../lib/normalize';
 
 /**
  * The documents stored on one quote — `GET /quote/<quoteId>/documents` — and
  * the bytes behind each one.
  */
-
-const text = (value) => {
-  const trimmed = typeof value === 'string' ? value.trim() : '';
-  return trimmed || null;
-};
 
 const normalizeDocument = (entry = {}) => ({
   id: text(entry.id),
@@ -82,11 +78,3 @@ export const formatBytes = (bytes) => {
   if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 };
-
-/** `KYC_PAN` → "Kyc Pan", for codes the metadata has no name for. */
-export const readableCode = (code) =>
-  (code ?? '')
-    .split(/[_\s-]+/)
-    .filter(Boolean)
-    .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
-    .join(' ') || 'Document';

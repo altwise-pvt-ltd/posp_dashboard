@@ -26,8 +26,6 @@ import { ALL, SEEN_STATUSES, mergeStatuses } from '../lib/quotationStatus';
 
 const PAGE_SIZE = 20;
 
-export { ALL };
-
 /**
  * Append the next page, dropping any row already held.
  *

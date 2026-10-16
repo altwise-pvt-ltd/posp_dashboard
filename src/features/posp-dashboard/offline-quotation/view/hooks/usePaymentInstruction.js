@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { fetchPaymentInstruction } from '../api/paymentInstructionApi';
 import { hasPaymentInstruction } from '../lib/quotationStatus';
 
@@ -13,17 +13,12 @@ export function usePaymentInstruction(quoteId, statusCode) {
   const target = hasPaymentInstruction(statusCode) && quoteId ? quoteId : null;
 
   const [instruction, setInstruction] = useState(null);
-  const [loading, setLoading] = useState(Boolean(target));
-  const [error, setError] = useState(null);
-  const [attempt, setAttempt] = useState(0);
 
   // Clear the previous quote's instruction in the same render the id changes.
   const [shown, setShown] = useState(target);
   if (shown !== target) {
     setShown(target);
     setInstruction(null);
-    setError(null);
-    setLoading(Boolean(target));
   }
 
   useEffect(() => {
@@ -35,26 +30,17 @@ export function usePaymentInstruction(quoteId, statusCode) {
 
     fetchPaymentInstruction(target, { signal })
       .then((result) => {
-        if (!live) return;
-        setInstruction(result);
-        setError(null);
+        if (live) setInstruction(result);
       })
-      .catch((err) => {
-        if (!live || signal.aborted) return;
-        setInstruction(null);
-        setError(err);
-      })
-      .finally(() => {
-        if (live) setLoading(false);
+      .catch(() => {
+        if (live && !signal.aborted) setInstruction(null);
       });
 
     return () => {
       live = false;
       controller.abort();
     };
-  }, [target, attempt]);
+  }, [target]);
 
-  const refresh = useCallback(() => setAttempt((n) => n + 1), []);
-
-  return { instruction, loading, error, refresh };
+  return { instruction };
 }

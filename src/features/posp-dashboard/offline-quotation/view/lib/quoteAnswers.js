@@ -1,4 +1,5 @@
 import { formatDate } from '@/shared/lib/format';
+import { humaniseCode } from '../../lib/normalize';
 
 /**
  * The answers on a quote, read through the form they were given on.
@@ -38,7 +39,7 @@ const optionText = (field, value) =>
  * every quote opened; `KOENINSEGG_AGERA` is at least the value the quote
  * actually holds.
  */
-export function answerText(field, raw) {
+function answerText(field, raw) {
   if (raw === null || raw === undefined) return null;
 
   const value = typeof raw === 'string' ? raw.trim() : String(raw);
@@ -116,14 +117,6 @@ const inferField = (value) => {
     : { control: 'text', options: [] };
 };
 
-/** `PASSENGER_COVER__VALUE` → "Passenger Cover Value", for a code with no field. */
-export const humaniseCode = (code) =>
-  String(code ?? '')
-    .split(/[_\s-]+/)
-    .filter(Boolean)
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(' ');
-
 /**
  * Index the answers by field, then by row.
  *
@@ -149,19 +142,18 @@ const indexValues = (values = []) => {
  *   sections — only those with at least one answer, in metadata order, each
  *              holding one `row` per `rowIndex` that carried anything
  *   orphans  — answers whose field code is in no section at all
- *   blanks   — the questions that were asked and left empty, as `{ code, label, section }`
+ *
+ * Blank answers are left out of both.
  *
  * `orphans` is not a defensive flourish. The metadata is fetched for the
  * product *as it is published today*, and the quote was answered against it as
  * it stood whenever it was raised — a question since removed still has its
  * answer stored, and dropping it silently would quietly rewrite what the agent
- * submitted. `blanks` is counted for the same reason, so the page can say how
- * much it is not showing.
+ * submitted.
  */
 export function buildAnswerView(sections = [], values = []) {
   const byField = indexValues(values);
   const claimed = new Set();
-  const blanks = [];
 
   const answered = [];
 
@@ -188,12 +180,7 @@ export function buildAnswerView(sections = [], values = []) {
         if (field.control === 'file') continue;
 
         const text = answerText(field, byField.get(field.code).get(index));
-        if (text === null) {
-          if (index === 0) {
-            blanks.push({ code: field.code, label: field.label || humaniseCode(field.code), section: section.name });
-          }
-          continue;
-        }
+        if (text === null) continue;
 
         entries.push({ code: field.code, label: field.label || humaniseCode(field.code), text });
       }
@@ -213,12 +200,11 @@ export function buildAnswerView(sections = [], values = []) {
 
     for (const [, raw] of rows) {
       const text = answerText(inferField(raw), raw);
-      if (text === null) blanks.push({ code, label: humaniseCode(code), section: null });
-      else orphans.push({ code, label: humaniseCode(code), text });
+      if (text !== null) orphans.push({ code, label: humaniseCode(code), text });
     }
   }
 
-  return { sections: answered, orphans, blanks };
+  return { sections: answered, orphans };
 }
 
 /**
@@ -231,8 +217,7 @@ export function buildAnswerView(sections = [], values = []) {
  * Only row 0. The form edits one entry per section, and a repeatable section's
  * later rows have nowhere to go on it.
  *
- * File fields are left out: what was uploaded lives on the server as a file,
- * not in `values`, so there is nothing here to put back into the picker.
+ * File fields are left out: their uploads are seeded by `storedDocumentValues`.
  */
 export function storedFormValues(sections = [], values = []) {
   const byField = indexValues(values);
@@ -273,4 +258,34 @@ export function storedFormValues(sections = [], values = []) {
   }
 
   return seeded;
+}
+
+/**
+ * The quote's uploaded documents as file-field values, by file name, plus the
+ * documents placed. A field taking one file gets the latest upload; one taking
+ * several gets them all.
+ */
+export function storedDocumentValues(sections = [], documents = []) {
+  const values = {};
+  const placed = [];
+  const byUpload = [...documents].sort((a, b) =>
+    String(a.uploadedAt ?? '').localeCompare(String(b.uploadedAt ?? ''))
+  );
+
+  for (const section of sections) {
+    for (const field of section.fields ?? []) {
+      if (field.control !== 'file') continue;
+
+      const docs = byUpload.filter((doc) => doc.code === field.code);
+      if (docs.length === 0) continue;
+
+      const kept = (field.maxCount ?? 1) > 1 ? docs : docs.slice(-1);
+      const names = kept.map((doc) => doc.fileName);
+
+      values[field.code] = (field.maxCount ?? 1) > 1 ? names : names[0];
+      placed.push(...kept);
+    }
+  }
+
+  return { values, documents: placed };
 }

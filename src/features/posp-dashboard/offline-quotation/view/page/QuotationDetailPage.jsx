@@ -2,7 +2,6 @@ import { useCallback, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
-  ChevronDown,
   FileQuestion,
   Info,
   Loader2,
@@ -14,7 +13,7 @@ import {
 } from "lucide-react";
 import DashboardLayout from "@/shared/layouts/DashboardLayout";
 import CustomButton from "@/shared/components/CustomButton";
-import { daysUntil } from "@/shared/lib/format";
+import { daysUntil, formatDate } from "@/shared/lib/format";
 import { showAlert } from "@/shared/store/alertStore";
 import QuoteNotice from "../../components/QuoteNotice";
 import InsurerResponsePanel from "../components/InsurerResponsePanel";
@@ -32,7 +31,6 @@ import { useQuoteDocuments } from "../hooks/useQuoteDocuments";
 import { submitPaymentReceipt } from "../api/paymentInstructionApi";
 import {
   formatAge,
-  formatDate,
   formatProduct,
   formatSumInsured,
 } from "../lib/quotationFormat";
@@ -47,9 +45,7 @@ import { canApplyForVerification, canEditQuote } from "../lib/quotationStatus";
  * were asked. The same headings, the same labels, the same sequence as the
  * create wizard — a quote read back should look like the quote that was given.
  *
- * Only answered questions are rendered. A read-back of a 30-question motor form
- * where a third of the rows say "—" is a page about its own blanks; the blank
- * ones are listed at the bottom instead, collapsed by default.
+ * Only answered questions are rendered; blank ones are left out.
  */
 
 function Fact({ label, children }) {
@@ -152,11 +148,15 @@ function QuotationDetailPage() {
 
   /**
    * Editing a draft or a returned quote. Offered only in those states (see
-   * `canEditQuote`), and only once the form it was raised on has loaded — the
-   * editor renders from that form, so without it there is nothing to edit.
+   * `canEditQuote`), and only once the form and the uploaded documents have
+   * loaded — the editor is seeded from both.
    */
   const [editing, setEditing] = useState(false);
-  const canEdit = Boolean(quote && metadata) && canEditQuote(quote.statusCode);
+  const canEdit =
+    Boolean(quote && metadata) &&
+    !docs.loading &&
+    !docs.error &&
+    canEditQuote(quote.statusCode);
 
   /** Saved: re-read the quote so the page shows what the server now holds. */
   const finishEditing = useCallback(() => {
@@ -400,6 +400,7 @@ function QuotationDetailPage() {
               <QuoteEditForm
                 quote={{ ...quote, id: quote.id ?? quoteId }}
                 metadata={metadata}
+                documents={docs.documents}
                 onCancel={() => setEditing(false)}
                 onSaved={finishEditing}
               />
@@ -483,35 +484,6 @@ function QuotationDetailPage() {
                   onRetry={docs.refresh}
                   metadata={metadata}
                 />
-
-                {answers.blanks.length > 0 && (
-                  <details className="group font-body-md text-body-md text-on-surface-variant">
-                    <summary className="inline-flex cursor-pointer list-none items-center gap-1 hover:text-on-surface [&::-webkit-details-marker]:hidden">
-                      {answers.blanks.length}{" "}
-                      {answers.blanks.length === 1
-                        ? "question was"
-                        : "questions were"}{" "}
-                      left blank
-                      <ChevronDown
-                        aria-hidden="true"
-                        className="size-4 transition-transform group-open:rotate-180"
-                      />
-                    </summary>
-                    <ul className="mt-2 list-disc space-y-1 pl-5">
-                      {answers.blanks.map((blank, i) => (
-                        <li key={`${blank.code}-${i}`}>
-                          {blank.label}
-                          {blank.section && (
-                            <span className="text-on-surface-variant/70">
-                              {" "}
-                              · {blank.section}
-                            </span>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                  </details>
-                )}
               </>
             )}
           </>

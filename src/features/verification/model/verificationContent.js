@@ -20,14 +20,15 @@ import { VERIFICATION } from "@/shared/store/verificationStore";
  * read (and unit-tested) without rendering anything.
  */
 
-export const SUPPORT_EMAIL = "support@letsinsurance.com";
+export const SUPPORT_EMAIL = "POSP@LetsInsurance.com";
+export const SUPPORT_PHONE = "+91 8888001163";
 
 /**
  * What the back office is actually checking, one row per onboarding step. The
  * ids are what a rejection points at, so a reason lands against the document it
  * refers to rather than in a heap of error text at the top of the page.
  */
-export const UNDER_REVIEW = [
+const UNDER_REVIEW = [
   { id: "pan", icon: CreditCard, label: "PAN card", detail: "Name and number matched against the card" },
   { id: "aadhaar", icon: Fingerprint, label: "Aadhaar / KYC", detail: "Identity and address confirmed" },
   { id: "photo", icon: UserRound, label: "Photograph", detail: "Checked against your Aadhaar record" },
@@ -52,12 +53,14 @@ export const STAGES = [
  * as a wall, so below `sm` the short one is shown instead. Both make the same
  * promises — the short version is a trim, not a different message.
  *
+ * `actionCaption` is left off a status that needs no caption under its button.
+ *
  * `bandClass` tints the status band on mobile only. On a phone the verdict has
  * to be readable at arm's length before anything is parsed, and a colour wash
  * does that faster than a badge; on desktop the band stays white, where the
  * badge and the icon have room to carry it.
  */
-export const STATUS_UI = {
+const STATUS_UI = {
   [VERIFICATION.PENDING]: {
     badge: "Under review",
     badgeClass: "bg-amber-50 text-amber-700 ring-amber-100",
@@ -83,10 +86,7 @@ export const STATUS_UI = {
     copy: "Everything checked out. Your 15-hour POSP training programme is open — start whenever you're ready.",
     shortCopy: "Everything checked out. Your 15-hour training programme is open.",
     checklistHeading: "Checked and cleared",
-    // Never rendered — the caption is suppressed once the button is live — but
-    // carried so every status answers every key and no reader has to check.
-    actionCaption: "Unlocks as soon as your profile is approved.",
-    supportPrompt: "Waiting more than two working days?",
+    supportPrompt: "Need help?",
   },
   [VERIFICATION.REJECTED]: {
     badge: "Action needed",

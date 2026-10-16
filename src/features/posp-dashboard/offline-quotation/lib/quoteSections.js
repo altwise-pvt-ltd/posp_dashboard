@@ -13,6 +13,8 @@
  * unwired, deliberately, along with submit.
  */
 
+import { humaniseCode } from './normalize';
+
 export const DOCUMENTS_SECTION_CODE = 'DOCUMENTS';
 export const ADD_ONS_SECTION_CODE = 'ADD_ONS';
 
@@ -24,14 +26,7 @@ const SECTION_NAMES = {
   [ADD_ONS_SECTION_CODE]: 'Add-ons',
 };
 
-const titleCase = (code) =>
-  String(code ?? '')
-    .split(/[_\-\s]+/)
-    .filter(Boolean)
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(' ');
-
-const sectionName = (code) => SECTION_NAMES[code] ?? titleCase(code);
+const sectionName = (code) => SECTION_NAMES[code] ?? humaniseCode(code);
 
 /**
  * Every field the form renders is this shape, whether it came from `fields`,

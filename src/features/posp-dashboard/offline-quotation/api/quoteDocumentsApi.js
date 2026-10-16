@@ -12,12 +12,20 @@ import { ENDPOINTS } from '@/shared/api/endpoints';
 const FILE_PART = 'file';
 const CODE_PART = 'documentCode';
 
+// Files rebuilt from documents the quote already holds; never uploaded again.
+const storedFiles = new WeakSet();
+
+/** A document the server holds, as a `File` the form can preview. */
+export function storedDocumentFile(blob, doc) {
+  const file = new File([blob], doc.fileName, { type: doc.contentType || blob.type });
+  storedFiles.add(file);
+  return file;
+}
+
 /**
- * Every file picked on the form, flattened into one upload queue.
- *
- * A string value is skipped: that is a document the server already holds and
- * handed back as a name, not something the user has just chosen. Only a real
- * `File` has bytes to send.
+ * Every newly picked file on the form, flattened into one upload queue.
+ * Documents the server already holds — a stored file, or just its name when the
+ * file couldn't be fetched — are skipped.
  */
 export function pendingDocuments(fields = [], values = {}) {
   const queue = [];
@@ -29,7 +37,7 @@ export function pendingDocuments(fields = [], values = {}) {
     const files = Array.isArray(picked) ? picked.filter(Boolean) : picked ? [picked] : [];
 
     for (const file of files) {
-      if (typeof file === 'string') continue;
+      if (!(file instanceof File) || storedFiles.has(file)) continue;
       queue.push({ code: field.code, label: field.label, file });
     }
   }

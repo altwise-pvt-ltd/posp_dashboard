@@ -1,8 +1,8 @@
-import { createElement } from 'react';
 import { RefreshCw } from 'lucide-react';
 import AppLink from '@/shared/components/AppLink';
+import LobIcon from '@/features/posp-dashboard/offline-quotation/components/LobIcon';
+import { useCatalogImage } from '@/features/posp-dashboard/offline-quotation/hooks/useCatalogImage';
 import { useQuoteCatalog } from '@/features/posp-dashboard/offline-quotation/hooks/useQuoteCatalog';
-import { iconFor } from '@/features/posp-dashboard/offline-quotation/lib/lobIcon';
 
 const CREATE_QUOTE_PATH = '/offline-quotation/create';
 
@@ -16,6 +16,7 @@ const TINTS = [
     ink: 'text-amber-600',
     wash: 'from-amber-50 to-amber-100',
     edge: 'border-amber-200/70',
+    fade: 'from-amber-50 via-amber-50/70 to-amber-50/0',
   },
   {
     bg: 'bg-sky-50',
@@ -23,6 +24,7 @@ const TINTS = [
     ink: 'text-sky-600',
     wash: 'from-sky-50 to-sky-100',
     edge: 'border-sky-200/70',
+    fade: 'from-sky-50 via-sky-50/70 to-sky-50/0',
   },
   {
     bg: 'bg-emerald-50',
@@ -30,6 +32,7 @@ const TINTS = [
     ink: 'text-emerald-600',
     wash: 'from-emerald-50 to-emerald-100',
     edge: 'border-emerald-200/70',
+    fade: 'from-emerald-50 via-emerald-50/70 to-emerald-50/0',
   },
   {
     bg: 'bg-violet-50',
@@ -37,6 +40,7 @@ const TINTS = [
     ink: 'text-violet-600',
     wash: 'from-violet-50 to-violet-100',
     edge: 'border-violet-200/70',
+    fade: 'from-violet-50 via-violet-50/70 to-violet-50/0',
   },
   {
     bg: 'bg-rose-50',
@@ -44,6 +48,7 @@ const TINTS = [
     ink: 'text-rose-600',
     wash: 'from-rose-50 to-rose-100',
     edge: 'border-rose-200/70',
+    fade: 'from-rose-50 via-rose-50/70 to-rose-50/0',
   },
 ];
 
@@ -89,19 +94,30 @@ function StepChip({ index, label, active }) {
 
 function LobCard({ lob, index }) {
   const tint = tintAt(index);
+  const image = useCatalogImage(lob.imageUrl);
 
   return (
     <AppLink
       to={quoteLinkFor(lob)}
       className={`group flex flex-col rounded-xl border-2 border-gray-200 bg-white overflow-hidden transition-all hover:shadow-sm ${tint.hoverBorder}`}
     >
-      <div className={`w-full h-32 ${tint.bg} flex items-center justify-center p-2`}>
-        {createElement(iconFor(lob), {
-          size: 56,
-          strokeWidth: 1.5,
-          'aria-hidden': true,
-          className: `${tint.ink} transition-transform duration-300 group-hover:scale-105`,
-        })}
+      <div
+        className={`w-full h-32 ${tint.bg} flex items-center justify-center overflow-hidden ${image ? '' : 'p-2'}`}
+      >
+        {image ? (
+          <img
+            src={image}
+            alt=""
+            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+        ) : (
+          <LobIcon
+            lob={lob}
+            size={56}
+            strokeWidth={1.5}
+            className={`${tint.ink} transition-transform duration-300 group-hover:scale-105`}
+          />
+        )}
       </div>
       <div className="p-3">
         <p className="font-body-lg text-body-lg font-semibold text-on-surface">{lob.name}</p>
@@ -163,32 +179,47 @@ const BENTO_LAYOUTS = {
 function BentoTile({ lob, index, variant, placement = '' }) {
   const tint = tintAt(index);
   const tall = variant === 'tall';
-  const icon = iconFor(lob);
   const names = tall ? productNames(lob) : '';
+  const image = useCatalogImage(lob.imageUrl);
+
+  // With an image, the text sits at the bottom over the fade.
+  let layout =
+    'items-center gap-2.5 max-[399px]:flex-col max-[399px]:items-start max-[399px]:justify-between max-[399px]:gap-0';
+  if (image) layout = 'flex-col justify-end';
+  else if (tall) layout = 'flex-col justify-between';
 
   return (
     <AppLink
       to={quoteLinkFor(lob)}
       className={`relative isolate flex min-w-0 overflow-hidden rounded-xl border bg-linear-to-br p-3 shadow-[0_1px_2px_rgba(15,23,42,0.06),0_10px_22px_-12px_rgba(15,23,42,0.28)] transition-[transform,box-shadow] duration-150 active:translate-y-px active:scale-[0.98] active:shadow-[0_1px_2px_rgba(15,23,42,0.08)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20 ${
         tint.wash
-      } ${tint.edge} ${
-        tall
-          ? 'flex-col justify-between'
-          : 'items-center gap-2.5 max-[399px]:flex-col max-[399px]:items-start max-[399px]:justify-between max-[399px]:gap-0'
-      } ${placement}`}
+      } ${tint.edge} ${layout} ${placement}`}
     >
-      {createElement(icon, {
-        'aria-hidden': true,
-        strokeWidth: 1.5,
-        className: `pointer-events-none absolute -z-10 -rotate-12 opacity-[0.14] ${tint.ink} ${
-          tall ? '-right-5 -bottom-5 size-28' : '-right-3 -bottom-4 size-20'
-        }`,
-      })}
+      {image ? (
+        <>
+          <img
+            src={image}
+            alt=""
+            className="pointer-events-none absolute inset-0 -z-20 size-full object-cover"
+          />
+          <span
+            aria-hidden="true"
+            className={`pointer-events-none absolute inset-0 -z-10 bg-linear-to-t from-50% via-75% ${tint.fade}`}
+          />
+        </>
+      ) : (
+        <>
+          <LobIcon
+            lob={lob}
+            strokeWidth={1.5}
+            className={`pointer-events-none absolute -z-10 -rotate-12 opacity-[0.14] ${tint.ink} ${
+              tall ? '-right-5 -bottom-5 size-28' : '-right-3 -bottom-4 size-20'
+            }`}
+          />
 
-      {createElement(icon, {
-        'aria-hidden': true,
-        className: `shrink-0 ${tint.ink} ${tall ? 'size-7' : 'size-6'}`,
-      })}
+          <LobIcon lob={lob} className={`shrink-0 ${tint.ink} ${tall ? 'size-7' : 'size-6'}`} />
+        </>
+      )}
 
       <span className="flex min-w-0 flex-col">
         <span

@@ -1,6 +1,7 @@
 import QuotationStatusPill from './QuotationStatusPill';
 import QuotationViewAction from './QuotationViewAction';
-import { formatAge, formatDate, formatLob, formatSumInsured } from '../lib/quotationFormat';
+import { formatDate } from '@/shared/lib/format';
+import { formatAge, formatLob, formatSumInsured } from '../lib/quotationFormat';
 
 /**
  * One queued quote on a phone.

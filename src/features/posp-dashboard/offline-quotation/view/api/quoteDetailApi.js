@@ -1,5 +1,6 @@
 import { api, unwrap } from '@/shared/api/client';
 import { ENDPOINTS } from '@/shared/api/endpoints';
+import { number, text } from '../../lib/normalize';
 import { normalizeRow } from './quoteQueueApi';
 
 /**
@@ -19,13 +20,6 @@ import { normalizeRow } from './quoteQueueApi';
  * the answers are read through it. See `useQuoteDetail`.
  */
 
-const text = (value) => {
-  const trimmed = typeof value === 'string' ? value.trim() : '';
-  return trimmed || null;
-};
-
-const number = (value) => (Number.isFinite(value) ? value : null);
-
 /**
  * One answer. `rowIndex` is kept rather than flattened away: a repeatable
  * section stores its second entry under index 1, and collapsing the two would
@@ -44,8 +38,6 @@ const normalizeSelectedOffer = (offer) => {
   if (!offer || typeof offer !== 'object' || Array.isArray(offer)) return null;
 
   return {
-    responseId: text(offer.responseId),
-    insurerId: text(offer.insurerId),
     insurerName: text(offer.insurerName),
     premium: number(offer.premium),
     idv: number(offer.idv),
@@ -53,7 +45,6 @@ const normalizeSelectedOffer = (offer) => {
     tpPremium: number(offer.tpPremium),
     insurerQuoteRef: text(offer.insurerQuoteRef),
     validTill: offer.validTill ?? null,
-    proposalId: text(offer.proposalId),
     proposalNumber: text(offer.proposalNumber),
     proposalStatus: text(offer.proposalStatus),
     acceptedAt: offer.acceptedAt ?? null,
@@ -70,15 +61,13 @@ const normalizeSelectedOffer = (offer) => {
  *
  * ⚠ `colorHex` is absent from this reply — see `recallStatusColor`.
  */
-export const normalizeQuote = (data = {}) => ({
+const normalizeQuote = (data = {}) => ({
   ...normalizeRow(data),
 
   /** The three parameters `/quote/metadata` takes, to reread the form. */
   productId: text(data.productId),
   subProductId: text(data.subProductId),
   fileType: text(data.fileType),
-
-  lobId: text(data.lobId),
 
   /**
    * What the agent expects the premium to come to. A different figure from
@@ -90,16 +79,7 @@ export const normalizeQuote = (data = {}) => ({
   /** Last touched. The queue sends `ageDays` instead and never sends this. */
   updatedAt: data.updatedAt ?? null,
 
-  originatorEmail: text(data.originatorEmail),
-
   values: Array.isArray(data.values) ? data.values.map(normalizeValue) : [],
-
-  /**
-   * Empty on every quote seen so far — the add-ons an agent ticked come back
-   * inside `values` (`ZERO_DEP: "true"`), not here. Carried through anyway so a
-   * payload that does start using it is not silently dropped.
-   */
-  addOns: Array.isArray(data.addOns) ? data.addOns : [],
 
   /** Null until the agent has accepted an insurer response. */
   selectedOffer: normalizeSelectedOffer(data.selectedOffer),

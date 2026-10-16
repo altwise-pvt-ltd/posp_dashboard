@@ -76,6 +76,12 @@ export function formatDate(value) {
   });
 }
 
+/** `2026-10-16` in local time — the format a date input uses. */
+export function toLocalIsoDate(date = new Date()) {
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
 /**
  * Whole days from today until `value`; negative once it is past, null when
  * there is no usable date.

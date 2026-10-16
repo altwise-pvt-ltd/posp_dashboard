@@ -4,8 +4,9 @@ import CustomButton from '@/shared/components/CustomButton';
 import QuoteNotice from '../../components/QuoteNotice';
 import DocumentPreviewDialog from './DocumentPreviewDialog';
 import DocumentThumbnail from './DocumentThumbnail';
-import { formatBytes, readableCode } from '../api/quoteDocumentListApi';
-import { formatDate } from '../lib/quotationFormat';
+import { humaniseCode } from '../../lib/normalize';
+import { formatBytes } from '../api/quoteDocumentListApi';
+import { formatDate } from '@/shared/lib/format';
 
 /** `claim.png` → "PNG"; falls back to the content type's subtype. */
 const extension = (doc) =>
@@ -21,7 +22,7 @@ function QuoteDocumentsPanel({ quoteId, documents, loading, error, onRetry, meta
   );
 
   const labelFor = useCallback(
-    (doc) => names.get(doc.code) || readableCode(doc.code),
+    (doc) => names.get(doc.code) || humaniseCode(doc.code) || 'Document',
     [names],
   );
 

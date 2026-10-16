@@ -202,7 +202,7 @@ export function useQuoteDetail(quoteId) {
     quote,
     /** The product's form as `/quote/metadata` gave it; null if it couldn't be fetched. */
     metadata,
-    /** `{ sections, orphans, blanks }` — see `buildAnswerView`. */
+    /** `{ sections, orphans }` — see `buildAnswerView`. */
     answers,
     /** True when the questions couldn't be fetched, so labels are codes. */
     unlabelled: Boolean(formError) && (quote?.values?.length ?? 0) > 0,

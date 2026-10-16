@@ -34,44 +34,15 @@ import {
  * that's only format-checked when the user actually fills it in.
  */
 const GSTIN_RE = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
-
-/**
- * The step asks one question before anything else — "do you have a business?"
- * — and the answer decides which half of this schema applies.
- *
- * Both gates (`hasBusiness`, `hasGst`) are form fields rather than component
- * state. They have to be: `businessType` and `businessName` are required only
- * on the Yes branch, and a resolver can only express that if the answer is in
- * the data it validates. Keeping them here also means the whole payload comes
- * out of one `handleSubmit`, with nothing merged in by hand on the way past.
- *
- * `hasBusiness` starts as `null` (unanswered) so neither branch renders until
- * the user picks. `z.boolean()` rejects `null`, which is the safety net — in
- * practice the Continue button doesn't exist yet, so it can't be reached.
- */
 const businessSchema = z
   .object({
     hasBusiness: z.boolean({ error: "Let us know whether you have a business." }),
-
-    /**
-     * Optional *in the schema*, required by the refinement below on the Yes
-     * branch. Declaring them required here would fail a No-business user on
-     * two fields they were never shown.
-     */
     businessType: z.string().trim().max(200).optional(),
     businessName: z.string().trim().max(200).optional(),
 
-    /* Address — collected either way. For a business it's where the business
-       is registered; for everyone else it's simply where they live. */
     addressLine1: z.string().trim().min(1, "Address line 1 is required.").max(200),
     addressLine2: z.string().trim().max(200, "Keep it under 200 characters.").optional(),
-    /**
-     * `city` and `state` are plain non-empty strings here, but the fields that
-     * fill them only ever commit a name from the geography lists — see the note
-     * on `Autocomplete`. So this rule fires for "typed something we don't
-     * recognise" as well as for "left it blank", which is why the messages ask
-     * the user to *pick* rather than to fill in.
-     */
+
     city: z.string().trim().min(1, "Pick a city or district from the list."),
     state: z.string().trim().min(1, "Pick a state from the list."),
     pincode: z.string().regex(/^[1-9][0-9]{5}$/, "Enter a valid 6-digit PIN code."),

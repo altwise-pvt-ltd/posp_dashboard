@@ -1,5 +1,6 @@
 import { api, unwrap } from '@/shared/api/client';
 import { ENDPOINTS } from '@/shared/api/endpoints';
+import { number, text } from '../../lib/normalize';
 import { rememberStatusColor } from '../lib/quotationStatus';
 
 /**
@@ -23,15 +24,6 @@ const EMPTY = Object.freeze({
   hasNextPage: false,
   hasPreviousPage: false,
 });
-
-/** A string with something in it, or null — `''` and `'  '` are both absences. */
-const text = (value) => {
-  const trimmed = typeof value === 'string' ? value.trim() : '';
-  return trimmed || null;
-};
-
-/** Numbers only. `null` sum insured means unpriced, and must not become 0. */
-const number = (value) => (Number.isFinite(value) ? value : null);
 
 const whole = (value) => (Number.isFinite(value) ? value : 0);
 

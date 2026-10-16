@@ -1,5 +1,6 @@
 import { api, unwrap } from '@/shared/api/client';
 import { ENDPOINTS } from '@/shared/api/endpoints';
+import { number, text } from '../../lib/normalize';
 
 /**
  * What the insurers came back with — `GET /quote/<quoteId>/compare`.
@@ -17,13 +18,6 @@ import { ENDPOINTS } from '@/shared/api/endpoints';
  * not something anyone can do.
  */
 
-const text = (value) => {
-  const trimmed = typeof value === 'string' ? value.trim() : '';
-  return trimmed || null;
-};
-
-const number = (value) => (Number.isFinite(value) ? value : null);
-
 /** A real boolean, or null when the field was absent rather than false. */
 const flag = (value) => {
   if (typeof value === 'boolean') return value;
@@ -33,8 +27,8 @@ const flag = (value) => {
 };
 
 /**
- * The fields this app reads by name. Anything outside this set is carried
- * through as an extra rather than dropped — see `extras` below.
+ * The fields this app knows about, read or deliberately not shown. Anything
+ * outside this set is carried through as an extra — see `extras` below.
  */
 const KNOWN = new Set([
   'responseId',
@@ -105,27 +99,9 @@ const normalizeResponse = (entry, index) => {
     receivedAt: source.receivedAt ?? null,
 
     isSelected: flag(source.isSelected),
-    /**
-     * Parsed but deliberately not rendered.
-     *
-     * The panel prints no verdict of its own about which response is best, and
-     * a "lowest premium" badge is exactly that — a claim the screen makes
-     * rather than a figure an insurer sent. The premiums are shown plainly and
-     * the comparison is left to the person making it. Kept on the object
-     * because it is real server data and the next thing to want it (a sort
-     * control, say) should not have to re-add it.
-     */
-    isLowestPremium: flag(source.isLowestPremium),
 
     /** A storage path, not a URL. ⚠ No route in this app serves it yet. */
     quoteDocPath: text(source.quoteDocPath),
-
-    /* Unparsed on purpose. Both arrive null on every response seen so far, and
-       guessing at the shape inside a blob named `...Json` is how the panel
-       starts rendering `[object Object]`. Carried so they are not lost. */
-    coverageJson: source.coverageJson ?? null,
-    addOnPricingJson: source.addOnPricingJson ?? null,
-    requestedAddOnCodes: source.requestedAddOnCodes ?? null,
 
     /** The agent's commission on this response. Not the customer's money. */
     earning: {
@@ -152,9 +128,8 @@ const normalizeResponse = (entry, index) => {
  * Fetch the responses on one quote, cheapest first.
  *
  * Sorted here rather than left in the server's order because this is a
- * *comparison*: the question an agent opens it with is which one is cheapest,
- * and the server's own `isLowestPremium` flag says it thinks in those terms
- * too. A response with no premium sorts last — it cannot be compared on the
+ * *comparison*: the question an agent opens it with is which one is cheapest.
+ * A response with no premium sorts last — it cannot be compared on the
  * thing the list is ordered by, so it does not get to lead.
  *
  * ⚠ The panel no longer says the list is ordered this way, so this is now an
@@ -179,10 +154,7 @@ export async function fetchQuoteResponses(quoteId, { signal } = {}) {
     return a.premium - b.premium;
   });
 
-  return {
-    quoteId: text(data?.quoteId) ?? quoteId,
-    responses,
-  };
+  return responses;
 }
 
 /**

@@ -1,7 +1,20 @@
 import { useState } from "react";
 import { Check, ChevronDown, ChevronRight, Files, Headset } from "lucide-react";
 import DocumentRow from "./DocumentRow";
-import { SUPPORT_EMAIL } from "../model/verificationContent";
+import { SUPPORT_EMAIL, SUPPORT_PHONE } from "../model/verificationContent";
+
+/** One tappable support contact: opens the mail app or the dialler. */
+function SupportLink({ href, label }) {
+  return (
+    <a
+      href={href}
+      className="flex items-center gap-2 text-xs font-semibold leading-4 text-slate-700"
+    >
+      <span className="min-w-0 flex-1 break-all">{label}</span>
+      <ChevronRight className="size-4 shrink-0 text-slate-300" aria-hidden="true" />
+    </a>
+  );
+}
 
 /**
  * The checklist on a phone, where five identical rows saying "we're checking
@@ -18,8 +31,7 @@ import { SUPPORT_EMAIL } from "../model/verificationContent";
  * never in the collapsible half.
  *
  * Support closes the section here rather than sitting in a grid cell as it does
- * on desktop, and the address is a tap, not something to copy out by hand — the
- * subject line carries what the desktop copy asks them to include.
+ * on desktop; the email and the phone number are each a tap.
  */
 export default function MobileDocuments({
   documents,
@@ -101,21 +113,23 @@ export default function MobileDocuments({
         </ul>
       )}
 
-      <a
-        href={`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent("POSP verification help")}`}
-        className="mt-2.5 flex items-center gap-2.5 rounded-xl bg-slate-50 px-3 py-3"
-      >
-        <Headset
-          className="size-4 shrink-0 text-slate-400"
-          strokeWidth={2}
-          aria-hidden="true"
-        />
-        <span className="min-w-0 flex-1 text-xs leading-4 text-slate-500">
-          {supportPrompt}{" "}
-          <span className="font-semibold text-slate-700">Email support</span>
-        </span>
-        <ChevronRight className="size-4 shrink-0 text-slate-300" aria-hidden="true" />
-      </a>
+      <div className="mt-2.5 rounded-xl bg-slate-50 px-3 py-3">
+        <p className="flex items-center gap-2.5 text-xs leading-4 text-slate-500">
+          <Headset
+            className="size-4 shrink-0 text-slate-400"
+            strokeWidth={2}
+            aria-hidden="true"
+          />
+          {supportPrompt}
+        </p>
+        <div className="mt-2 grid gap-1.5 pl-6.5">
+          <SupportLink
+            href={`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent("POSP verification help")}`}
+            label={SUPPORT_EMAIL}
+          />
+          <SupportLink href={`tel:${SUPPORT_PHONE.replace(/\s/g, "")}`} label={SUPPORT_PHONE} />
+        </div>
+      </div>
     </div>
   );
 }

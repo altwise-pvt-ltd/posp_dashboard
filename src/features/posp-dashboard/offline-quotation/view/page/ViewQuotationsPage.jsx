@@ -8,7 +8,6 @@ import QuotationList from '../components/QuotationList';
 import { useQuotationList } from '../hooks/useQuotationList';
 import { ALL } from '../lib/quotationStatus';
 
-
 function ViewQuotationsPage() {
   const navigate = useNavigate();
   const {
@@ -35,9 +34,6 @@ function ViewQuotationsPage() {
   /** A failure with nothing on screen behind it — the whole panel is the error. */
   const blocked = Boolean(error) && rows.length === 0;
 
-
-
-    
   const showFilters = rows.length > 0 || status !== ALL;
 
   const hiding = query ? visible.length !== rows.length : rows.length !== totalCount;
@@ -47,7 +43,6 @@ function ViewQuotationsPage() {
   return (
     <DashboardLayout>
       <div className="dashboard-scale flex flex-col gap-gutter">
-
         <header className="anim-fade flex flex-wrap items-start justify-between gap-3">
           <div>
             <h1 className="font-headline-lg text-headline-lg text-on-surface">Quotations</h1>
@@ -99,7 +94,6 @@ function ViewQuotationsPage() {
               )}
 
               {rows.length === 0 ? (
-               
                 status === ALL ? (
                   <QuoteNotice
                     icon={<FileText size={20} />}

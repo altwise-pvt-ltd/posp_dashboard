@@ -2,16 +2,22 @@ import { z } from "zod";
 
 export const MIN_AGE = 18;
 
+/* `dd/mm/yyyy` → its { day, month, year } strings, or null when not in that shape. */
+export function splitDayMonthYear(value) {
+  const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value ?? "");
+  return match ? { day: match[1], month: match[2], year: match[3] } : null;
+}
+
 /* Strict dd/mm/yyyy → Date, or null when it isn't a real calendar day. The
    round-trip check is what rejects rollovers like 31/02/2000, which `new Date`
    would otherwise hand back as the 2nd of March. */
 function parseDayMonthYear(value) {
-  const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value || "");
-  if (!match) return null;
+  const parts = splitDayMonthYear(value);
+  if (!parts) return null;
 
-  const day = +match[1];
-  const month = +match[2];
-  const year = +match[3];
+  const day = +parts.day;
+  const month = +parts.month;
+  const year = +parts.year;
   const date = new Date(year, month - 1, day);
 
   const real =
@@ -27,17 +33,6 @@ function parseDayMonthYear(value) {
 function isOldEnough(date) {
   const adultOn = new Date(date.getFullYear() + MIN_AGE, date.getMonth(), date.getDate());
   return adultOn <= new Date();
-}
-
-export function formatDobInput(raw) {
-  const digits = String(raw ?? "").replace(/\D/g, "").slice(0, 8);
-  if (digits.length > 4) {
-    return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
-  }
-  if (digits.length > 2) {
-    return `${digits.slice(0, 2)}/${digits.slice(2)}`;
-  }
-  return digits;
 }
 
 export function dateOfBirthField({ required = true, label = "Date of birth" } = {}) {

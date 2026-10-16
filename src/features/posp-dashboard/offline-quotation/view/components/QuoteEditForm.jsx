@@ -11,6 +11,7 @@ import {
 } from "@/features/dynamic-form/lib/validateFields";
 import CustomButton from "@/shared/components/CustomButton";
 import { showAlert } from "@/shared/store/alertStore";
+import { storedDocumentFile } from "../../api/quoteDocumentsApi";
 import { fetchLookupOptions } from "../../api/quoteMetadataApi";
 import QuoteWizardFooter from "../../components/QuoteWizardFooter";
 import { useQuoteDraft } from "../../hooks/useQuoteDraft";
@@ -20,7 +21,8 @@ import {
   buildQuoteSections,
   pruneAddOnValues,
 } from "../../lib/quoteSections";
-import { storedFormValues } from "../lib/quoteAnswers";
+import { fetchQuoteDocumentBlob } from "../api/quoteDocumentListApi";
+import { storedDocumentValues, storedFormValues } from "../lib/quoteAnswers";
 
 const focusField = (code) => {
   const node = document.getElementById(code);
@@ -37,14 +39,20 @@ const focusField = (code) => {
  * one field in question is the wrong shape for that.
  *
  * Every question the product asks is shown, answered or not, seeded with what
- * the quote holds; a blank one can be filled in here like any other.
+ * the quote holds — uploaded documents included; a blank one can be filled in
+ * here like any other.
  *
  * Saved through the same `POST /quote/draft` a new quote uses, with `quoteId`
  * added to the body so the server updates this quote rather than raising a new
  * one (see `saveQuoteDraft`).
  */
-function QuoteEditForm({ quote, metadata, onCancel, onSaved }) {
+function QuoteEditForm({ quote, metadata, documents, onCancel, onSaved }) {
   const baseSections = useMemo(() => buildQuoteSections(metadata), [metadata]);
+
+  const storedDocs = useMemo(
+    () => storedDocumentValues(baseSections, documents),
+    [baseSections, documents],
+  );
 
   // What the quote holds wins over the product's own defaults and presets —
   // this is the agent's answer, not the form's suggestion.
@@ -52,12 +60,48 @@ function QuoteEditForm({ quote, metadata, onCancel, onSaved }) {
     () => ({
       ...(metadata.directives?.setValues ?? {}),
       ...storedFormValues(baseSections, quote.values),
+      ...storedDocs.values,
     }),
-    [metadata, baseSections, quote.values],
+    [metadata, baseSections, quote.values, storedDocs],
   );
 
-  const { values, setValue } = useDynamicFormValues(baseSections, seeded);
+  const { values, setValue, setAllValues } = useDynamicFormValues(
+    baseSections,
+    seeded,
+  );
   const [errors, setErrors] = useState({});
+
+  // Swap each stored document's name for its file once fetched, so it previews
+  // like a picked one. Left as the name if the fetch fails or the agent has
+  // already changed that field.
+  useEffect(() => {
+    let live = true;
+
+    for (const doc of storedDocs.documents) {
+      fetchQuoteDocumentBlob(quote.id, doc.id)
+        .then((blob) => {
+          if (!live) return;
+          const file = storedDocumentFile(blob, doc);
+
+          setAllValues((prev) => {
+            const current = prev[doc.code];
+            if (current === doc.fileName) return { ...prev, [doc.code]: file };
+
+            const at = Array.isArray(current) ? current.indexOf(doc.fileName) : -1;
+            if (at < 0) return prev;
+            return {
+              ...prev,
+              [doc.code]: current.map((entry, i) => (i === at ? file : entry)),
+            };
+          });
+        })
+        .catch(() => {});
+    }
+
+    return () => {
+      live = false;
+    };
+  }, [quote.id, storedDocs, setAllValues]);
 
   const draft = useQuoteDraft({
     quoteId: quote.id,
@@ -161,25 +205,14 @@ function QuoteEditForm({ quote, metadata, onCancel, onSaved }) {
     else clearError(code);
   };
 
-  /**
-   * Every visible field is checked, as the wizard's save does — with one
-   * exception. A document already uploaded to this quote isn't in `values`
-   * (there is no file to put back into the picker), so a required upload would
-   * read as missing when it isn't. A file field is only checked when the agent
-   * has picked a new one.
-   */
+  // Every visible field is checked, as the wizard's save does.
   const handleSave = () => {
     if (busy) return;
 
-    const checked = fields.filter(
-      (field) =>
-        field.control !== "file" || isFieldAnswered(field, values[field.code]),
-    );
-
-    const found = validateFields(checked, values, requiredCodes);
+    const found = validateFields(fields, values, requiredCodes);
     setErrors(found);
 
-    const first = checked.find((field) => found[field.code]);
+    const first = fields.find((field) => found[field.code]);
     if (first) {
       if (draft.phase === "error") draft.reset();
       focusField(first.code);

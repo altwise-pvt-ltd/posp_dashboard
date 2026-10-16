@@ -9,14 +9,8 @@ import FileUpload from '@/shared/components/FileUpload';
 import { fileField } from '@/shared/upload/schema';
 import { alertOnInvalid } from '@/shared/store/alertStore';
 import { reportFormError } from '@/shared/api/formErrors';
+import { toLocalIsoDate } from '@/shared/lib/format';
 import QuoteDrawer from './QuoteDrawer';
-
-/** Today as `YYYY-MM-DD` in local time, the format a date input uses. */
-const localToday = () => {
-  const now = new Date();
-  const pad = (n) => String(n).padStart(2, '0');
-  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-};
 
 const markPaymentSchema = z.object({
   file: fileField({ message: 'Please upload the payment receipt.' }),
@@ -34,7 +28,7 @@ const markPaymentSchema = z.object({
   paidOn: z
     .string()
     .min(1, 'Please enter the payment date.')
-    .refine((value) => value <= localToday(), "Payment date can't be in the future."),
+    .refine((value) => value <= toLocalIsoDate(), "Payment date can't be in the future."),
   agentNote: z.string().trim().max(500, 'Keep the note under 500 characters.'),
 });
 
@@ -45,7 +39,7 @@ const TEXTAREA =
 const amountDefault = (amount) => (Number.isFinite(amount) ? String(amount) : '');
 
 function MarkPaymentForm({ amount, reference, onClose, onBack, onSubmit }) {
-  const [today] = useState(localToday);
+  const [today] = useState(() => toLocalIsoDate());
 
   const form = useForm({
     resolver: zodResolver(markPaymentSchema),

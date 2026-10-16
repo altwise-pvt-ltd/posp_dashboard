@@ -1,13 +1,9 @@
 /**
- * Display formatting for a queue row.
- *
- * The money and date formatters used to be defined here. They are generic —
- * "₹, Indian grouping, no paise" and "11 Sep 2026" are not quotation facts —
- * and the Business module needs the same two answers, so they now live in
- * `@/shared/lib/format`. Only what reads a field off a queue row stays here.
+ * Display formatting for a queue row. Generic money and date formatting lives
+ * in `@/shared/lib/format`.
  */
 
-import { formatCurrency, formatDate } from '@/shared/lib/format';
+import { formatCurrency } from '@/shared/lib/format';
 
 /**
  * A quote's sum insured. `—` when a draft has not been priced.
@@ -17,8 +13,6 @@ import { formatCurrency, formatDate } from '@/shared/lib/format';
  * a ₹5,00,000 cover where an agent expects a ₹14,250 bill.
  */
 export const formatSumInsured = formatCurrency;
-
-export { formatDate };
 
 /**
  * "Motor · Two Wheeler" — the line of business and the product under it.

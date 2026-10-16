@@ -1,6 +1,6 @@
 import { Headset } from "lucide-react";
 import DocumentRow from "./DocumentRow";
-import { SUPPORT_EMAIL } from "../model/verificationContent";
+import { SUPPORT_EMAIL, SUPPORT_PHONE } from "../model/verificationContent";
 
 /**
  * The checklist from `sm` up: every document at once, three across from `lg`.
@@ -32,6 +32,8 @@ export default function DocumentChecklist({ documents, supportPrompt }) {
         <p className="min-w-0 text-[11px] leading-4 text-slate-500">
           {supportPrompt} Write to{" "}
           <span className="font-semibold text-slate-700">{SUPPORT_EMAIL}</span>{" "}
+          or call{" "}
+          <span className="font-semibold text-slate-700">{SUPPORT_PHONE}</span>{" "}
           with your registered mobile number.
         </p>
       </li>

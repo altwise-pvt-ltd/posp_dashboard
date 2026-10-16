@@ -20,6 +20,7 @@ import {
   stageStateFor,
   statusUiFor,
 } from "../model/verificationContent";
+
 const VERIFICATION_SHELL =
   "mx-auto box-border w-full max-w-5xl px-4 sm:px-6 lg:px-10 xl:px-14 2xl:max-w-320";
 
@@ -155,9 +156,7 @@ export default function VerificationPendingPage() {
               onClick={onPrimaryAction}
             />
 
-            {/* Nothing to say once they're through — the live button speaks
-                for itself, and a caption under it would only add noise. */}
-            {!verified && (
+            {ui.actionCaption && (
               <p className="text-[11px] text-slate-400">{ui.actionCaption}</p>
             )}
           </div>
@@ -170,7 +169,7 @@ export default function VerificationPendingPage() {
             spacer. Breaks the shell gutters to sit edge to edge, and pads
             past the home indicator on the phones that have one. */}
         <div className="sticky bottom-0 z-10 -mx-4 mt-3 border-t border-slate-200 bg-white/95 px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur sm:hidden">
-          {!verified && (
+          {ui.actionCaption && (
             <p className="mb-2 text-center text-xs text-slate-400">
               {ui.actionCaption}
             </p>

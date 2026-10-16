@@ -1,5 +1,6 @@
 import { api, unwrap, uploadConfig } from '@/shared/api/client';
 import { ENDPOINTS } from '@/shared/api/endpoints';
+import { text } from '../../lib/normalize';
 
 /**
  * The RM's payment instruction on a quote — `GET /quote/<quoteId>/payment-instruction`.
@@ -8,12 +9,8 @@ import { ENDPOINTS } from '@/shared/api/endpoints';
  * `data: null`), so "not yet" and "request failed" stay apart.
  */
 
-const text = (value) => {
-  const trimmed = typeof value === 'string' ? value.trim() : '';
-  return trimmed || null;
-};
-
-const number = (value) => {
+/** A number, or a numeric string, as a number; null otherwise. */
+const amountOf = (value) => {
   if (Number.isFinite(value)) return value;
   const parsed = typeof value === 'string' ? Number(value) : NaN;
   return Number.isFinite(parsed) ? parsed : null;
@@ -25,7 +22,6 @@ export const PAYMENT_METHODS = Object.freeze({
 });
 
 const normalizeInstruction = (data) => ({
-  id: text(data.id),
   method: text(data.method),
 
   bank: {
@@ -39,7 +35,7 @@ const normalizeInstruction = (data) => ({
   paymentLink: text(data.paymentLink),
   linkExpiresAt: data.linkExpiresAt ?? null,
 
-  amount: number(data.amount),
+  amount: amountOf(data.amount),
   notes: text(data.notes),
   publishedAt: data.publishedAt ?? null,
 });
