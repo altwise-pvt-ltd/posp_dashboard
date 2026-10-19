@@ -40,6 +40,7 @@ import {
   formatProduct,
   formatSumInsured,
   hasDate,
+  splitLeadSection,
 } from "../lib/quotationFormat";
 import { canApplyForVerification, canEditQuote } from "../lib/quotationStatus";
 
@@ -109,8 +110,11 @@ function QuotationDetailPage() {
   const hasSelection = Boolean(quote?.selectedOffer);
   const insurer = useQuoteResponses(quoteId, quote?.statusCode, hasSelection);
 
+  // The server's id once the quote has loaded, else the route param.
+  const id = quote?.id ?? quoteId;
+
   /** The latest payment on this quote, once an offer has been selected. */
-  const payment = useQuotePayment(quote?.id ?? quoteId, quote?.quoteNumber, hasSelection);
+  const payment = useQuotePayment(id, quote?.quoteNumber, hasSelection);
   const paid = Boolean(payment) && !UNPAID_STATUSES.has(paymentStatusMeta(payment.status).label);
 
   const selectedResponse = insurer.responses.find((response) => response.isSelected);
@@ -139,7 +143,7 @@ function QuotationDetailPage() {
 
   /** Errors are rethrown so the form can show them against its fields. */
   const submitPayment = async (values) => {
-    const { message } = await submitPaymentReceipt(quote?.id ?? quoteId, values);
+    const { message } = await submitPaymentReceipt(id, values);
 
     showAlert({
       variant: "success",
@@ -239,25 +243,13 @@ function QuotationDetailPage() {
    */
   const age = formatAge(quote ? -(daysUntil(quote.createdAt) ?? 0) : null);
 
-  // The first answer section (e.g. "Quote Request Info") is shown inside the
-  // summary card rather than as its own panel. Its file type repeats the case
-  // type already shown there, so that entry is dropped.
-  const [leadSection, ...laterSections] = answers?.sections ?? [];
-  const mergeLead = leadSection?.rows.length === 1;
-  const sameAsCaseType = (entry) =>
-    /file\s*type/i.test(entry.label) &&
-    String(entry.text).toLowerCase() === String(quote?.fileType ?? "").toLowerCase();
-  const leadEntries = mergeLead
-    ? leadSection.rows[0].entries.filter((entry) => !sameAsCaseType(entry))
-    : [];
-  const panelSections = mergeLead ? laterSections : answers?.sections ?? [];
+  // The first answer section is shown inside the summary card; the rest become panels.
+  const { leadEntries, panelSections } = splitLeadSection(answers, quote);
 
   return (
     <DashboardLayout>
       <div className="dashboard-scale flex flex-col gap-gutter">
-        {/* Always a link to the list, never `navigate(-1)` — a quote opened
-            from a shared URL has no history to go back through, and a back
-            button that does nothing is worse than none. */}
+        {/* Goes to the list, not back — a quote opened from a shared URL has no history. */}
         <Link
           to="/offline-quotation/view"
           className="font-body-md text-body-md anim-fade inline-flex w-fit items-center gap-1.5 rounded-lg text-on-surface-variant transition-colors hover:text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus/40"
@@ -280,10 +272,7 @@ function QuotationDetailPage() {
               icon={<FileQuestion size={20} />}
               title="Quotation not found"
               body="This quote no longer exists, or it was never yours to open."
-              /* A button that navigates, not a <Link> wrapped around one — an
-                 <a> with a <button> inside it is invalid HTML, and the two
-                 nested controls are announced as two stops by a screen
-                 reader. */
+              /* Navigates on click; not a <Link>, which would nest <a> and <button>. */
               action={
                 <CustomButton
                   variant="secondary"
@@ -321,8 +310,6 @@ function QuotationDetailPage() {
         ) : (
           <>
             <section className="anim-fade-d1 rounded-xl border border-hairline bg-white p-4 sm:p-gutter">
-              {/* The reference is the quote's identity and leads at heading
-                  size — there is no customer name to put in that position. */}
               <header className="flex flex-wrap items-start justify-between gap-3 border-b border-hairline-soft pb-4">
                 <div className="min-w-0">
                   <h1 className="font-data-mono text-headline-lg font-semibold text-on-surface">
@@ -335,9 +322,6 @@ function QuotationDetailPage() {
                   )}
                 </div>
 
-                {/* Status and the one action that changes it, stacked — the
-                    button is about this quote's state, so it belongs beside
-                    the thing that states it. */}
                 <div className="flex flex-col items-start gap-3 sm:items-end">
                   <QuotationStatusPill quotation={quote} />
 
@@ -451,7 +435,7 @@ function QuotationDetailPage() {
 
             {editing ? (
               <QuoteEditForm
-                quote={{ ...quote, id: quote.id ?? quoteId }}
+                quote={{ ...quote, id }}
                 metadata={metadata}
                 documents={docs.documents}
                 onCancel={() => setEditing(false)}
@@ -471,7 +455,9 @@ function QuotationDetailPage() {
                 {/* Once an offer is selected, only that one is shown. */}
                 {!hasSelection && insurer.expected && (
                   <InsurerResponsePanel
+                    quoteId={id}
                     responses={insurer.responses}
+                    documents={docs.documents}
                     loading={insurer.loading}
                     error={insurer.error}
                     onRetry={insurer.retry}
@@ -493,7 +479,7 @@ function QuotationDetailPage() {
                 {/* Hidden once loaded with nothing in it. */}
                 {(docs.loading || docs.error || docs.documents.length > 0) && (
                   <QuoteDocumentsPanel
-                    quoteId={quote.id ?? quoteId}
+                    quoteId={id}
                     documents={docs.documents}
                     loading={docs.loading}
                     error={docs.error}

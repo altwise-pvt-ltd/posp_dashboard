@@ -1,15 +1,15 @@
-import { useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Input from '@/shared/components/Input';
+import DateInput from '@/shared/components/DateInput';
 import CustomButton from '@/shared/components/CustomButton';
 import FileUpload from '@/shared/components/FileUpload';
 import { fileField } from '@/shared/upload/schema';
 import { alertOnInvalid } from '@/shared/store/alertStore';
 import { reportFormError } from '@/shared/api/formErrors';
-import { toLocalIsoDate } from '@/shared/lib/format';
+import { dmyToIso, toLocalIsoDate } from '@/shared/lib/format';
 import QuoteDrawer from './QuoteDrawer';
 
 const markPaymentSchema = z.object({
@@ -28,7 +28,7 @@ const markPaymentSchema = z.object({
   paidOn: z
     .string()
     .min(1, 'Please enter the payment date.')
-    .refine((value) => value <= toLocalIsoDate(), "Payment date can't be in the future."),
+    .refine((value) => dmyToIso(value) <= toLocalIsoDate(), "Payment date can't be in the future."),
   agentNote: z.string().trim().max(500, 'Keep the note under 500 characters.'),
 });
 
@@ -39,7 +39,8 @@ const TEXTAREA =
 const amountDefault = (amount) => (Number.isFinite(amount) ? String(amount) : '');
 
 function MarkPaymentForm({ amount, reference, onClose, onBack, onSubmit }) {
-  const [today] = useState(() => toLocalIsoDate());
+  // Read per render, not captured once — a drawer left open past midnight would go stale.
+  const today = toLocalIsoDate();
 
   const form = useForm({
     resolver: zodResolver(markPaymentSchema),
@@ -58,7 +59,8 @@ function MarkPaymentForm({ amount, reference, onClose, onBack, onSubmit }) {
 
   const submit = form.handleSubmit(async (values) => {
     try {
-      const done = await onSubmit?.(values);
+      // The field shows dd/mm/yyyy; the API gets yyyy-mm-dd.
+      const done = await onSubmit?.({ ...values, paidOn: dmyToIso(values.paidOn) });
       if (done) onClose();
     } catch (error) {
       reportFormError(form, error, "Couldn't submit the payment");
@@ -136,13 +138,13 @@ function MarkPaymentForm({ amount, reference, onClose, onBack, onSubmit }) {
           {...form.register('referenceNo')}
         />
 
-        <Input
+        <DateInput
+          form={form}
+          name="paidOn"
           id="paidOn"
-          type="date"
           label="Paid on *"
           max={today}
           error={errors.paidOn?.message}
-          {...form.register('paidOn')}
         />
 
         <div>

@@ -11,6 +11,8 @@ const normalizeDocument = (entry = {}) => ({
   id: text(entry.id),
   code: text(entry.documentCode),
   fileName: text(entry.fileName) ?? 'Document',
+  /** Storage key; matched against an insurer response's `quoteDocPath`. */
+  filePath: text(entry.filePath),
   contentType: text(entry.contentType) ?? '',
   sizeBytes: Number.isFinite(entry.sizeBytes) ? entry.sizeBytes : null,
   status: text(entry.status),
@@ -31,6 +33,9 @@ export async function fetchQuoteDocuments(quoteId, { signal } = {}) {
  */
 const blobRequests = new Map();
 
+// Past this the oldest entry is dropped; a dropped document is fetched again.
+const CACHE_MAX = 24;
+
 export function fetchQuoteDocumentBlob(quoteId, documentId) {
   const key = `${quoteId}|${documentId}`;
   const cached = blobRequests.get(key);
@@ -42,6 +47,8 @@ export function fetchQuoteDocumentBlob(quoteId, documentId) {
   });
 
   blobRequests.set(key, request);
+  if (blobRequests.size > CACHE_MAX) blobRequests.delete(blobRequests.keys().next().value);
+
   return request;
 }
 

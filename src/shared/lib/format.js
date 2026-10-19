@@ -82,6 +82,18 @@ export function toLocalIsoDate(date = new Date()) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
 
+/** `19/10/2026` → `2026-10-19`; empty when not dd/mm/yyyy. */
+export function dmyToIso(value) {
+  const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value ?? '');
+  return match ? `${match[3]}-${match[2]}-${match[1]}` : '';
+}
+
+/** `2026-10-19` → `19/10/2026`; empty when not yyyy-mm-dd. */
+export function isoToDmy(value) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value ?? '');
+  return match ? `${match[3]}/${match[2]}/${match[1]}` : '';
+}
+
 /**
  * Whole days from today until `value`; negative once it is past, null when
  * there is no usable date.

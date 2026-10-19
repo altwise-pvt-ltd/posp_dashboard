@@ -10,12 +10,9 @@ import { number, text } from '../../lib/normalize';
  * responded to, it says so with an empty list. So "no responses" and "failed to
  * ask" are different outcomes here and the hook reports them differently.
  *
- * ⚠ `insurerId` is a uuid and there is no insurer name anywhere in the reply —
- * nor any master list in this app to resolve one against. So the cards below
- * are headed by the *premium*, with the insurer's own reference beneath it,
- * because those are the only two things on a response an agent can actually
- * recognise. Ask the backend for `insurerName`; comparing two quotes by uuid is
- * not something anyone can do.
+ * ⚠ `insurerName` and `insurerLogoUrl` have not been seen on this reply. They
+ * are read under the names `/quote/<id>`'s `selectedOffer` uses; until the
+ * backend confirms them a card falls back to "Insurer" and initials.
  */
 
 /** A real boolean, or null when the field was absent rather than false. */
@@ -33,22 +30,29 @@ const flag = (value) => {
 const KNOWN = new Set([
   'responseId',
   'insurerId',
+  'insurerName',
+  'insurerLogoUrl',
   'premium',
   'idv',
   'validTill',
   'isSelected',
+  // Ranking is done client-side; ties on this flag are common.
   'isLowestPremium',
-  'coverageJson',
   'receivedAt',
   'insurerQuoteRef',
   'quoteDocPath',
-  'requestedAddOnCodes',
-  'addOnPricingJson',
   'earningPoints',
   'earningStatus',
   'earningNote',
   'earningPlanName',
 ]);
+
+/** Null, undefined, blank or an empty list: nothing worth showing. */
+const isBlank = (value) =>
+  value === null ||
+  value === undefined ||
+  (typeof value === 'string' && value.trim() === '') ||
+  (Array.isArray(value) && value.length === 0);
 
 /** `insurerName` → "Insurer name", for a field this app has never seen. */
 const humanize = (key) =>
@@ -85,8 +89,11 @@ const normalizeResponse = (entry, index) => {
      */
     responseId: text(source.responseId),
 
-    /** ⚠ A uuid. There is no name on this reply — see the note above. */
+    /** ⚠ A uuid. */
     insurerId: text(source.insurerId),
+    /** ⚠ Unconfirmed field names — see the note above. */
+    insurerName: text(source.insurerName),
+    insurerLogoUrl: text(source.insurerLogoUrl),
     /** The insurer's own reference for this quote — "ACK01234". */
     insurerQuoteRef: text(source.insurerQuoteRef),
 
@@ -100,7 +107,10 @@ const normalizeResponse = (entry, index) => {
 
     isSelected: flag(source.isSelected),
 
-    /** A storage path, not a URL. ⚠ No route in this app serves it yet. */
+    /**
+     * A storage path, not a URL. Opened by matching it to a document's
+     * `filePath` on `/quote/<id>/documents`. ⚠ That match is unverified.
+     */
     quoteDocPath: text(source.quoteDocPath),
 
     /** The agent's commission on this response. Not the customer's money. */
@@ -112,49 +122,28 @@ const normalizeResponse = (entry, index) => {
     },
 
     /**
-     * Anything the server started sending that this file does not name.
-     *
-     * A new field is a thing someone added on purpose, and silently dropping it
-     * means nobody notices for a release. Rendered generically at the foot of
-     * the card until it is given a proper place here.
+     * Anything the server sends that this file does not name, rendered
+     * generically on the card. Includes `coverageJson`, `addOnPricingJson` and
+     * `requestedAddOnCodes` once they arrive non-empty — their shape is unseen.
      */
     extras: Object.entries(source)
-      .filter(([key, value]) => !KNOWN.has(key) && value !== null && value !== undefined)
+      .filter(([key, value]) => !KNOWN.has(key) && !isBlank(value))
       .map(([key, value]) => ({ key, label: humanize(key), value })),
   };
 };
 
 /**
- * Fetch the responses on one quote, cheapest first.
- *
- * Sorted here rather than left in the server's order because this is a
- * *comparison*: the question an agent opens it with is which one is cheapest.
- * A response with no premium sorts last — it cannot be compared on the
- * thing the list is ordered by, so it does not get to lead.
- *
- * ⚠ The panel no longer says the list is ordered this way, so this is now an
- * arrangement the screen makes without announcing it. That is a deliberate
- * trade — the order helps and the caption was a claim — but if the server's
- * own order is ever meaningful, delete this sort rather than labelling it.
+ * Fetch the responses on one quote, in the server's order. The panel sorts them
+ * (see `rankResponses`).
  *
  * Rejects on failure rather than answering an empty list — an empty list is
- * itself a fact the panel states, and a failed request dressed up as one would
- * tell the agent something untrue about their quote.
+ * itself a fact the panel states.
  */
 export async function fetchQuoteResponses(quoteId, { signal } = {}) {
   const response = await api.get(ENDPOINTS.quotation.compare(quoteId), { signal });
   const data = unwrap(response);
 
-  const responses = Array.isArray(data?.responses) ? data.responses.map(normalizeResponse) : [];
-
-  responses.sort((a, b) => {
-    if (a.premium === b.premium) return 0;
-    if (a.premium === null) return 1;
-    if (b.premium === null) return -1;
-    return a.premium - b.premium;
-  });
-
-  return responses;
+  return Array.isArray(data?.responses) ? data.responses.map(normalizeResponse) : [];
 }
 
 /**

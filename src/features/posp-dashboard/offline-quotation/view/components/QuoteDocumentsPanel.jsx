@@ -22,7 +22,7 @@ function DocumentTile({ quoteId, doc, label, onOpen }) {
       className="group flex w-full flex-col overflow-hidden rounded-lg border border-hairline bg-white text-left transition hover:-translate-y-0.5 hover:border-orange-300 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus/40 motion-reduce:hover:translate-y-0"
     >
       <div className="relative aspect-4/3 w-full overflow-hidden bg-well text-on-surface-variant">
-        <DocumentThumbnail quoteId={quoteId} document={doc} />
+        <DocumentThumbnail quoteId={quoteId} doc={doc} />
 
         <span className="absolute left-2 top-2 rounded bg-white/90 px-1.5 py-0.5 text-field-label font-semibold uppercase tracking-wide text-on-surface-variant shadow-sm">
           {extension(doc)}

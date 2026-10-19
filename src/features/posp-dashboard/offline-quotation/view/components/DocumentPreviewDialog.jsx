@@ -24,7 +24,7 @@ const TOOL =
 const ARROW =
   'absolute top-1/2 z-10 hidden size-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur-md transition-colors hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 sm:inline-flex';
 
-function Stage({ document, file }) {
+function Stage({ doc, file }) {
   if (file.loading) {
     return (
       <div className="flex flex-col items-center gap-3 text-white/70">
@@ -55,12 +55,12 @@ function Stage({ document, file }) {
 
   if (!file.url) return null;
 
-  if (isImage(document) || file.blob?.type?.startsWith('image/')) {
+  if (isImage(doc) || file.blob?.type?.startsWith('image/')) {
     return (
       <motion.img
         key={file.url}
         src={file.url}
-        alt={document.fileName}
+        alt={doc.fileName}
         draggable={false}
         initial={{ opacity: 0, scale: 0.98 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -70,11 +70,11 @@ function Stage({ document, file }) {
     );
   }
 
-  if (isPdf(document) || file.blob?.type === 'application/pdf') {
+  if (isPdf(doc) || file.blob?.type === 'application/pdf') {
     return (
       <iframe
         src={file.url}
-        title={document.fileName}
+        title={doc.fileName}
         className="size-full max-w-5xl rounded-lg bg-white shadow-2xl"
       />
     );
@@ -86,7 +86,7 @@ function Stage({ document, file }) {
       <p className="text-sm">No preview for this file type.</p>
       <button
         type="button"
-        onClick={() => saveBlob(file.blob, document.fileName)}
+        onClick={() => saveBlob(file.blob, doc.fileName)}
         className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-medium text-slate-900 transition-colors hover:bg-white/90"
       >
         <Download className="size-4" aria-hidden="true" />
@@ -101,10 +101,10 @@ function Stage({ document, file }) {
  * page's animated (transformed) sections can't trap its fixed positioning.
  */
 function DocumentPreviewDialog({ quoteId, documents, index, labelFor, onClose, onNavigate }) {
-  const document = index == null ? null : documents[index];
-  const file = useDocumentBlob(quoteId, document?.id ?? null);
+  const current = index == null ? null : documents[index];
+  const file = useDocumentBlob(quoteId, current?.id ?? null);
 
-  const open = Boolean(document);
+  const open = Boolean(current);
   const hasPrev = open && index > 0;
   const hasNext = open && index < documents.length - 1;
 
@@ -117,19 +117,19 @@ function DocumentPreviewDialog({ quoteId, documents, index, labelFor, onClose, o
       if (event.key === 'ArrowRight' && hasNext) onNavigate(index + 1);
     };
 
-    const body = window.document.body;
+    const body = document.body;
     const savedOverflow = body.style.overflow;
     body.style.overflow = 'hidden';
-    window.document.addEventListener('keydown', onKeyDown);
+    document.addEventListener('keydown', onKeyDown);
 
     return () => {
       body.style.overflow = savedOverflow;
-      window.document.removeEventListener('keydown', onKeyDown);
+      document.removeEventListener('keydown', onKeyDown);
     };
   }, [open, index, hasPrev, hasNext, onClose, onNavigate]);
 
-  const meta = document
-    ? [formatBytes(document.sizeBytes), document.uploadedAt && `Uploaded ${formatDate(document.uploadedAt)}`]
+  const meta = current
+    ? [formatBytes(current.sizeBytes), current.uploadedAt && `Uploaded ${formatDate(current.uploadedAt)}`]
         .filter(Boolean)
         .join(' · ')
     : '';
@@ -151,14 +151,14 @@ function DocumentPreviewDialog({ quoteId, documents, index, labelFor, onClose, o
           <header className="flex items-center justify-between gap-4 px-4 py-3 sm:px-6">
             <div className="min-w-0">
               <p className="truncate text-status-pill font-semibold uppercase tracking-wider text-white/50">
-                {labelFor(document)}
+                {labelFor(current)}
               </p>
               <h2
                 id="document-preview-title"
                 className="truncate text-base font-medium text-white"
-                title={document.fileName}
+                title={current.fileName}
               >
-                {document.fileName}
+                {current.fileName}
               </h2>
               {meta && <p className="truncate text-xs text-white/50">{meta}</p>}
             </div>
@@ -184,7 +184,7 @@ function DocumentPreviewDialog({ quoteId, documents, index, labelFor, onClose, o
               <button
                 type="button"
                 disabled={!file.blob}
-                onClick={() => saveBlob(file.blob, document.fileName)}
+                onClick={() => saveBlob(file.blob, current.fileName)}
                 aria-label="Download"
                 title="Download"
                 className={TOOL}
@@ -220,7 +220,7 @@ function DocumentPreviewDialog({ quoteId, documents, index, labelFor, onClose, o
               </button>
             )}
 
-            <Stage document={document} file={file} />
+            <Stage doc={current} file={file} />
 
             {hasNext && (
               <button
@@ -252,7 +252,7 @@ function DocumentPreviewDialog({ quoteId, documents, index, labelFor, onClose, o
                           : 'opacity-50 hover:opacity-90'
                       }`}
                     >
-                      <DocumentThumbnail quoteId={quoteId} document={doc} compact />
+                      <DocumentThumbnail quoteId={quoteId} doc={doc} compact />
                     </button>
                   </li>
                 ))}
@@ -262,7 +262,7 @@ function DocumentPreviewDialog({ quoteId, documents, index, labelFor, onClose, o
         </motion.div>
       )}
     </AnimatePresence>,
-    window.document.body,
+    document.body,
   );
 }
 
