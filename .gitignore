@@ -28,8 +28,8 @@ documentation/
 # Test coverage
 coverage
 
-# Claude local settings (personal, not shared)
-.claude/settings.local.json
+# Claude Code folder (personal, not shared)
+.claude/
 
 # Editor directories and files
 .vscode/*

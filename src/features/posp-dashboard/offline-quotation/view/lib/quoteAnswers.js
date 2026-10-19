@@ -61,8 +61,10 @@ function answerText(field, raw) {
         .filter(Boolean)
         .join(', ');
 
-    case 'date':
-      return formatDate(value);
+    case 'date': {
+      const shown = formatDate(value);
+      return shown === '—' ? null : shown;
+    }
 
     case 'number': {
       const shown = groupDigits(value);

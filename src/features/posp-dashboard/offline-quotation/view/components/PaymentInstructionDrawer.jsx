@@ -1,8 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { Check, Copy, ExternalLink, Landmark, Link2, TriangleAlert } from 'lucide-react';
 import CustomButton from '@/shared/components/CustomButton';
 import { PAYMENT_METHODS } from '../api/paymentInstructionApi';
+import { useCopied } from '../hooks/useCopied';
+import CopyIconButton from './CopyIconButton';
 import QuoteDrawer from './QuoteDrawer';
 
 /** Paise are kept when present — this is the exact sum to pay. */
@@ -43,61 +45,6 @@ const methodLabel = (method) =>
         .replace(/^./, (c) => c.toUpperCase())
         .replace(/ (\S)/g, (_, c) => ` ${c.toLowerCase()}`)
     : 'Payment');
-
-async function copyText(value) {
-  try {
-    await navigator.clipboard.writeText(value);
-    return true;
-  } catch {
-    // Fallback for browsers or contexts without the async clipboard API.
-    const area = document.createElement('textarea');
-    area.value = value;
-    area.setAttribute('readonly', '');
-    area.style.position = 'fixed';
-    area.style.opacity = '0';
-    document.body.appendChild(area);
-    area.select();
-    const ok = document.execCommand('copy');
-    area.remove();
-    return ok;
-  }
-}
-
-/** Tracks which value was copied last, cleared after a moment. */
-function useCopied() {
-  const [copied, setCopied] = useState(null);
-  const timer = useRef(null);
-
-  useEffect(() => () => clearTimeout(timer.current), []);
-
-  const copy = async (key, value) => {
-    if (!value) return;
-    const ok = await copyText(value);
-    if (!ok) return;
-
-    setCopied(key);
-    clearTimeout(timer.current);
-    timer.current = setTimeout(() => setCopied(null), 1800);
-  };
-
-  return { copied, copy };
-}
-
-function CopyIconButton({ label, done, onClick }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label={done ? `${label} copied` : `Copy ${label}`}
-      title={done ? 'Copied' : 'Copy'}
-      className={`shrink-0 rounded-lg p-1.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40 ${
-        done ? 'bg-orange-50 text-orange-700' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-700'
-      }`}
-    >
-      {done ? <Check aria-hidden="true" className="size-4" /> : <Copy aria-hidden="true" className="size-4" />}
-    </button>
-  );
-}
 
 function Label({ children }) {
   return (

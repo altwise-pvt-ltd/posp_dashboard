@@ -3,7 +3,7 @@
  * in `@/shared/lib/format`.
  */
 
-import { formatCurrency } from '@/shared/lib/format';
+import { formatCurrency, formatDate } from '@/shared/lib/format';
 
 /**
  * A quote's sum insured. `—` when a draft has not been priced.
@@ -41,6 +41,22 @@ export const formatLob = (row) => row?.lob || '—';
  * arithmetic before it means anything; "13 days old" is the fact the agent is
  * actually sorting on.
  */
+// A string with a non-midnight clock part, e.g. "2026-10-16T14:41:00".
+const hasClockTime = (value) =>
+  typeof value === 'string' && /T\d{2}:\d{2}/.test(value) && !/T00:00(:00(\.0+)?)?(Z|[+-]00:?00)?$/.test(value);
+
+/** "16 Oct 2026, 2:41 pm", or just the date when the value has no time in it. */
+export const formatDateTime = (value) => {
+  const day = formatDate(value);
+  if (day === '—' || !hasClockTime(value)) return day;
+
+  const time = new Date(value).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' });
+  return `${day}, ${time}`;
+};
+
+/** True when the value parses as a date. */
+export const hasDate = (value) => Boolean(value) && !Number.isNaN(new Date(value).getTime());
+
 export const formatAge = (days) => {
   if (!Number.isFinite(days) || days < 0) return null;
   if (days === 0) return 'today';

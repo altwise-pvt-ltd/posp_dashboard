@@ -1,5 +1,6 @@
 import { BadgeCheck } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/shared/lib/format';
+import EarningStrip from './EarningStrip';
 
 function Fact({ label, children, mono = false }) {
   return (
@@ -18,8 +19,8 @@ function Fact({ label, children, mono = false }) {
   );
 }
 
-/** The insurer response the agent accepted, and the proposal raised on it. */
-function SelectedOfferPanel({ offer }) {
+/** The insurer response the agent accepted, the proposal raised on it, and the agent's earning. */
+function SelectedOfferPanel({ offer, earning }) {
   const {
     insurerName,
     insurerQuoteRef,
@@ -50,30 +51,40 @@ function SelectedOfferPanel({ offer }) {
         </span>
       </div>
 
-      <div className="mt-4 flex flex-wrap items-end justify-between gap-x-6 gap-y-3 rounded-xl border border-gray-200 bg-surface-dim/40 p-3.5">
-        <div className="min-w-0">
-          <p className="font-label-caps text-label-caps font-semibold uppercase text-on-surface-variant">
-            Insurer
-          </p>
-          <p className="font-headline-md text-headline-md mt-0.5 text-on-surface">
-            {insurerName ?? '—'}
-          </p>
-          {insurerQuoteRef && (
-            <p className="font-body-md text-body-md text-on-surface-variant">
-              Insurer ref <span className="font-data-mono text-on-surface">{insurerQuoteRef}</span>
-            </p>
+      {(insurerName || insurerQuoteRef || Number.isFinite(premium)) && (
+        <div className="mt-4 flex flex-wrap items-end justify-between gap-x-6 gap-y-3 rounded-xl border border-gray-200 bg-surface-dim/40 p-3.5">
+          {(insurerName || insurerQuoteRef) && (
+            <div className="min-w-0">
+              {insurerName && (
+                <>
+                  <p className="font-label-caps text-label-caps font-semibold uppercase text-on-surface-variant">
+                    Insurer
+                  </p>
+                  <p className="font-headline-md text-headline-md mt-0.5 text-on-surface">
+                    {insurerName}
+                  </p>
+                </>
+              )}
+              {insurerQuoteRef && (
+                <p className="font-body-md text-body-md text-on-surface-variant">
+                  Insurer ref <span className="font-data-mono text-on-surface">{insurerQuoteRef}</span>
+                </p>
+              )}
+            </div>
+          )}
+
+          {Number.isFinite(premium) && (
+            <div className="sm:text-right">
+              <p className="font-label-caps text-label-caps font-semibold uppercase text-on-surface-variant">
+                Premium
+              </p>
+              <p className="font-data-currency text-headline-lg mt-0.5 text-on-surface">
+                {formatCurrency(premium)}
+              </p>
+            </div>
           )}
         </div>
-
-        <div className="sm:text-right">
-          <p className="font-label-caps text-label-caps font-semibold uppercase text-on-surface-variant">
-            Premium
-          </p>
-          <p className="font-data-currency text-headline-lg mt-0.5 text-on-surface">
-            {formatCurrency(premium)}
-          </p>
-        </div>
-      </div>
+      )}
 
       <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-4 sm:grid-cols-3">
         {proposalNumber && (
@@ -87,6 +98,8 @@ function SelectedOfferPanel({ offer }) {
         {tpPremium !== null && <Fact label="TP premium">{formatCurrency(tpPremium)}</Fact>}
         {validTill && <Fact label="Valid till">{formatDate(validTill)}</Fact>}
       </dl>
+
+      <EarningStrip earning={earning} />
     </section>
   );
 }

@@ -1,22 +1,16 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-/**
- * The pager under the list.
- *
- * Numbered pages, not "load more": a policy book is looked through rather than
- * scrolled to the end of, and an agent who was on page three when they opened
- * a drawer expects page three when they close it. "Load more" also grows the
- * table's scroller without bound, which is the thing the fixed-height viewport
- * in `PolicyTable` exists to prevent.
- *
- * The count line is the other half of the control. With the table clipped to
- * its own box, the list no longer ends where the page ends — "Showing 11–20 of
- * 27" is what tells the reader how much book is behind the scrollbar.
- *
- * Drawn for both layouts. On a phone the numbers wrap under the count line
- * rather than shrinking: tap targets stay a finger wide.
- */
-function PolicyPagination({ page, pageCount, rangeStart, rangeEnd, total, onPageChange }) {
+/** Numbered pager with a "Showing 11–20 of 27" line. Pages are 1-based. */
+function Pagination({
+  page,
+  pageCount,
+  rangeStart,
+  rangeEnd,
+  total,
+  onPageChange,
+  label = 'Pages',
+  disabled = false,
+}) {
   // One page is no decision to make — the count line still earns its place,
   // the buttons don't.
   const single = pageCount <= 1;
@@ -42,11 +36,11 @@ function PolicyPagination({ page, pageCount, rangeStart, rangeEnd, total, onPage
       </p>
 
       {!single && (
-        <nav aria-label="Policy pages" className="flex items-center gap-1.5">
+        <nav aria-label={label} className="flex flex-wrap items-center gap-1.5">
           <button
             type="button"
             onClick={() => go(page - 1)}
-            disabled={page === 1}
+            disabled={disabled || page === 1}
             aria-label="Previous page"
             className={stepClass}
           >
@@ -69,9 +63,10 @@ function PolicyPagination({ page, pageCount, rangeStart, rangeEnd, total, onPage
                 key={entry}
                 type="button"
                 onClick={() => go(entry)}
+                disabled={disabled}
                 aria-label={`Page ${entry}`}
                 aria-current={entry === page ? 'page' : undefined}
-                className={`font-data-mono text-data-mono inline-flex size-9 shrink-0 items-center justify-center rounded-lg border transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40 ${
+                className={`font-data-mono text-data-mono inline-flex size-9 shrink-0 items-center justify-center rounded-lg border transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40 disabled:cursor-not-allowed disabled:opacity-60 ${
                   entry === page
                     ? 'border-orange-200 bg-orange-50 font-semibold text-orange-700'
                     : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900'
@@ -85,7 +80,7 @@ function PolicyPagination({ page, pageCount, rangeStart, rangeEnd, total, onPage
           <button
             type="button"
             onClick={() => go(page + 1)}
-            disabled={page === pageCount}
+            disabled={disabled || page === pageCount}
             aria-label="Next page"
             className={stepClass}
           >
@@ -124,4 +119,4 @@ function pageWindow(page, pageCount) {
   return [1, GAP, page - 1, page, page + 1, GAP, pageCount];
 }
 
-export default PolicyPagination;
+export default Pagination;

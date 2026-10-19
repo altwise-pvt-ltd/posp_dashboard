@@ -22,8 +22,10 @@ import { hasInsurerResponses } from '../lib/quotationStatus';
  * Takes `statusCode` rather than the whole quote so nothing re-runs on the new
  * object identity a refetch produces when the quote itself has not changed.
  */
-export function useQuoteResponses(quoteId, statusCode) {
-  const expected = hasInsurerResponses(statusCode);
+export function useQuoteResponses(quoteId, statusCode, hasSelection = false) {
+  // A quote with a selected offer had responses, so they are fetched in every later state too.
+  // ⚠ Unconfirmed that /compare still answers after acceptance; the page hides the result quietly if not.
+  const expected = hasInsurerResponses(statusCode) || hasSelection;
 
   /**
    * What to ask for, or null for "don't ask".

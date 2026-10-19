@@ -1,7 +1,9 @@
+import { useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FileSearch, FileText, Loader2, Plus, RefreshCw, TriangleAlert } from 'lucide-react';
 import DashboardLayout from '@/shared/layouts/DashboardLayout';
 import CustomButton from '@/shared/components/CustomButton';
+import Pagination from '@/shared/components/Pagination';
 import QuoteNotice from '../../components/QuoteNotice';
 import QuotationFilters from '../components/QuotationFilters';
 import QuotationList from '../components/QuotationList';
@@ -21,9 +23,12 @@ function ViewQuotationsPage() {
     setStatus,
     filtered,
     loading,
-    loadingMore,
-    hasNextPage,
-    loadMore,
+    paging,
+    page,
+    pageCount,
+    setPage,
+    rangeStart,
+    rangeEnd,
     error,
     retry,
     clearFilters,
@@ -36,7 +41,12 @@ function ViewQuotationsPage() {
 
   const showFilters = rows.length > 0 || status !== ALL;
 
-  const hiding = query ? visible.length !== rows.length : rows.length !== totalCount;
+  // Bring the top of the list back into view when the page changes.
+  const listRef = useRef(null);
+  const changePage = (next) => {
+    setPage(next);
+    listRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  };
 
   const statusName = statuses.find((entry) => entry.code === status)?.label ?? status;
 
@@ -56,7 +66,10 @@ function ViewQuotationsPage() {
           </CustomButton>
         </header>
 
-        <section className="anim-fade-d1 rounded-xl border border-hairline bg-white p-4 sm:p-gutter">
+        <section
+          ref={listRef}
+          className="anim-fade-d1 scroll-mt-4 rounded-xl border border-hairline bg-white p-4 sm:p-gutter"
+        >
           {loading ? (
             <QuoteNotice
               icon={<Loader2 size={20} className="animate-spin" />}
@@ -89,7 +102,7 @@ function ViewQuotationsPage() {
                   status={status}
                   onStatusChange={setStatus}
                   statuses={statuses}
-                  disabled={loadingMore}
+                  disabled={paging}
                 />
               )}
 
@@ -133,8 +146,8 @@ function ViewQuotationsPage() {
                   icon={<FileSearch size={20} />}
                   title="Nothing matches"
                   body={
-                    hasNextPage
-                      ? 'No loaded quotation matches what you typed — there are more still to load.'
+                    pageCount > 1
+                      ? 'No quotation on this page matches what you typed — try another page.'
                       : 'No quotation matches what you typed.'
                   }
                   action={
@@ -149,40 +162,38 @@ function ViewQuotationsPage() {
                   }
                 />
               ) : (
-                <QuotationList quotations={visible} />
+                <div
+                  aria-busy={paging}
+                  className={`transition-opacity ${paging ? 'pointer-events-none opacity-50' : ''}`}
+                >
+                  <QuotationList quotations={visible} />
+                </div>
               )}
 
-              {/* The count, and the way to get more of them. Only rendered once
-                  it says something — "Showing 2 of 2" is noise. */}
-              {(hiding || hasNextPage) && (
+              {query && pageCount > 1 && (
                 <p className="font-body-md text-body-md text-on-surface-variant">
-                  {query
-                    ? `Showing ${visible.length} of ${rows.length} loaded.`
-                    : `Showing ${rows.length} of ${totalCount}.`}
-                  {query && hasNextPage && ' Search only looks at what has been loaded.'}
+                  Search only looks at the quotations on this page.
                 </p>
               )}
 
-              {/* A "load more" that failed keeps the rows already on screen and
-                  puts the failure next to the button that caused it, rather
-                  than replacing a working list with an error panel. */}
               {error && rows.length > 0 && (
                 <p className="font-body-md text-body-md text-error flex items-start gap-2">
                   <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-                  {error?.message || 'Couldn’t load any more quotations.'}
+                  {error?.message || 'Couldn’t load that page. Please try again.'}
                 </p>
               )}
 
-              {hasNextPage && (
-                <CustomButton
-                  variant="secondary"
-                  size="md"
-                  onClick={loadMore}
-                  loading={loadingMore}
-                  className="self-center"
-                >
-                  {loadingMore ? 'Loading' : 'Load more'}
-                </CustomButton>
+              {rows.length > 0 && (
+                <Pagination
+                  label="Quotation pages"
+                  page={page}
+                  pageCount={pageCount}
+                  rangeStart={rangeStart}
+                  rangeEnd={rangeEnd}
+                  total={totalCount}
+                  onPageChange={changePage}
+                  disabled={paging}
+                />
               )}
             </div>
           )}

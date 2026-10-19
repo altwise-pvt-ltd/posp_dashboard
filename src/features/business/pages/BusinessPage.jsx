@@ -8,7 +8,7 @@ import PolicySummary from '../components/PolicySummary';
 import PolicyTrend from '../components/PolicyTrend';
 import PolicyFilters from '../components/PolicyFilters';
 import PolicyList from '../components/PolicyList';
-import PolicyPagination from '../components/PolicyPagination';
+import Pagination from '@/shared/components/Pagination';
 import PolicyDetail from '../components/PolicyDetail';
 import { usePolicyList } from '../hooks/usePolicyList';
 
@@ -186,7 +186,8 @@ function BusinessPage() {
                   {/* Inside the filtered branch, so it is never drawn over an
                       empty state — and it reports the filtered count, which is
                       the list the reader is actually paging through. */}
-                  <PolicyPagination
+                  <Pagination
+                    label="Policy pages"
                     page={page}
                     pageCount={pageCount}
                     rangeStart={rangeStart}

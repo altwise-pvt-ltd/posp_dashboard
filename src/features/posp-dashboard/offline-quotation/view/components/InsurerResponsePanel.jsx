@@ -2,6 +2,7 @@ import { BadgeCheck, Check, Inbox, Loader2, RefreshCw, TriangleAlert } from 'luc
 import CustomButton from '@/shared/components/CustomButton';
 import { formatCurrency, formatDate } from '@/shared/lib/format';
 import QuoteNotice from '../../components/QuoteNotice';
+import EarningStrip from './EarningStrip';
 
 /**
  * What the insurers answered — `GET /quote/<id>/compare`, rendered.
@@ -29,46 +30,6 @@ function Fact({ label, children }) {
         {label}
       </dt>
       <dd className="font-body-lg text-body-lg mt-0.5 break-words text-on-surface">{children}</dd>
-    </div>
-  );
-}
-
-/**
- * The agent's commission on this response — not the customer's money.
- *
- * Set apart from the premium deliberately: they are both rupee figures about
- * the same quote, and mistaking one for the other is the expensive error on
- * this screen. `NO_GRID` is the common case today and carries a note
- * explaining itself, so the note is shown rather than the bare status code —
- * "No rate card is configured for this insurer yet" is an answer, `NO_GRID` is
- * a string only the backend team can read.
- *
- * Pinned to the foot of the card — by `CardFoot` below, not by this component:
- * two `mt-auto` children in one flex column split the slack between them
- * instead of one taking it all, which would open a gap between this strip and
- * the button under it. Two cards side by side hold different numbers of facts —
- * one insurer sends a `validTill` and the other does not — and without the pin
- * the earning strips sit at two different heights, which reads as one card
- * being unfinished rather than as one fact being absent.
- */
-function Earning({ earning }) {
-  const { points, status, planName, note } = earning;
-  if (points === null && !status && !planName && !note) return null;
-
-  return (
-    <div className="pt-4">
-      <div className="rounded-lg bg-slate-50 px-3 py-2.5">
-        <p className="font-label-caps text-label-caps font-semibold uppercase text-on-surface-variant">
-          Your earning
-          {planName && <span className="normal-case"> · {planName} plan</span>}
-        </p>
-        <p className="font-body-md text-body-md mt-1 text-on-surface">
-          {points !== null ? `${points} points` : note || status || '—'}
-        </p>
-        {points !== null && note && (
-          <p className="font-body-md text-body-md mt-0.5 text-on-surface-variant">{note}</p>
-        )}
-      </div>
     </div>
   );
 }
@@ -102,7 +63,7 @@ function CardFoot({ response, onSelect, selecting, busy }) {
 
   return (
     <div className="mt-auto">
-      <Earning earning={earning} />
+      <EarningStrip earning={earning} />
 
       {isSelected ? (
         <p className="font-body-md text-body-md mt-4 flex items-center gap-1.5 rounded-lg bg-orange-50 px-3 py-2 text-orange-700">
@@ -153,12 +114,16 @@ function ResponseCard({ response, onSelect, selecting, busy }) {
           {/* The premium is labelled rather than left as a bare figure. There
               are two rupee amounts on this card and IDV is the larger of the
               two, so an unlabelled headline number is genuinely ambiguous. */}
-          <p className="font-label-caps text-label-caps font-semibold uppercase text-on-surface-variant">
-            Premium
-          </p>
-          <p className="font-headline-lg text-headline-lg mt-0.5 font-semibold text-on-surface">
-            {premium !== null ? formatCurrency(premium) : '—'}
-          </p>
+          {premium !== null && (
+            <>
+              <p className="font-label-caps text-label-caps font-semibold uppercase text-on-surface-variant">
+                Premium
+              </p>
+              <p className="font-headline-lg text-headline-lg mt-0.5 font-semibold text-on-surface">
+                {formatCurrency(premium)}
+              </p>
+            </>
+          )}
 
           {/* No insurer name exists on this reply, so its own reference is the
               nearest thing to one. The uuid is the last resort and is set in

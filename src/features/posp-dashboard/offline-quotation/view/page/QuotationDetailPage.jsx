@@ -3,36 +3,43 @@ import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   FileQuestion,
-  Info,
   Loader2,
   Pencil,
   RefreshCw,
+  Share2,
   ShieldCheck,
   TriangleAlert,
   Wallet,
 } from "lucide-react";
 import DashboardLayout from "@/shared/layouts/DashboardLayout";
 import CustomButton from "@/shared/components/CustomButton";
-import { daysUntil, formatDate } from "@/shared/lib/format";
+import { daysUntil, formatCurrency, formatDate } from "@/shared/lib/format";
 import { showAlert } from "@/shared/store/alertStore";
 import QuoteNotice from "../../components/QuoteNotice";
+import { paymentStatusMeta } from "../../payments/lib/paymentFormat";
 import InsurerResponsePanel from "../components/InsurerResponsePanel";
 import MarkPaymentDrawer from "../components/MarkPaymentDrawer";
+import PaymentConfirmationPanel from "../components/PaymentConfirmationPanel";
 import PaymentInstructionDrawer from "../components/PaymentInstructionDrawer";
 import QuotationStatusPill from "../components/QuotationStatusPill";
 import SelectedOfferPanel from "../components/SelectedOfferPanel";
+import QuoteAnswersAccordion from "../components/QuoteAnswersAccordion";
 import QuoteEditForm from "../components/QuoteEditForm";
 import QuoteDocumentsPanel from "../components/QuoteDocumentsPanel";
+import QuoteTimeline from "../components/QuoteTimeline";
 import VerificationDialog from "../components/VerificationDialog";
 import { useQuoteDetail } from "../hooks/useQuoteDetail";
 import { useQuoteResponses } from "../hooks/useQuoteResponses";
+import { useQuotePayment } from "../hooks/useQuotePayment";
 import { usePaymentInstruction } from "../hooks/usePaymentInstruction";
 import { useQuoteDocuments } from "../hooks/useQuoteDocuments";
 import { submitPaymentReceipt } from "../api/paymentInstructionApi";
+import { copyText } from "../lib/clipboard";
 import {
   formatAge,
   formatProduct,
   formatSumInsured,
+  hasDate,
 } from "../lib/quotationFormat";
 import { canApplyForVerification, canEditQuote } from "../lib/quotationStatus";
 
@@ -48,6 +55,21 @@ import { canApplyForVerification, canEditQuote } from "../lib/quotationStatus";
  * Only answered questions are rendered; blank ones are left out.
  */
 
+// A payment in these states doesn't count as paid; the agent may need to pay again.
+const UNPAID_STATUSES = new Set(["Failed", "Rejected"]);
+
+/** Plain-text summary of a paid quote, for the Share button. */
+const shareText = (quote, payment) =>
+  [
+    quote.quoteNumber && `Quotation ${quote.quoteNumber}`,
+    (quote.lob || quote.product) && formatProduct(quote),
+    quote.selectedOffer?.insurerName && `Insurer: ${quote.selectedOffer.insurerName}`,
+    Number.isFinite(payment.amount) && `Premium paid: ${formatCurrency(payment.amount)}`,
+    hasDate(payment.paidAt) && `Paid on: ${formatDate(payment.paidAt)}`,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
 function Fact({ label, children }) {
   return (
     <div className="min-w-0">
@@ -58,30 +80,6 @@ function Fact({ label, children }) {
         {children}
       </dd>
     </div>
-  );
-}
-
-/** A panel of answers — one section of the form, or the leftovers. */
-function AnswerPanel({ title, caption, entries }) {
-  return (
-    <section className="anim-fade-d2 rounded-xl border border-hairline bg-white p-4 sm:p-gutter">
-      <h3 className="font-headline-md text-headline-md text-on-surface">
-        {title}
-      </h3>
-      {caption && (
-        <p className="font-body-md text-body-md mt-0.5 text-on-surface-variant">
-          {caption}
-        </p>
-      )}
-
-      <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-4 sm:grid-cols-3">
-        {entries.map((entry) => (
-          <Fact key={entry.code} label={entry.label}>
-            {entry.text}
-          </Fact>
-        ))}
-      </dl>
-    </section>
   );
 }
 
@@ -108,7 +106,14 @@ function QuotationDetailPage() {
    * status inside the hook, so this is a no-op on every other quote — see
    * `hasInsurerResponses`.
    */
-  const insurer = useQuoteResponses(quoteId, quote?.statusCode);
+  const hasSelection = Boolean(quote?.selectedOffer);
+  const insurer = useQuoteResponses(quoteId, quote?.statusCode, hasSelection);
+
+  /** The latest payment on this quote, once an offer has been selected. */
+  const payment = useQuotePayment(quote?.id ?? quoteId, quote?.quoteNumber, hasSelection);
+  const paid = Boolean(payment) && !UNPAID_STATUSES.has(paymentStatusMeta(payment.status).label);
+
+  const selectedResponse = insurer.responses.find((response) => response.isSelected);
 
   const [confirming, setConfirming] = useState(false);
 
@@ -205,6 +210,28 @@ function QuotationDetailPage() {
     if (sent) navigate("/offline-quotation/view");
   };
 
+  /** Native share sheet where there is one, else copy the summary. */
+  const share = async () => {
+    const text = shareText(quote, payment);
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: quote.quoteNumber || "Quotation", text });
+        return;
+      } catch (err) {
+        // Dismissing the sheet is not a failure.
+        if (err?.name === "AbortError") return;
+      }
+    }
+
+    const copied = await copyText(text);
+    showAlert(
+      copied
+        ? { variant: "success", title: "Copied", message: "Quote summary copied to the clipboard." }
+        : { variant: "error", title: "Couldn't share", message: "Your browser blocked the clipboard." },
+    );
+  };
+
   /**
    * The queue computes `ageDays` for us; this reply doesn't send it, so it is
    * worked out from `createdAt` with the shared helper — which floors both ends
@@ -299,11 +326,13 @@ function QuotationDetailPage() {
               <header className="flex flex-wrap items-start justify-between gap-3 border-b border-hairline-soft pb-4">
                 <div className="min-w-0">
                   <h1 className="font-data-mono text-headline-lg font-semibold text-on-surface">
-                    {quote.quoteNumber ?? "—"}
+                    {quote.quoteNumber || "Quotation"}
                   </h1>
-                  <p className="font-body-md text-body-md mt-1 text-on-surface-variant">
-                    {formatProduct(quote)}
-                  </p>
+                  {(quote.lob || quote.product) && (
+                    <p className="font-body-md text-body-md mt-1 text-on-surface-variant">
+                      {formatProduct(quote)}
+                    </p>
+                  )}
                 </div>
 
                 {/* Status and the one action that changes it, stacked — the
@@ -324,7 +353,7 @@ function QuotationDetailPage() {
                       </CustomButton>
                     )}
 
-                    {paymentInstruction && (
+                    {paymentInstruction && !paid && (
                       <CustomButton
                         variant="primary"
                         size="md"
@@ -345,17 +374,38 @@ function QuotationDetailPage() {
                         Submit for verification
                       </CustomButton>
                     )}
+
+                    {paid && (
+                      <CustomButton
+                        variant="secondary"
+                        size="md"
+                        leftIcon={<Share2 />}
+                        onClick={share}
+                      >
+                        Share
+                      </CustomButton>
+                    )}
                   </div>
                 </div>
               </header>
 
-              <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-4 sm:grid-cols-3">
-                <Fact label="Sum insured">
-                  {formatSumInsured(quote.sumInsured)}
-                </Fact>
-                <Fact label="Expected premium">
-                  {formatSumInsured(quote.expectedPremium)}
-                </Fact>
+              <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-4 sm:grid-cols-3 lg:grid-flow-col lg:auto-cols-fr lg:grid-cols-none">
+                {Number.isFinite(quote.sumInsured) && (
+                  <Fact label="Sum insured">
+                    {formatSumInsured(quote.sumInsured)}
+                  </Fact>
+                )}
+                {paid && Number.isFinite(payment.amount) ? (
+                  <Fact label="Premium paid">
+                    {formatCurrency(payment.amount)}
+                  </Fact>
+                ) : (
+                  Number.isFinite(quote.expectedPremium) && (
+                    <Fact label="Expected premium">
+                      {formatSumInsured(quote.expectedPremium)}
+                    </Fact>
+                  )
+                )}
                 {quote.fileType && (
                   <Fact label="Case type">{quote.fileType}</Fact>
                 )}
@@ -365,16 +415,19 @@ function QuotationDetailPage() {
                   </Fact>
                 ))}
 
-                <Fact label="Raised">
-                  {formatDate(quote.createdAt)}
-                  {age && (
-                    <span className="font-body-md text-body-md text-on-surface-variant">
-                      {" · "}
-                      {age}
-                    </span>
-                  )}
-                </Fact>
-                {quote.updatedAt && (
+                {/* Once paid, these dates move to the activity timeline. */}
+                {!paid && hasDate(quote.createdAt) && (
+                  <Fact label="Raised">
+                    {formatDate(quote.createdAt)}
+                    {age && (
+                      <span className="font-body-md text-body-md text-on-surface-variant">
+                        {" · "}
+                        {age}
+                      </span>
+                    )}
+                  </Fact>
+                )}
+                {!paid && hasDate(quote.updatedAt) && (
                   <Fact label="Last updated">
                     {formatDate(quote.updatedAt)}
                   </Fact>
@@ -406,84 +459,50 @@ function QuotationDetailPage() {
               />
             ) : (
               <>
+                {payment && <PaymentConfirmationPanel payment={payment} />}
+
                 {quote.selectedOffer && (
-                  <SelectedOfferPanel offer={quote.selectedOffer} />
+                  <SelectedOfferPanel
+                    offer={quote.selectedOffer}
+                    earning={selectedResponse?.earning}
+                  />
                 )}
 
-                {insurer.expected && (
+                {/* Once an offer is selected, only that one is shown. */}
+                {!hasSelection && insurer.expected && (
                   <InsurerResponsePanel
                     responses={insurer.responses}
                     loading={insurer.loading}
                     error={insurer.error}
                     onRetry={insurer.retry}
                     /* The choice is posted, then both the comparison and the
-                   quote itself are re-read — the panel holds no selection of
-                   its own. See `acceptResponse` above. */
+                       quote itself are re-read — the panel holds no selection
+                       of its own. See `acceptResponse` above. */
                     onSelect={acceptResponse}
                     selectingId={insurer.selectingId}
                   />
                 )}
 
-                {/* The questions couldn't be fetched, so every label below is a
-                field code made readable rather than the wording the agent
-                actually saw. Said plainly, because the difference is not
-                otherwise visible. */}
-                {unlabelled && (
-                  <p className="anim-fade-d2 font-body-md text-body-md flex items-start gap-2 rounded-xl border border-warning-outline bg-warning-container px-3 py-2 text-on-warning-container">
-                    <Info
-                      aria-hidden="true"
-                      className="mt-0.5 size-4 shrink-0"
-                    />
-                    The question list for this product couldn&apos;t be loaded,
-                    so the answers below are labelled by field code.
-                  </p>
-                )}
+                <QuoteAnswersAccordion
+                  sections={panelSections}
+                  orphans={answers.orphans}
+                  unlabelled={unlabelled}
+                  defaultOpen={!hasSelection}
+                />
 
-                {panelSections.map((section) =>
-                  section.rows.map((row) => (
-                    <AnswerPanel
-                      key={`${section.code}-${row.index}`}
-                      title={section.name}
-                      /* Only when a repeatable section actually repeated — "Entry 1"
-                     over a section that has exactly one is a label for a
-                     structure the user never made. */
-                      caption={
-                        section.rows.length > 1
-                          ? `Entry ${row.index + 1}`
-                          : null
-                      }
-                      entries={row.entries}
-                    />
-                  )),
-                )}
-
-                {answers.orphans.length > 0 && (
-                  <AnswerPanel
-                    title="Other answers"
-                    caption="Stored on this quote, but no longer part of this product's form."
-                    entries={answers.orphans}
+                {/* Hidden once loaded with nothing in it. */}
+                {(docs.loading || docs.error || docs.documents.length > 0) && (
+                  <QuoteDocumentsPanel
+                    quoteId={quote.id ?? quoteId}
+                    documents={docs.documents}
+                    loading={docs.loading}
+                    error={docs.error}
+                    onRetry={docs.refresh}
+                    metadata={metadata}
                   />
                 )}
 
-                {answers.sections.length === 0 &&
-                  answers.orphans.length === 0 && (
-                    <section className="anim-fade-d2 rounded-xl border border-hairline bg-white p-4 sm:p-gutter">
-                      <QuoteNotice
-                        icon={<FileQuestion size={20} />}
-                        title="No answers recorded"
-                        body="This quote was created but none of its questions were answered."
-                      />
-                    </section>
-                  )}
-
-                <QuoteDocumentsPanel
-                  quoteId={quote.id ?? quoteId}
-                  documents={docs.documents}
-                  loading={docs.loading}
-                  error={docs.error}
-                  onRetry={docs.refresh}
-                  metadata={metadata}
-                />
+                <QuoteTimeline quote={quote} payment={payment} />
               </>
             )}
           </>

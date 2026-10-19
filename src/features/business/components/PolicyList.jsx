@@ -13,7 +13,7 @@ import PolicyTable from './PolicyTable';
  *
  * The cost is that each row's text is in the DOM twice. That stays cheap
  * because what arrives here is one page of rows, not the whole book — see
- * `PAGE_SIZE` in `usePolicyList` and the pager in `PolicyPagination`.
+ * `PAGE_SIZE` in `usePolicyList` and the shared `Pagination` pager.
  *
  * Both layouts scroll inside their own box. The cards cap at 60vh and hand the
  * scroll back to the page at either end, so the gesture is never trapped.

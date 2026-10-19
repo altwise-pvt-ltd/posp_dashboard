@@ -9,9 +9,8 @@ import QuotationTable from './QuotationTable';
  * one in the app, resizing the window never hits a frame with neither layout
  * mounted, and there is no client-only branch to get wrong.
  *
- * The cost is that each row's text is in the DOM twice. At a page of quotes
- * that is nothing; the endpoint pages at 20, and "load more" appends, so keep
- * an eye on this if an agent with hundreds of quotes ever loads them all.
+ * The cost is that each row's text is in the DOM twice, which is nothing at a
+ * page of 10.
  *
  * `md` and not `lg` because the table is the better answer the moment it fits:
  * DashboardLayout's sidebar is still off-canvas at this width, so the content
