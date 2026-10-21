@@ -9,7 +9,7 @@ import FileUpload from '@/shared/components/FileUpload';
 import { fileField } from '@/shared/upload/schema';
 import { alertOnInvalid } from '@/shared/store/alertStore';
 import { reportFormError } from '@/shared/api/formErrors';
-import { dmyToIso, toLocalIsoDate } from '@/shared/lib/format';
+import { dmyToIso, parseDayMonthYear, toLocalIsoDate } from '@/shared/lib/format';
 import QuoteDrawer from './QuoteDrawer';
 
 const markPaymentSchema = z.object({
@@ -28,6 +28,7 @@ const markPaymentSchema = z.object({
   paidOn: z
     .string()
     .min(1, 'Please enter the payment date.')
+    .refine((value) => !value || parseDayMonthYear(value), 'Enter a valid date as dd/mm/yyyy.')
     .refine((value) => dmyToIso(value) <= toLocalIsoDate(), "Payment date can't be in the future."),
   agentNote: z.string().trim().max(500, 'Keep the note under 500 characters.'),
 });

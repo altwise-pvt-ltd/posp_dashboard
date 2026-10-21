@@ -1,6 +1,6 @@
 import { api, unwrap, uploadConfig } from '@/shared/api/client';
 import { ENDPOINTS } from '@/shared/api/endpoints';
-import { splitDayMonthYear } from '@/shared/validation/dateOfBirthField';
+import { splitDayMonthYear } from '@/shared/lib/format';
 import { STEPS, REVIEW_INDEX, clampIndex, toStepIndex } from '../model/steps';
 
 /**

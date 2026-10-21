@@ -1,21 +1,18 @@
 import { useId } from 'react';
 import { Coins, Info } from 'lucide-react';
+import { hasEarningPoints } from '../lib/insurerResponse';
 
 const CHIP =
   'inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1';
 
-/**
- * The agent's earning on one response. Green with the points when there are
- * any; otherwise a grey "Earning unavailable" chip whose tooltip is the
- * server's note. The tooltip opens on hover and on focus, so a tap shows it too.
- */
+/** The agent's earning on one response, or a note explaining why there is none. */
 function EarningChip({ earning }) {
   const tooltipId = useId();
   if (!earning) return null;
 
-  const { points, status, planName, note } = earning;
+  const { points, planName, note } = earning;
 
-  if (points !== null && status !== 'NO_GRID') {
+  if (hasEarningPoints(earning)) {
     return (
       <span
         className={`${CHIP} self-start bg-emerald-50 text-emerald-700 ring-emerald-200 md:self-auto`}

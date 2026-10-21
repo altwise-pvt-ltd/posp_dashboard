@@ -3,6 +3,8 @@ import { AnimatePresence } from 'framer-motion';
 import { Check, Copy, ExternalLink, Landmark, Link2, TriangleAlert } from 'lucide-react';
 import CustomButton from '@/shared/components/CustomButton';
 import { PAYMENT_METHODS } from '../api/paymentInstructionApi';
+import { formatMethod } from '../../lib/paymentFormat';
+import { formatDateTime, hasDate } from '../lib/quotationFormat';
 import { useCopied } from '../hooks/useCopied';
 import CopyIconButton from './CopyIconButton';
 import QuoteDrawer from './QuoteDrawer';
@@ -16,35 +18,6 @@ const AMOUNT = new Intl.NumberFormat('en-IN', {
 });
 
 const formatAmount = (value) => (Number.isFinite(value) ? AMOUNT.format(value) : '—');
-
-const formatDateTime = (value) => {
-  if (!value) return null;
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return null;
-
-  return date.toLocaleString('en-IN', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  });
-};
-
-const METHOD_LABEL = {
-  [PAYMENT_METHODS.BANK_TRANSFER]: 'Bank transfer',
-  [PAYMENT_METHODS.PAYMENT_LINK]: 'Payment link',
-};
-
-/** `UpiTransfer` → "Upi transfer", for a method this file doesn't name yet. */
-const methodLabel = (method) =>
-  METHOD_LABEL[method] ??
-  (method
-    ? method
-        .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
-        .replace(/^./, (c) => c.toUpperCase())
-        .replace(/ (\S)/g, (_, c) => ` ${c.toLowerCase()}`)
-    : 'Payment');
 
 function Label({ children }) {
   return (
@@ -93,8 +66,10 @@ const shareText = (instruction, reference) => {
 
   if (instruction.paymentLink) {
     lines.push(`Payment link: ${instruction.paymentLink}`);
-    const expires = formatDateTime(instruction.linkExpiresAt);
-    if (expires) lines.push(`Link valid until: ${expires}`);
+    // Guarded on the raw value: the shared formatter renders a missing date as an em dash.
+    if (hasDate(instruction.linkExpiresAt)) {
+      lines.push(`Link valid until: ${formatDateTime(instruction.linkExpiresAt)}`);
+    }
   }
 
   return lines.join('\n');
@@ -121,7 +96,9 @@ function DrawerContent({ instruction, reference, onClose, onMarkPayment }) {
   const expiryValid = expiresAt && !Number.isNaN(expiresAt.getTime());
   const linkExpired = expiryValid && expiresAt.getTime() < openedAt;
 
-  const published = formatDateTime(instruction.publishedAt);
+  const published = hasDate(instruction.publishedAt)
+    ? formatDateTime(instruction.publishedAt)
+    : null;
   const details = shareText(instruction, reference);
 
   return (
@@ -153,7 +130,7 @@ function DrawerContent({ instruction, reference, onClose, onMarkPayment }) {
           <Label>Amount payable</Label>
           <span className="font-body-md text-body-md inline-flex items-center gap-1.5 text-on-surface-variant">
             <MethodIcon aria-hidden="true" className="size-4" />
-            {methodLabel(method)}
+            {formatMethod(method)}
           </span>
         </div>
         <p className="font-data-currency text-headline-lg mt-0.5 text-on-surface">

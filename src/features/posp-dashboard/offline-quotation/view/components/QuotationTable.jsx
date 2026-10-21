@@ -4,21 +4,9 @@ import { formatDate } from '@/shared/lib/format';
 import { formatAge, formatLob, formatSumInsured } from '../lib/quotationFormat';
 
 /**
- * The desktop layout. A real <table>, not a grid of divs — these are rows of
- * the same record type and the header cells genuinely label their columns, so
- * the semantics are free and a screen reader announces "Sum insured, ₹5,00,000"
- * instead of a bare figure.
- *
- * Rendered from `md` up only; below that `QuotationCard` takes over. See
- * `QuotationList`.
- *
- * Sum insured is right-aligned and set in the tabular-figure token
- * (`font-data-currency`), so the rupee amounts line up digit-for-digit down the
- * column. That is the whole reason those tokens exist in the theme.
- *
- * There is no Customer column because the queue has no customer on it — see
- * `quoteQueueApi.js`. The reference carries the row's identity instead, with
- * the workflow remark under it.
+ * The desktop layout, rendered from `md` up; below that `QuotationCard` takes
+ * over. The queue carries no customer (see `quoteQueueApi.js`), so the reference
+ * identifies the row, with the workflow remark under it.
  */
 
 /** Index 2 is Sum insured — its header follows the figures under it right. */

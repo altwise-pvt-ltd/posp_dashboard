@@ -1,6 +1,6 @@
 import { formatCurrency, formatDate } from '@/shared/lib/format';
 import QuotationViewAction from '../../view/components/QuotationViewAction';
-import { formatMethod, formatPayee, paymentStatusMeta } from '../lib/paymentFormat';
+import { formatMethod, formatPayee, paymentStatusMeta } from '../../lib/paymentFormat';
 
 function PaymentStatusPill({ status }) {
   const { label, pill } = paymentStatusMeta(status);

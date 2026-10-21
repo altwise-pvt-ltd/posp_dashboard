@@ -2,28 +2,8 @@ import { ChevronDown, ListFilter, Search, X } from 'lucide-react';
 import { ALL } from '../lib/quotationStatus';
 
 /**
- * The toolbar: one search field and the status filter.
- *
- * The two controls do not act in the same place, and that is deliberate rather
- * than accidental — see the note at the top of `useQuotationList`. Picking a
- * status is a request to the server; the field filters the rows already loaded.
- *
- * The options carry no counts. They used to, when the whole list was in memory
- * and a tally was honest. Against a paged endpoint the only number available is
- * "how many are on the page in hand", which is not what an option labelled
- * "Draft" would be read as claiming. The real total lives under the list, where
- * it can say what it is counting.
- *
- * Status is a dropdown rather than a row of chips: the list is learned (see
- * `mergeStatuses`) and only grows, and a chip per status outgrew the toolbar —
- * it squeezed the search field down to its first two letters. A dropdown stays
- * one control wide however many states the server turns out to have.
- *
- * Both controls are built here rather than reusing `shared/components/Input` or
- * `Select`: those carry a form row's label block and bottom margin. A toolbar
- * needs controlled values and no margin. The select is still native for the same
- * reasons `Select` is — platform picker on mobile, keyboard and screen-reader
- * behaviour for free.
+ * The toolbar: one search field and the status filter. The field filters the rows
+ * already loaded; picking a status is a new request to the server.
  */
 
 function QuotationFilters({

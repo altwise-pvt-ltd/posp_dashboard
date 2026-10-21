@@ -78,6 +78,13 @@ export function rankResponses(responses, sortKey = DEFAULT_SORT) {
     });
 }
 
+/**
+ * True when an earning carries points the grid will actually pay. `NO_GRID`
+ * means there is no grid behind the figure, so the points are not shown.
+ */
+export const hasEarningPoints = (earning) =>
+  earning?.points != null && earning.status !== 'NO_GRID';
+
 /** The stored document whose `filePath` is this response's `quoteDocPath`, or null. */
 export const findQuoteDocument = (documents, path) =>
   (path && documents.find((doc) => doc.filePath === path)) || null;

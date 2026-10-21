@@ -1,4 +1,5 @@
 import { formatDateTime, hasDate } from '../lib/quotationFormat';
+import { PANEL, PANEL_TITLE } from '../lib/panel';
 
 /** Milestones derived from dates the quote and its payment already carry. */
 function buildEvents(quote, payment) {
@@ -18,8 +19,8 @@ function QuoteTimeline({ quote, payment }) {
   if (events.length < 2) return null;
 
   return (
-    <section className="anim-fade-d2 rounded-xl border border-hairline bg-white p-4 sm:p-gutter">
-      <h3 className="font-headline-md text-headline-md text-on-surface">Activity</h3>
+    <section className={PANEL}>
+      <h3 className={PANEL_TITLE}>Activity</h3>
 
       <ol className="mt-4">
         {events.map((event, index) => (

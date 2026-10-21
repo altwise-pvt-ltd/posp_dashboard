@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
@@ -13,6 +13,8 @@ import {
   X,
 } from 'lucide-react';
 import { saveBlob } from '@/shared/lib/saveFile';
+import { useMatchMedia, MOBILE_QUERY } from '@/shared/hooks/useMatchMedia';
+import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
 import { useDocumentBlob } from '../hooks/useDocumentBlob';
 import { formatBytes, isImage, isPdf } from '../api/quoteDocumentListApi';
 import { formatDate } from '@/shared/lib/format';
@@ -24,7 +26,7 @@ const TOOL =
 const ARROW =
   'absolute top-1/2 z-10 hidden size-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur-md transition-colors hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 sm:inline-flex';
 
-function Stage({ doc, file }) {
+function Stage({ doc, file, isMobile }) {
   if (file.loading) {
     return (
       <div className="flex flex-col items-center gap-3 text-white/70">
@@ -71,6 +73,25 @@ function Stage({ doc, file }) {
   }
 
   if (isPdf(doc) || file.blob?.type === 'application/pdf') {
+    // Android Chrome can't render a PDF in an iframe, so phones get a link out.
+    if (isMobile) {
+      return (
+        <div className="flex flex-col items-center gap-4 text-center text-white/80">
+          <FileText className="size-10" aria-hidden="true" />
+          <p className="text-sm">This file opens in your phone&apos;s viewer.</p>
+          <a
+            href={file.url}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-medium text-slate-900 transition-colors hover:bg-white/90"
+          >
+            <ExternalLink className="size-4" aria-hidden="true" />
+            Open file
+          </a>
+        </div>
+      );
+    }
+
     return (
       <iframe
         src={file.url}
@@ -97,16 +118,20 @@ function Stage({ doc, file }) {
 }
 
 /**
- * Full-screen viewer for a quote's documents. Portalled to <body> so the
- * page's animated (transformed) sections can't trap its fixed positioning.
+ * Full-screen viewer for a quote's documents. Rendered into `<body>` through a
+ * portal — inside the page's transformed sections, its fixed positioning breaks.
  */
 function DocumentPreviewDialog({ quoteId, documents, index, labelFor, onClose, onNavigate }) {
   const current = index == null ? null : documents[index];
   const file = useDocumentBlob(quoteId, current?.id ?? null);
+  const isMobile = useMatchMedia(MOBILE_QUERY);
+  const dialogRef = useRef(null);
 
   const open = Boolean(current);
   const hasPrev = open && index > 0;
   const hasNext = open && index < documents.length - 1;
+
+  useFocusTrap(dialogRef, open);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -138,6 +163,7 @@ function DocumentPreviewDialog({ quoteId, documents, index, labelFor, onClose, o
     <AnimatePresence>
       {open && (
         <motion.div
+          ref={dialogRef}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -220,7 +246,7 @@ function DocumentPreviewDialog({ quoteId, documents, index, labelFor, onClose, o
               </button>
             )}
 
-            <Stage doc={current} file={file} />
+            <Stage doc={current} file={file} isMobile={isMobile} />
 
             {hasNext && (
               <button

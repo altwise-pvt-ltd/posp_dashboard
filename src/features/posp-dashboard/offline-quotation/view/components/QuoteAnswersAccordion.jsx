@@ -1,16 +1,7 @@
 import { useId, useState } from 'react';
 import { ChevronDown, Info } from 'lucide-react';
-
-function Fact({ label, children }) {
-  return (
-    <div className="min-w-0">
-      <dt className="font-label-caps text-label-caps font-semibold uppercase text-on-surface-variant">
-        {label}
-      </dt>
-      <dd className="font-body-lg text-body-lg mt-0.5 break-words text-on-surface">{children}</dd>
-    </div>
-  );
-}
+import { PANEL, PANEL_TITLE } from '../lib/panel';
+import Fact from './Fact';
 
 function AnswerPanel({ panel, open, onToggle }) {
   const bodyId = useId();
@@ -74,7 +65,24 @@ function QuoteAnswersAccordion({ sections = [], orphans = [], unlabelled = false
     });
   }
 
-  const [openKeys, setOpenKeys] = useState(() => new Set(defaultOpen ? panels.map((p) => p.key) : []));
+  const keys = panels.map((p) => p.key);
+  const [known, setKnown] = useState(() => new Set(keys));
+  const [openKeys, setOpenKeys] = useState(() => new Set(defaultOpen ? keys : []));
+
+  /**
+   * A quiet refresh swaps the answers under a mounted accordion, so the panels
+   * can change without a remount. Keys that are new follow `defaultOpen`; keys
+   * the agent closed by hand stay closed; keys that have gone are dropped.
+   */
+  if (keys.length !== known.size || keys.some((key) => !known.has(key))) {
+    const current = new Set(keys);
+    setKnown(current);
+    setOpenKeys((open) => {
+      const next = new Set([...open].filter((key) => current.has(key)));
+      if (defaultOpen) keys.forEach((key) => !known.has(key) && next.add(key));
+      return next;
+    });
+  }
 
   if (panels.length === 0) return null;
 
@@ -91,9 +99,9 @@ function QuoteAnswersAccordion({ sections = [], orphans = [], unlabelled = false
   const toggleAll = () => setOpenKeys(allOpen ? new Set() : new Set(panels.map((p) => p.key)));
 
   return (
-    <section className="anim-fade-d2 rounded-xl border border-hairline bg-white p-4 sm:p-gutter">
+    <section className={PANEL}>
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <h3 className="font-headline-md text-headline-md text-on-surface">Quote details</h3>
+        <h3 className={PANEL_TITLE}>Quote details</h3>
         <button
           type="button"
           onClick={toggleAll}

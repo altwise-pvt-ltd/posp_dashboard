@@ -7,6 +7,7 @@ import { findQuoteDocument, quoteDocumentLabel } from '../lib/insurerResponse';
 import DocumentPreviewDialog from './DocumentPreviewDialog';
 import InsurerResponseCard from './InsurerResponseCard';
 import ResponseSortSelect from './ResponseSortSelect';
+import { PANEL, PANEL_TITLE } from '../lib/panel';
 
 /**
  * What the insurers answered — `GET /quote/<id>/compare` — as a sortable
@@ -53,11 +54,11 @@ function InsurerResponsePanel({
   );
 
   return (
-    <section className="anim-fade-d2 rounded-xl border border-gray-200 bg-white p-4 sm:p-gutter">
+    <section className={PANEL}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex flex-wrap items-baseline gap-x-2">
-            <h3 className="font-headline-md text-headline-md text-on-surface">Insurer responses</h3>
+            <h3 className={PANEL_TITLE}>Insurer responses</h3>
             {ready && (
               <span className="font-body-md text-body-md text-on-surface-variant">
                 {responses.length} received

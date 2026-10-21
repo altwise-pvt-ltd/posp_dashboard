@@ -14,6 +14,7 @@ import { showAlert } from "@/shared/store/alertStore";
 import { storedDocumentFile } from "../../api/quoteDocumentsApi";
 import { fetchLookupOptions } from "../../api/quoteMetadataApi";
 import QuoteWizardFooter from "../../components/QuoteWizardFooter";
+import { PANEL } from '../lib/panel';
 import { useQuoteDraft } from "../../hooks/useQuoteDraft";
 import { useQuoteRules } from "../../hooks/useQuoteRules";
 import {
@@ -31,16 +32,10 @@ const focusField = (code) => {
 };
 
 /**
- * A draft or returned quote, reopened for editing.
- *
- * The create wizard's form — same renderers, rules, lookups and validation —
- * but every section on one page rather than one per screen. The agent is here
- * to fix what the reviewer pointed at, and walking eight screens to find the
- * one field in question is the wrong shape for that.
- *
- * Every question the product asks is shown, answered or not, seeded with what
- * the quote holds — uploaded documents included; a blank one can be filled in
- * here like any other.
+ * A draft or returned quote, reopened for editing: the create wizard's form —
+ * same renderers, rules, lookups and validation — with every section on one
+ * page instead of one per screen. Every question is rendered, answered or not,
+ * seeded with what the quote holds, uploaded documents included.
  *
  * Saved through the same `POST /quote/draft` a new quote uses, with `quoteId`
  * added to the body so the server updates this quote rather than raising a new
@@ -256,7 +251,7 @@ function QuoteEditForm({ quote, metadata, documents, onCancel, onSaved }) {
       {sections.map((section) => (
         <section
           key={section.code}
-          className="anim-fade-d2 rounded-xl border border-hairline bg-white p-4 sm:p-gutter"
+          className={PANEL}
         >
           <DynamicForm
             sections={[section]}

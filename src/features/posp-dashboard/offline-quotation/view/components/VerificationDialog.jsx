@@ -4,16 +4,10 @@ import { ShieldCheck } from 'lucide-react';
 import CustomButton from '@/shared/components/CustomButton';
 
 /**
- * Confirmation for sending a quote to be verified.
+ * Confirmation for sending a quote to be verified. One way: there is no route to
+ * withdraw a quote once it is with the back office.
  *
- * Worth a stop because it is one way: there is no route to withdraw a quote
- * once it is with the back office, so the agent cannot undo this from the app.
- *
- * Built on the same bones as `SubmitSectionDialog` in the exam — focus lands on
- * Cancel, Escape closes, the backdrop closes — but wearing this module's shape
- * (`rounded-xl`, `CustomButton`) rather than the exam's squared-off styling.
- * The safe option is the one a keyboard reaches first, and the destructive one
- * is never what Enter fires by default.
+ * Focus lands on Cancel; Escape and the backdrop close.
  */
 function VerificationDialog({ open, reference, submitting, onCancel, onConfirm }) {
   useEffect(() => {

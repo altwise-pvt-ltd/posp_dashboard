@@ -2,19 +2,8 @@ import QuotationCard from './QuotationCard';
 import QuotationTable from './QuotationTable';
 
 /**
- * Picks the layout for the viewport: cards below `md`, the table from `md` up.
- *
- * Both are rendered and one is hidden with a utility, rather than switching on
- * a matchMedia hook. The breakpoint then lives in the same place as every other
- * one in the app, resizing the window never hits a frame with neither layout
- * mounted, and there is no client-only branch to get wrong.
- *
- * The cost is that each row's text is in the DOM twice, which is nothing at a
- * page of 10.
- *
- * `md` and not `lg` because the table is the better answer the moment it fits:
- * DashboardLayout's sidebar is still off-canvas at this width, so the content
- * column has the full screen to work with.
+ * Renders both layouts and hides one with a utility: cards below `md`, the table
+ * from `md` up. Each row's text is in the DOM twice.
  */
 function QuotationList({ quotations }) {
   return (

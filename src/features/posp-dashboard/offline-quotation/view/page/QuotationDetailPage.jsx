@@ -16,7 +16,7 @@ import CustomButton from "@/shared/components/CustomButton";
 import { daysUntil, formatCurrency, formatDate } from "@/shared/lib/format";
 import { showAlert } from "@/shared/store/alertStore";
 import QuoteNotice from "../../components/QuoteNotice";
-import { paymentStatusMeta } from "../../payments/lib/paymentFormat";
+import { paymentStatusMeta } from "../../lib/paymentFormat";
 import InsurerResponsePanel from "../components/InsurerResponsePanel";
 import MarkPaymentDrawer from "../components/MarkPaymentDrawer";
 import PaymentConfirmationPanel from "../components/PaymentConfirmationPanel";
@@ -28,6 +28,7 @@ import QuoteEditForm from "../components/QuoteEditForm";
 import QuoteDocumentsPanel from "../components/QuoteDocumentsPanel";
 import QuoteTimeline from "../components/QuoteTimeline";
 import VerificationDialog from "../components/VerificationDialog";
+import Fact from "../components/Fact";
 import { useQuoteDetail } from "../hooks/useQuoteDetail";
 import { useQuoteResponses } from "../hooks/useQuoteResponses";
 import { useQuotePayment } from "../hooks/useQuotePayment";
@@ -46,14 +47,8 @@ import { canApplyForVerification, canEditQuote } from "../lib/quotationStatus";
 
 /**
  * One quote, opened from the list — `GET /quote/<quoteId>` joined to
- * `GET /quote/metadata` (see `useQuoteDetail`).
- *
- * It reads top to bottom as the quote itself: what it is and where it stands,
- * then the form as the agent filled it in, section by section in the order they
- * were asked. The same headings, the same labels, the same sequence as the
- * create wizard — a quote read back should look like the quote that was given.
- *
- * Only answered questions are rendered; blank ones are left out.
+ * `GET /quote/metadata` (see `useQuoteDetail`). Sections follow the create
+ * wizard's order; only answered questions are rendered.
  */
 
 // A payment in these states doesn't count as paid; the agent may need to pay again.
@@ -70,19 +65,6 @@ const shareText = (quote, payment) =>
   ]
     .filter(Boolean)
     .join("\n");
-
-function Fact({ label, children }) {
-  return (
-    <div className="min-w-0">
-      <dt className="font-label-caps text-label-caps font-semibold uppercase text-on-surface-variant">
-        {label}
-      </dt>
-      <dd className="font-body-lg text-body-lg mt-0.5 break-words text-on-surface">
-        {children}
-      </dd>
-    </div>
-  );
-}
 
 function QuotationDetailPage() {
   const { quoteId } = useParams();
@@ -132,10 +114,7 @@ function QuotationDetailPage() {
   const closePayment = useCallback(() => setPaymentView(null), []);
   const backToInstruction = useCallback(() => setPaymentView("instruction"), []);
 
-  /**
-   * Back to the list after a receipt is accepted, without leaving this page
-   * behind in history: pop it when we came from the list, else replace it.
-   */
+  /** Pops back to the list when we arrived from it, else replaces this entry. */
   const leaveToList = () => {
     if (location.state?.fromList) navigate(-1);
     else navigate("/offline-quotation/view", { replace: true });
@@ -175,42 +154,26 @@ function QuotationDetailPage() {
   }, [refresh, refreshDocs]);
 
   /**
-   * Accepting a response changes two things, and the hook that posts it can
-   * only see one.
-   *
-   * `useQuoteResponses.select` re-reads the comparison, so the "Selected" badge
-   * comes from the server rather than from the click. But accepting a quote is
-   * a workflow event: the status moves, and the pill and the buttons in the
-   * header above are drawn from `useQuoteDetail`, which knows nothing about the
-   * POST. Without this the page would show the new badge under the old status.
-   *
-   * A quiet refresh, not `retry` — the page stays readable while it re-reads.
+   * `useQuoteResponses.select` re-reads the comparison but not the quote, and
+   * accepting moves the status — so refresh the detail too. A quiet refresh,
+   * not `retry`: the page stays readable while it re-reads.
    */
   const acceptResponse = async (responseId) => {
     const accepted = await insurer.select(responseId);
     if (accepted) refresh();
   };
 
-  /**
-   * Offered unless the quote is already at or past verification — a deny-list,
-   * for the reason set out on `canApplyForVerification`. After a successful
-   * send the status changes and this goes away on its own, because the hook
-   * refetches rather than assuming.
-   */
+  /** Offered unless the quote is already at or past verification. */
   const canApply = Boolean(quote) && canApplyForVerification(quote.statusCode);
 
   const confirm = async () => {
     const sent = await submitForVerification();
 
-    // Closed either way: the alert store reports both outcomes, and a dialog
-    // left open over a success would be a second thing to dismiss.
+    // Closed either way; the alert store reports both outcomes.
     setConfirming(false);
 
-    /* Back to the queue on success — the agent opened this quote to send it,
-       and once it is sent the list is where the next one is. The list route
-       unmounts behind us, so arriving there mounts `useQuotationList` fresh
-       and fetches page 1: the quote appears in its new state with nothing to
-       invalidate. A failure stays put, where the button still is. */
+    // The list route unmounts behind us, so arriving there mounts
+    // `useQuotationList` fresh and fetches page 1.
     if (sent) navigate("/offline-quotation/view");
   };
 
@@ -461,9 +424,6 @@ function QuotationDetailPage() {
                     loading={insurer.loading}
                     error={insurer.error}
                     onRetry={insurer.retry}
-                    /* The choice is posted, then both the comparison and the
-                       quote itself are re-read — the panel holds no selection
-                       of its own. See `acceptResponse` above. */
                     onSelect={acceptResponse}
                     selectingId={insurer.selectingId}
                   />

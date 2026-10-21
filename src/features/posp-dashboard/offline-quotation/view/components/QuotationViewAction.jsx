@@ -1,25 +1,12 @@
 import { Link } from 'react-router-dom';
 
 /**
- * The per-row "open this quote" affordance.
+ * The per-row link to one quote, rendered by both the table and the card.
  *
- * Live since `/offline-quotation/view/:quoteId` was built. It stays a component
- * rather than two copies of a link because the table and the card both render
- * one, and this is the single file that decides where a row goes.
- *
- * The target is `quotation.id` — the **uuid**, which is what `GET /quote/<id>`
- * takes. Never `quoteNumber`: the reference is what a human reads down the
- * phone, and the API does not answer to it.
- *
- * A row with no id keeps the old inert treatment. That is not hypothetical —
- * `normalizeRow` nulls an id that arrives blank — and a link to
- * `/offline-quotation/view/undefined` would land on a "not found" page that
- * blames the quote for a problem in the row.
- *
- * `aria-disabled` and not `disabled` on that branch: a disabled button is
- * dropped out of the tab order entirely, which silently removes the only row
- * control from keyboard and screen-reader users rather than explaining itself
- * to them.
+ * Targets `quotation.id` — the uuid `GET /quote/<id>` takes, never
+ * `quoteNumber`, which the API does not answer to. A row whose id arrived blank
+ * (`normalizeRow` nulls it) renders inert instead of linking, and stays in the
+ * tab order via `aria-disabled`.
  */
 
 const SHELL =

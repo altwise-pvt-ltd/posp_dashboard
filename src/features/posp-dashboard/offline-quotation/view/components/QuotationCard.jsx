@@ -4,16 +4,8 @@ import { formatDate } from '@/shared/lib/format';
 import { formatAge, formatLob, formatSumInsured } from '../lib/quotationFormat';
 
 /**
- * One queued quote on a phone.
- *
- * A card rather than a horizontally scrolling table: six columns on a 390px
- * screen means either a scroll nobody discovers or type nobody can read. The
- * same facts are here, reordered for the smaller surface — reference and status
- * first because that is what an agent scans for, sum insured given the most
- * weight because it is the figure they are asked for on the call.
- *
- * The queue carries no customer, so there is no name to lead with: the
- * reference *is* the identity of the row.
+ * One queued quote below `md`; from `md` up `QuotationTable` takes over. The
+ * queue carries no customer, so the reference identifies the row.
  */
 function QuotationCard({ quotation }) {
   const age = formatAge(quotation.ageDays);

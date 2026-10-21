@@ -1,20 +1,11 @@
 import { CircleCheck, Clock } from 'lucide-react';
 import { formatCurrency } from '@/shared/lib/format';
-import { formatMethod, formatPayee, paymentStatusMeta } from '../../payments/lib/paymentFormat';
+import { formatMethod, formatPayee, paymentStatusMeta } from '../../lib/paymentFormat';
 import { useCopied } from '../hooks/useCopied';
 import { formatDateTime, hasDate } from '../lib/quotationFormat';
 import CopyIconButton from './CopyIconButton';
-
-function Fact({ label, children }) {
-  return (
-    <div className="min-w-0">
-      <dt className="font-label-caps text-label-caps font-semibold uppercase text-on-surface-variant">
-        {label}
-      </dt>
-      <dd className="font-body-lg text-body-lg mt-0.5 break-words text-on-surface">{children}</dd>
-    </div>
-  );
-}
+import Fact from './Fact';
+import { PANEL, PANEL_TITLE } from '../lib/panel';
 
 /** The latest payment recorded against this quote. */
 function PaymentConfirmationPanel({ payment }) {
@@ -24,9 +15,9 @@ function PaymentConfirmationPanel({ payment }) {
   const Icon = success ? CircleCheck : Clock;
 
   return (
-    <section className="anim-fade-d2 rounded-xl border border-hairline bg-white p-4 sm:p-gutter">
+    <section className={PANEL}>
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <h3 className="font-headline-md text-headline-md text-on-surface">Payment</h3>
+        <h3 className={PANEL_TITLE}>Payment</h3>
         <span
           className={`font-label-caps text-status-pill inline-flex items-center rounded-full px-2 py-0.5 font-semibold uppercase tracking-wide ring-1 ring-inset ${status.pill}`}
         >

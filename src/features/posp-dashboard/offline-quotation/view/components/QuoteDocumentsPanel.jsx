@@ -7,6 +7,7 @@ import DocumentThumbnail from './DocumentThumbnail';
 import { humaniseCode } from '../../lib/normalize';
 import { formatBytes } from '../api/quoteDocumentListApi';
 import { formatDate } from '@/shared/lib/format';
+import { PANEL, PANEL_TITLE } from '../lib/panel';
 
 /** `claim.png` → "PNG"; falls back to the content type's subtype. */
 const extension = (doc) =>
@@ -88,8 +89,8 @@ function QuoteDocumentsPanel({ quoteId, documents, loading, error, onRetry, meta
   const ordered = useMemo(() => groups.flatMap((group) => group.docs), [groups]);
 
   return (
-    <section className="anim-fade-d2 rounded-xl border border-hairline bg-white p-4 sm:p-gutter">
-      <h3 className="font-headline-md text-headline-md text-on-surface">Documents</h3>
+    <section className={PANEL}>
+      <h3 className={PANEL_TITLE}>Documents</h3>
 
       {loading && documents.length === 0 ? (
         <div className="font-body-md text-body-md mt-4 flex items-center gap-2 text-on-surface-variant">

@@ -82,10 +82,36 @@ export function toLocalIsoDate(date = new Date()) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
 
+/** `dd/mm/yyyy` → its { day, month, year } strings, or null when not in that shape. */
+export function splitDayMonthYear(value) {
+  const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value ?? '');
+  return match ? { day: match[1], month: match[2], year: match[3] } : null;
+}
+
+/* Strict dd/mm/yyyy → Date, or null when it isn't a real calendar day. The
+   round-trip check is what rejects rollovers like 31/02/2000, which `new Date`
+   would otherwise hand back as the 2nd of March. */
+export function parseDayMonthYear(value) {
+  const parts = splitDayMonthYear(value);
+  if (!parts) return null;
+
+  const day = +parts.day;
+  const month = +parts.month;
+  const year = +parts.year;
+  const date = new Date(year, month - 1, day);
+
+  const real =
+    date.getFullYear() === year &&
+    date.getMonth() === month - 1 &&
+    date.getDate() === day;
+
+  return real ? date : null;
+}
+
 /** `19/10/2026` → `2026-10-19`; empty when not dd/mm/yyyy. */
 export function dmyToIso(value) {
-  const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value ?? '');
-  return match ? `${match[3]}-${match[2]}-${match[1]}` : '';
+  const parts = splitDayMonthYear(value);
+  return parts ? `${parts.year}-${parts.month}-${parts.day}` : '';
 }
 
 /** `2026-10-19` → `19/10/2026`; empty when not yyyy-mm-dd. */

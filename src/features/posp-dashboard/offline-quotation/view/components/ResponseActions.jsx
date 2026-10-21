@@ -1,7 +1,6 @@
 import { Check, FileText } from 'lucide-react';
 import CustomButton from '@/shared/components/CustomButton';
 
-/** Outline by default; the brand gradient on hover. Cleared again when disabled. */
 const OUTLINE_SELECT =
   'hover:border-transparent hover:bg-linear-to-r hover:from-orange-500 hover:to-rose-500 hover:text-white disabled:hover:border-slate-200 disabled:hover:bg-none disabled:hover:text-slate-700';
 

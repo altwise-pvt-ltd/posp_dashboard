@@ -1,23 +1,8 @@
 import { BadgeCheck } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/shared/lib/format';
 import EarningStrip from './EarningStrip';
-
-function Fact({ label, children, mono = false }) {
-  return (
-    <div className="min-w-0">
-      <dt className="font-label-caps text-label-caps font-semibold uppercase text-on-surface-variant">
-        {label}
-      </dt>
-      <dd
-        className={`mt-0.5 break-words text-on-surface ${
-          mono ? 'font-data-mono text-body-lg font-semibold' : 'font-body-lg text-body-lg'
-        }`}
-      >
-        {children}
-      </dd>
-    </div>
-  );
-}
+import { PANEL, PANEL_TITLE } from '../lib/panel';
+import Fact, { FACT_LABEL } from './Fact';
 
 /** The insurer response the agent accepted, the proposal raised on it, and the agent's earning. */
 function SelectedOfferPanel({ offer, earning }) {
@@ -35,10 +20,10 @@ function SelectedOfferPanel({ offer, earning }) {
   } = offer;
 
   return (
-    <section className="anim-fade-d2 rounded-xl border border-hairline bg-white p-4 sm:p-gutter">
+    <section className={PANEL}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h3 className="font-headline-md text-headline-md text-on-surface">Selected policy</h3>
+          <h3 className={PANEL_TITLE}>Selected policy</h3>
           <p className="font-body-md text-body-md mt-0.5 text-on-surface-variant">
             The insurer response you accepted
             {acceptedAt && <> on {formatDate(acceptedAt)}</>}.
@@ -57,7 +42,7 @@ function SelectedOfferPanel({ offer, earning }) {
             <div className="min-w-0">
               {insurerName && (
                 <>
-                  <p className="font-label-caps text-label-caps font-semibold uppercase text-on-surface-variant">
+                  <p className={FACT_LABEL}>
                     Insurer
                   </p>
                   <p className="font-headline-md text-headline-md mt-0.5 text-on-surface">
@@ -75,7 +60,7 @@ function SelectedOfferPanel({ offer, earning }) {
 
           {Number.isFinite(premium) && (
             <div className="sm:text-right">
-              <p className="font-label-caps text-label-caps font-semibold uppercase text-on-surface-variant">
+              <p className={FACT_LABEL}>
                 Premium
               </p>
               <p className="font-data-currency text-headline-lg mt-0.5 text-on-surface">

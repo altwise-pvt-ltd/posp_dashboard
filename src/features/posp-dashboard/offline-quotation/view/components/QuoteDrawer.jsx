@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, X } from 'lucide-react';
+import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
 
 /* Counted so one drawer closing while the next opens doesn't unlock the page. */
 let locks = 0;
@@ -25,6 +26,9 @@ const unlockScroll = () => {
  */
 function QuoteDrawer({ title, reference, onClose, onBack, footer, children, labelId }) {
   const closeRef = useRef(null);
+  const panelRef = useRef(null);
+
+  useFocusTrap(panelRef);
 
   useEffect(() => {
     const onKeyDown = (event) => {
@@ -53,6 +57,7 @@ function QuoteDrawer({ title, reference, onClose, onBack, footer, children, labe
       />
 
       <motion.aside
+        ref={panelRef}
         initial={{ x: '100%' }}
         animate={{ x: 0 }}
         exit={{ x: '100%' }}

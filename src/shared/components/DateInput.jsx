@@ -37,6 +37,8 @@ function DateInput({ form, name, min, max, className = "", ...props }) {
       placeholder="dd/mm/yyyy"
       {...props}
       {...form.register(name)}
+      // Validated on pick and submit, not on blur: opening the calendar blurs the field.
+      onBlur={undefined}
       readOnly
       aria-haspopup="dialog"
       onClick={openPicker}
