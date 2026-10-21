@@ -2,22 +2,13 @@ import { useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { Check, Copy, ExternalLink, Landmark, Link2, TriangleAlert } from 'lucide-react';
 import CustomButton from '@/shared/components/CustomButton';
+import { formatCurrencyPreserve } from '@/shared/lib/format';
 import { PAYMENT_METHODS } from '../api/paymentInstructionApi';
 import { formatMethod } from '../../lib/paymentFormat';
 import { formatDateTime, hasDate } from '../lib/quotationFormat';
 import { useCopied } from '../hooks/useCopied';
 import CopyIconButton from './CopyIconButton';
 import QuoteDrawer from './QuoteDrawer';
-
-/** Paise are kept when present — this is the exact sum to pay. */
-const AMOUNT = new Intl.NumberFormat('en-IN', {
-  style: 'currency',
-  currency: 'INR',
-  minimumFractionDigits: 0,
-  maximumFractionDigits: 2,
-});
-
-const formatAmount = (value) => (Number.isFinite(value) ? AMOUNT.format(value) : '—');
 
 function Label({ children }) {
   return (
@@ -56,7 +47,7 @@ const shareText = (instruction, reference) => {
   const { bank } = instruction;
   const lines = [`Payment details${reference ? ` for ${reference}` : ''}`];
 
-  lines.push(`Amount: ${formatAmount(instruction.amount)}`);
+  lines.push(`Amount: ${formatCurrencyPreserve(instruction.amount)}`);
 
   if (bank.accountName) lines.push(`Account name: ${bank.accountName}`);
   if (bank.bankName) lines.push(`Bank: ${bank.bankName}`);
@@ -125,7 +116,7 @@ function DrawerContent({ instruction, reference, onClose, onMarkPayment }) {
       }
     >
     <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4 sm:px-gutter">
-      <div className="rounded-xl border border-gray-200 bg-surface-dim/40 p-3.5">
+      <div className="rounded-xl border border-hairline bg-surface-dim/40 p-3.5">
         <div className="flex items-start justify-between gap-3">
           <Label>Amount payable</Label>
           <span className="font-body-md text-body-md inline-flex items-center gap-1.5 text-on-surface-variant">
@@ -134,7 +125,7 @@ function DrawerContent({ instruction, reference, onClose, onMarkPayment }) {
           </span>
         </div>
         <p className="font-data-currency text-headline-lg mt-0.5 text-on-surface">
-          {formatAmount(instruction.amount)}
+          {formatCurrencyPreserve(instruction.amount)}
         </p>
         {published && (
           <p className="font-body-md text-body-md text-on-surface-variant">
@@ -144,7 +135,7 @@ function DrawerContent({ instruction, reference, onClose, onMarkPayment }) {
       </div>
 
       {bankRows.length > 0 && (
-        <section className="rounded-xl border border-gray-200 bg-white p-4">
+        <section className="rounded-xl border border-hairline bg-white p-4">
           <h3 className="font-body-lg text-body-lg mb-3 font-semibold text-on-surface">
             Bank account details
           </h3>
@@ -165,7 +156,7 @@ function DrawerContent({ instruction, reference, onClose, onMarkPayment }) {
       )}
 
       {instruction.paymentLink && (
-        <section className="rounded-xl border border-gray-200 bg-white p-4">
+        <section className="rounded-xl border border-hairline bg-white p-4">
           <h3 className="font-body-lg text-body-lg mb-3 font-semibold text-on-surface">
             Payment link
           </h3>

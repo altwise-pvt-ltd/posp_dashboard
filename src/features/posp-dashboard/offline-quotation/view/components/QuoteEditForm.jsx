@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { RefreshCw, Save } from "lucide-react";
-import DynamicForm from "@/features/dynamic-form/components/DynamicForm";
-import { useDynamicFormValues } from "@/features/dynamic-form/hooks/useDynamicFormValues";
-import { useLookupState } from "@/features/dynamic-form/hooks/useLookupOptions";
-import { resolveVisibleSections } from "@/features/dynamic-form/lib/visibleSections";
+import DynamicForm from "@/shared/dynamic-form/components/DynamicForm";
+import { useDynamicFormValues } from "@/shared/dynamic-form/hooks/useDynamicFormValues";
+import { useLookupState } from "@/shared/dynamic-form/hooks/useLookupOptions";
+import { resolveVisibleSections } from "@/shared/dynamic-form/lib/visibleSections";
 import {
   isFieldAnswered,
   validateField,
   validateFields,
-} from "@/features/dynamic-form/lib/validateFields";
+} from "@/shared/dynamic-form/lib/validateFields";
 import CustomButton from "@/shared/components/CustomButton";
 import { showAlert } from "@/shared/store/alertStore";
 import { storedDocumentFile } from "../../api/quoteDocumentsApi";

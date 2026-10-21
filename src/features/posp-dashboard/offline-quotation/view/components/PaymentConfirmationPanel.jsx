@@ -1,5 +1,5 @@
 import { CircleCheck, Clock } from 'lucide-react';
-import { formatCurrency } from '@/shared/lib/format';
+import { formatCurrencyPreserve } from '@/shared/lib/format';
 import { formatMethod, formatPayee, paymentStatusMeta } from '../../lib/paymentFormat';
 import { useCopied } from '../hooks/useCopied';
 import { formatDateTime, hasDate } from '../lib/quotationFormat';
@@ -25,14 +25,14 @@ function PaymentConfirmationPanel({ payment }) {
         </span>
       </div>
 
-      <div className="mt-4 flex items-start gap-3 rounded-xl border border-gray-200 bg-surface-dim/40 p-3.5">
+      <div className="mt-4 flex items-start gap-3 rounded-xl border border-hairline bg-surface-dim/40 p-3.5">
         <Icon
           aria-hidden="true"
           className={`mt-1 size-5 shrink-0 ${success ? 'text-emerald-600' : 'text-amber-600'}`}
         />
         <div className="min-w-0">
           <p className="font-data-currency text-headline-lg text-on-surface">
-            {formatCurrency(payment.amount)}
+            {formatCurrencyPreserve(payment.amount)}
             <span className="font-body-lg text-body-lg text-on-surface-variant"> paid</span>
           </p>
           {hasDate(payment.paidAt) && (

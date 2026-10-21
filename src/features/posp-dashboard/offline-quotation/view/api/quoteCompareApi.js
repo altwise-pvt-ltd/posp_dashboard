@@ -1,6 +1,7 @@
 import { api, unwrap } from '@/shared/api/client';
 import { ENDPOINTS } from '@/shared/api/endpoints';
 import { number, text } from '../../lib/normalize';
+import { humanizeLabel } from '@/shared/lib/humanize';
 
 /**
  * What the insurers came back with — `GET /quote/<quoteId>/compare`.
@@ -54,16 +55,6 @@ const isBlank = (value) =>
   (typeof value === 'string' && value.trim() === '') ||
   (Array.isArray(value) && value.length === 0);
 
-/** `insurerName` → "Insurer name", for a field this app has never seen. */
-const humanize = (key) =>
-  String(key)
-    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
-    .split(/[_\s-]+/)
-    .filter(Boolean)
-    .map((word, index) =>
-      index === 0 ? word.charAt(0).toUpperCase() + word.slice(1).toLowerCase() : word.toLowerCase()
-    )
-    .join(' ');
 
 /**
  * One insurer's answer.
@@ -128,7 +119,7 @@ const normalizeResponse = (entry, index) => {
      */
     extras: Object.entries(source)
       .filter(([key, value]) => !KNOWN.has(key) && !isBlank(value))
-      .map(([key, value]) => ({ key, label: humanize(key), value })),
+      .map(([key, value]) => ({ key, label: humanizeLabel(key), value })),
   };
 };
 

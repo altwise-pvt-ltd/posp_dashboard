@@ -1,4 +1,4 @@
-import CustomSelect from '@/features/dynamic-form/components/fields/CustomSelect';
+import CustomSelect from '@/shared/dynamic-form/components/fields/CustomSelect';
 
 const toOptions = (entries) =>
   entries.map((entry) => ({ value: entry.id ?? entry.code, text: entry.name }));

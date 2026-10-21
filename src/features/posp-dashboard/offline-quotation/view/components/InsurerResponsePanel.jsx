@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
+import { MotionConfig } from 'framer-motion';
 import { Inbox, Loader2, RefreshCw, TriangleAlert } from 'lucide-react';
 import CustomButton from '@/shared/components/CustomButton';
 import QuoteNotice from '../../components/QuoteNotice';
@@ -95,27 +96,31 @@ function InsurerResponsePanel({
           action={retryButton('Check again')}
         />
       ) : (
-        <ul className="mt-4 flex flex-col gap-3">
-          {rows.map((row) => {
-            const { response } = row;
-            const quoteDocument = findQuoteDocument(documents, response.quoteDocPath);
+        // Movement drops to fades for users who ask the OS for reduced motion.
+        <MotionConfig reducedMotion="user">
+          <ul className="mt-4 flex flex-col gap-3">
+            {rows.map((row, index) => {
+              const { response } = row;
+              const quoteDocument = findQuoteDocument(documents, response.quoteDocPath);
 
-            return (
-              <InsurerResponseCard
-                key={response.key}
-                row={row}
-                dimmed={anySelected && !response.isSelected}
-                quoteDocument={quoteDocument}
-                onView={() =>
-                  setPreview({ document: quoteDocument, label: quoteDocumentLabel(response) })
-                }
-                onSelect={onSelect}
-                selecting={Boolean(response.responseId) && response.responseId === selectingId}
-                busy={busy}
-              />
-            );
-          })}
-        </ul>
+              return (
+                <InsurerResponseCard
+                  key={response.key}
+                  row={row}
+                  index={index}
+                  dimmed={anySelected && !response.isSelected}
+                  quoteDocument={quoteDocument}
+                  onView={() =>
+                    setPreview({ document: quoteDocument, label: quoteDocumentLabel(response) })
+                  }
+                  onSelect={onSelect}
+                  selecting={Boolean(response.responseId) && response.responseId === selectingId}
+                  busy={busy}
+                />
+              );
+            })}
+          </ul>
+        </MotionConfig>
       )}
 
       <DocumentPreviewDialog

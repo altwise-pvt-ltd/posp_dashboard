@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import DashboardLayout from "@/shared/layouts/DashboardLayout";
 import CustomButton from "@/shared/components/CustomButton";
-import { daysUntil, formatCurrency, formatDate } from "@/shared/lib/format";
+import { daysUntil, formatCurrencyPreserve, formatDate } from "@/shared/lib/format";
 import { showAlert } from "@/shared/store/alertStore";
 import QuoteNotice from "../../components/QuoteNotice";
 import { paymentStatusMeta } from "../../lib/paymentFormat";
@@ -60,7 +60,7 @@ const shareText = (quote, payment) =>
     quote.quoteNumber && `Quotation ${quote.quoteNumber}`,
     (quote.lob || quote.product) && formatProduct(quote),
     quote.selectedOffer?.insurerName && `Insurer: ${quote.selectedOffer.insurerName}`,
-    Number.isFinite(payment.amount) && `Premium paid: ${formatCurrency(payment.amount)}`,
+    Number.isFinite(payment.amount) && `Premium paid: ${formatCurrencyPreserve(payment.amount)}`,
     hasDate(payment.paidAt) && `Paid on: ${formatDate(payment.paidAt)}`,
   ]
     .filter(Boolean)
@@ -344,7 +344,7 @@ function QuotationDetailPage() {
                 )}
                 {paid && Number.isFinite(payment.amount) ? (
                   <Fact label="Premium paid">
-                    {formatCurrency(payment.amount)}
+                    {formatCurrencyPreserve(payment.amount)}
                   </Fact>
                 ) : (
                   Number.isFinite(quote.expectedPremium) && (

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowRight, Loader2, PackageOpen, RefreshCw, TriangleAlert } from 'lucide-react';
-import { resolveVisibleSections } from '@/features/dynamic-form/lib/visibleSections';
+import { resolveVisibleSections } from '@/shared/dynamic-form/lib/visibleSections';
 import CustomButton from '@/shared/components/CustomButton';
 import { findLobProducts, findProductSubProducts } from '../api/quoteCatalogApi';
 import { useQuoteMetadata } from '../hooks/useQuoteMetadata';

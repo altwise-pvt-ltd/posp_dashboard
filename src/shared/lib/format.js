@@ -36,6 +36,62 @@ export const formatCurrency = (value) =>
   Number.isFinite(value) ? INR.format(value) : '—';
 
 /**
+ * `₹14,250.50` — paise always shown, for a sum actually transacted: what the
+ * agent is told to pay and what the server recorded as paid.
+ *
+ * Pinned to 2 digits on both ends, so paise never round away and a whole rupee
+ * still reads as money. Two is the limit: the paisa is the smallest unit INR
+ * has, no transfer can move less, and the amount field itself accepts at most
+ * two decimals. Use `formatCurrency` for cover, premiums and other figures
+ * being summarised rather than paid.
+ */
+const INR_EXACT = new Intl.NumberFormat('en-IN', {
+  style: 'currency',
+  currency: 'INR',
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
+export const formatCurrencyExact = (value) =>
+  Number.isFinite(value) ? INR_EXACT.format(value) : '—';
+
+/**
+ * Exact amount display: preserves the exact decimal precision from the backend.
+ * No rounding, padding, or truncation. Uses Indian number formatting (₹, comma grouping).
+ *
+ * ⚠ Limitation: JSON parsing converts `1250.00` (string) to `1250` (number), losing
+ * trailing zeros. Pass the original string from the backend if exact zeros matter.
+ * Document this when inspecting call sites.
+ *
+ * Examples:
+ * - formatCurrencyPreserve(1250) → "₹1,250" (no decimals in source)
+ * - formatCurrencyPreserve("1250.00") → "₹1,250.00" (preserves trailing zeros)
+ * - formatCurrencyPreserve(1250.004) → "₹1,250.004" (preserves all precision)
+ */
+export const formatCurrencyPreserve = (value) => {
+  if (value === null || value === undefined || value === '') return '—';
+
+  const str = String(value).trim();
+  if (!str || str === 'NaN') return '—';
+
+  const isNegative = str.startsWith('-');
+  const absStr = isNegative ? str.slice(1) : str;
+
+  const [integerPart, decimalPart] = absStr.split('.');
+
+  // Indian grouping: 1,23,45,67,890 (groups of 2 after first group of 3)
+  let integer = integerPart;
+  if (integer.length > 3) {
+    const lastThree = integer.slice(-3);
+    const beforeLastThree = integer.slice(0, -3);
+    integer = beforeLastThree.replace(/\B(?=(\d{2})+(?!\d))/g, ',') + ',' + lastThree;
+  }
+
+  const amount = decimalPart ? `${integer}.${decimalPart}` : integer;
+  return `₹${isNegative ? '-' : ''}${amount}`;
+};
+
+/**
  * `₹14.2L` / `₹1.4Cr` — the short form, for summary tiles where the full
  * figure would wrap.
  *

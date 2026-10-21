@@ -64,38 +64,6 @@ const RETRY_CLASS =
 const EXIT_CLASS =
   'mt-2 inline-flex w-full items-center justify-center rounded-lg px-4 py-2.5 text-xs font-bold text-slate-500 transition-colors duration-200 hover:text-orange-600 focus:outline-none focus-visible:ring-4 focus-visible:ring-orange-500/25';
 
-/**
- * The certificate screen — what a learner sees the moment they have passed.
- *
- * The document is the server's file, not this app's CSS. It used to be drawn
- * here from `GET /posp/me` and a hand-built A4 sheet; the backend renders the
- * real thing and `certificateUrl` on `GET /certificates/me` points at it, so
- * this screen fetches it and frames it. What a POSP sees is now byte-identical
- * to what the issuer holds — which a re-implementation in CSS could only ever
- * approximate, and would silently drift from the day the issuer changed it.
- *
- * That also removes the print seam. The old sheet was DOM, so printing meant
- * `window.print()` plus CSS that hid the rest of the page. A file in a frame is
- * not this document's to print — the server's sheet carries its own print button,
- * and the bar holds only the back button.
- *
- * Five states, and four of them are cards rather than sheets:
- *   loading     — the record, then the file
- *   error       — either call failed
- *   not issued  — a 404; the pass is recorded, the document isn't cut yet
- *   no file     — a record whose `certificateUrl` is empty
- *   issued      — the certificate
- *
- * The fetch lives here rather than in the callers because there are three of
- * them — `/certificate`, the exam portal after a pass, and the training page for
- * a POSP who was already certified — and none has anything to add to it.
- *
- * Where the back button goes is the caller's to say, because they are reached
- * from different places: the post-exam paths are the end of the funnel and lead
- * forward to the dashboard, while `/certificate` is opened from the profile and
- * has to lead back to it. A hardcoded "Go to Dashboard" was the only way off
- * this screen, which made every visit to it a one-way trip.
- */
 function CertificateScreen({
   actionLabel = 'Go to Dashboard',
   onAction,

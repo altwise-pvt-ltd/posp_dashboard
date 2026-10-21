@@ -6,6 +6,9 @@
  * neutral pill, rather than mapped to the wrong one.
  */
 
+import { humanizeLabel } from '@/shared/lib/humanize';
+import { formatCurrencyPreserve } from '@/shared/lib/format';
+
 const normalise = (value) =>
   typeof value === 'string' ? value.trim().toUpperCase().replace(/[\s-]+/g, '_') : '';
 
@@ -29,15 +32,9 @@ const METHOD_LABELS = {
   PAYMENTLINK: 'Payment link',
 };
 
-// "BANK_TRANSFER" → "Bank transfer" for anything not in the table.
-const humanize = (value) => {
-  const words = value.replace(/_/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase();
-  return words.charAt(0).toUpperCase() + words.slice(1);
-};
-
 export const formatMethod = (value) => {
   if (!value) return '—';
-  return METHOD_LABELS[normalise(value)] ?? humanize(value);
+  return METHOD_LABELS[normalise(value)] ?? humanizeLabel(value);
 };
 
-export const formatPayee = (value) => (value ? humanize(value) : '—');
+export const formatPayee = (value) => (value ? humanizeLabel(value) : '—');

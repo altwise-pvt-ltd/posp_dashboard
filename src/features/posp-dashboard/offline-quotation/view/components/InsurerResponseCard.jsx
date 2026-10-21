@@ -1,7 +1,10 @@
+import { useState } from 'react';
+import { motion } from 'framer-motion';
 import { Star } from 'lucide-react';
-import { formatCurrency } from '@/shared/lib/format';
+import { formatCurrencyPreserve } from '@/shared/lib/format';
 import { formatValidity } from '../lib/quotationFormat';
 import { RESPONSE_COLUMNS, formatExtraValue } from '../lib/insurerResponse';
+import { CARD_TRANSITION, CARD_VARIANTS, SELECT_RIPPLE, cardOpacity } from '../lib/responseMotion';
 import EarningChip from './EarningChip';
 import InsurerLogo from './InsurerLogo';
 import ResponseActions from './ResponseActions';
@@ -12,15 +15,12 @@ const PILL = 'inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 t
 
 const VALIDITY_TONE = { muted: 'text-on-surface-variant', warning: 'font-medium text-warning' };
 
-/** Border, tint and emphasis for one row. */
-const rowClasses = ({ selected, expired, dimmed }) =>
+/** Border, tint and hover lift for one row; opacity is animated separately. */
+const rowClasses = ({ selected, expired }) =>
   [
-    'rounded-xl border p-4 transition duration-150 md:p-5 motion-reduce:transition-none',
+    'relative rounded-xl border p-4 transition-[translate,box-shadow,border-color,background-color] duration-300 md:p-5 motion-reduce:transition-none',
     selected ? 'border-brand bg-brand-tint ring-1 ring-brand' : 'border-hairline bg-white',
-    expired
-      ? 'opacity-60'
-      : 'hover:-translate-y-px hover:shadow-md motion-reduce:hover:translate-y-0',
-    dimmed && !expired && 'opacity-80',
+    !expired && 'hover:-translate-y-0.5 hover:shadow-lg hover:shadow-brand/10 motion-reduce:hover:translate-y-0',
   ]
     .filter(Boolean)
     .join(' ');
@@ -35,17 +35,37 @@ function Metric({ label, children }) {
 }
 
 /** One insurer response: identity and badges, premium / IDV / validity, then earning and actions. */
-function InsurerResponseCard({ row, dimmed, quoteDocument, onView, onSelect, selecting, busy }) {
+function InsurerResponseCard({ row, index, dimmed, quoteDocument, onView, onSelect, selecting, busy }) {
   const { response, expired, isBest, premiumDelta, lowerIdv } = row;
   const { insurerId, insurerName, insurerLogoUrl, insurerQuoteRef, premium, idv, validTill, isSelected, earning, extras } =
     response;
+
+  // Drops the entrance stagger once the card has risen in.
+  const [entered, setEntered] = useState(false);
 
   const validity = formatValidity(validTill);
   // The uuid only stands in when there is neither a name nor a reference.
   const reference = insurerQuoteRef ? `Ref ${insurerQuoteRef}` : !insurerName && insurerId;
 
   return (
-    <li className={rowClasses({ selected: isSelected, expired, dimmed })}>
+    <motion.li
+      layout="position"
+      variants={CARD_VARIANTS}
+      custom={{ index, entered, opacity: cardOpacity({ expired, dimmed }) }}
+      initial="hidden"
+      animate="shown"
+      transition={CARD_TRANSITION}
+      onAnimationComplete={() => setEntered(true)}
+      className={rowClasses({ selected: isSelected, expired })}
+    >
+      {isSelected && (
+        <motion.span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 rounded-xl"
+          {...SELECT_RIPPLE}
+        />
+      )}
+
       <div className={`flex flex-col gap-4 ${RESPONSE_COLUMNS}`}>
         <div className="flex min-w-0 items-center gap-3">
           <InsurerLogo url={insurerLogoUrl} name={insurerName} />
@@ -73,14 +93,14 @@ function InsurerResponseCard({ row, dimmed, quoteDocument, onView, onSelect, sel
         <dl className="grid grid-cols-3 gap-3 md:col-span-3 md:grid-cols-subgrid">
           <Metric label="Premium">
             <span className="block text-base font-bold tabular-nums md:text-xl">
-              {formatCurrency(premium)}
+              {formatCurrencyPreserve(premium)}
             </span>
             {premiumDelta !== null && (
-              <span className={`${NOTE} tabular-nums`}>+{formatCurrency(premiumDelta)}</span>
+              <span className={`${NOTE} tabular-nums`}>+{formatCurrencyPreserve(premiumDelta)}</span>
             )}
           </Metric>
           <Metric label="IDV">
-            <span className="block text-sm tabular-nums md:text-[15px]">{formatCurrency(idv)}</span>
+            <span className="block text-sm tabular-nums md:text-[15px]">{formatCurrencyPreserve(idv)}</span>
             {lowerIdv && <span className={NOTE}>lower IDV</span>}
           </Metric>
           <Metric label="Valid till">
@@ -109,7 +129,6 @@ function InsurerResponseCard({ row, dimmed, quoteDocument, onView, onSelect, sel
         <ResponseActions
           response={response}
           quoteDocument={quoteDocument}
-          isBest={isBest}
           expired={expired}
           onView={onView}
           onSelect={onSelect}
@@ -117,7 +136,7 @@ function InsurerResponseCard({ row, dimmed, quoteDocument, onView, onSelect, sel
           busy={busy}
         />
       </div>
-    </li>
+    </motion.li>
   );
 }
 

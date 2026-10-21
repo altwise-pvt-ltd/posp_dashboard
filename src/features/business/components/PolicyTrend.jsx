@@ -1,5 +1,5 @@
 import { useId } from 'react';
-import { formatCompactCurrency, formatCurrency } from '@/shared/lib/format';
+import { formatCompactCurrency, formatCurrencyPreserve } from '@/shared/lib/format';
 
 /**
  * Premium booked per month, drawn from the same rows the list and the summary
@@ -160,7 +160,7 @@ function PolicyTrend({ trend, title = 'Premium booked', action = null, className
                          and the gap between bars belongs to the column beside
                          it rather than to nothing. */
                       className="group relative flex h-full flex-1 cursor-default flex-col justify-end focus-visible:outline-none"
-                      aria-label={`${m.fullLabel}: ${formatCurrency(m.premium)} from ${m.count} ${m.count === 1 ? 'policy' : 'policies'}`}
+                      aria-label={`${m.fullLabel}: ${formatCurrencyPreserve(m.premium)} from ${m.count} ${m.count === 1 ? 'policy' : 'policies'}`}
                     >
                       {/* Direct labels, selectively — the peak and the current
                           month only. A value over all twelve is noise and goes
@@ -208,7 +208,7 @@ function PolicyTrend({ trend, title = 'Premium booked', action = null, className
                         className={`pointer-events-none absolute -top-1 z-10 hidden whitespace-nowrap rounded bg-inverse-surface px-2 py-1 text-[11px] text-inverse-on-surface shadow-lg group-hover:block group-focus-visible:block ${tip}`}
                       >
                         <span className="font-semibold">{m.fullLabel}</span>
-                        <span className="font-data-mono"> · {formatCurrency(m.premium)} · {m.count}p</span>
+                        <span className="font-data-mono"> · {formatCurrencyPreserve(m.premium)} · {m.count}p</span>
                       </span>
                     </button>
                   );
@@ -281,7 +281,7 @@ function PolicyTrend({ trend, title = 'Premium booked', action = null, className
                         {m.count}
                       </td>
                       <td className="font-data-currency text-data-currency px-2 py-1.5 text-right text-on-surface">
-                        {formatCurrency(m.premium)}
+                        {formatCurrencyPreserve(m.premium)}
                       </td>
                     </tr>
                   ))}

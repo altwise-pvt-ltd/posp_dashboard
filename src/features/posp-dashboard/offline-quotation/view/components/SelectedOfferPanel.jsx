@@ -1,5 +1,5 @@
 import { BadgeCheck } from 'lucide-react';
-import { formatCurrency, formatDate } from '@/shared/lib/format';
+import { formatCurrencyPreserve, formatDate } from '@/shared/lib/format';
 import EarningStrip from './EarningStrip';
 import { PANEL, PANEL_TITLE } from '../lib/panel';
 import Fact, { FACT_LABEL } from './Fact';
@@ -37,7 +37,7 @@ function SelectedOfferPanel({ offer, earning }) {
       </div>
 
       {(insurerName || insurerQuoteRef || Number.isFinite(premium)) && (
-        <div className="mt-4 flex flex-wrap items-end justify-between gap-x-6 gap-y-3 rounded-xl border border-gray-200 bg-surface-dim/40 p-3.5">
+        <div className="mt-4 flex flex-wrap items-end justify-between gap-x-6 gap-y-3 rounded-xl border border-hairline bg-surface-dim/40 p-3.5">
           {(insurerName || insurerQuoteRef) && (
             <div className="min-w-0">
               {insurerName && (
@@ -64,7 +64,7 @@ function SelectedOfferPanel({ offer, earning }) {
                 Premium
               </p>
               <p className="font-data-currency text-headline-lg mt-0.5 text-on-surface">
-                {formatCurrency(premium)}
+                {formatCurrencyPreserve(premium)}
               </p>
             </div>
           )}
@@ -78,9 +78,9 @@ function SelectedOfferPanel({ offer, earning }) {
           </Fact>
         )}
         {proposalStatus && <Fact label="Proposal status">{proposalStatus}</Fact>}
-        {idv !== null && <Fact label="IDV">{formatCurrency(idv)}</Fact>}
-        {odPremium !== null && <Fact label="OD premium">{formatCurrency(odPremium)}</Fact>}
-        {tpPremium !== null && <Fact label="TP premium">{formatCurrency(tpPremium)}</Fact>}
+        {idv !== null && <Fact label="IDV">{formatCurrencyPreserve(idv)}</Fact>}
+        {odPremium !== null && <Fact label="OD premium">{formatCurrencyPreserve(odPremium)}</Fact>}
+        {tpPremium !== null && <Fact label="TP premium">{formatCurrencyPreserve(tpPremium)}</Fact>}
         {validTill && <Fact label="Valid till">{formatDate(validTill)}</Fact>}
       </dl>
 

@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { FileText, Loader2, RefreshCw, X } from 'lucide-react';
-import { formatCurrency, formatDate } from '@/shared/lib/format';
+import { formatCurrencyPreserve, formatDate } from '@/shared/lib/format';
 import { expiryLabel } from '../lib/policyFilters';
 import { formatPeriod, formatProduct } from '../lib/policyFormat';
 import { usePolicyDetail } from '../hooks/usePolicyDetail';
@@ -163,10 +163,10 @@ function PolicyDetail({ policy, now, onClose }) {
                   Premium
                 </p>
                 <p className="font-data-currency text-headline-lg text-on-surface">
-                  {formatCurrency(record.premium)}
+                  {formatCurrencyPreserve(record.premium)}
                 </p>
                 <p className="font-body-md text-body-md text-on-surface-variant">
-                  Sum insured {formatCurrency(record.sumInsured)}
+                  Sum insured {formatCurrencyPreserve(record.sumInsured)}
                 </p>
               </div>
 

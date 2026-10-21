@@ -1,4 +1,4 @@
-import { formatCurrency, formatDate } from '@/shared/lib/format';
+import { formatCurrencyPreserve, formatDate } from '@/shared/lib/format';
 import { expiryLabel } from '../lib/policyFilters';
 import { formatProduct } from '../lib/policyFormat';
 import PolicyStatusPill from './PolicyStatusPill';
@@ -35,7 +35,7 @@ function PolicyCard({ policy, now, onSelect }) {
           {policy.customerName}
         </p>
         <p className="font-data-currency text-data-currency shrink-0 text-on-surface">
-          {formatCurrency(policy.premium)}
+          {formatCurrencyPreserve(policy.premium)}
         </p>
       </div>
 

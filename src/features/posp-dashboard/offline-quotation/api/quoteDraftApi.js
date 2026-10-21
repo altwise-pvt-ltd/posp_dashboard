@@ -1,6 +1,6 @@
 import { api, unwrap } from '@/shared/api/client';
 import { ENDPOINTS } from '@/shared/api/endpoints';
-import { isValuelessControl } from '@/features/dynamic-form/components/fields/registry';
+import { isValuelessControl } from '@/shared/dynamic-form/components/fields/registry';
 
 /**
  * One answer in the shape `POST /quote/draft` takes it: a string, or `null` for

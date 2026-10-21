@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { formatCurrency, formatDate } from '@/shared/lib/format';
+import { formatCurrencyPreserve, formatDate } from '@/shared/lib/format';
 import { expiryLabel } from '../lib/policyFilters';
 import { formatProduct } from '../lib/policyFormat';
 import PolicyStatusPill from './PolicyStatusPill';
@@ -98,7 +98,7 @@ function PolicyTable({ policies, now, onSelect }) {
                 </td>
 
                 <td className="font-data-currency text-data-currency border-b border-slate-100 px-3 py-3 text-right text-on-surface">
-                  {formatCurrency(policy.premium)}
+                  {formatCurrencyPreserve(policy.premium)}
                 </td>
 
                 <td className="border-b border-slate-100 px-3 py-3">

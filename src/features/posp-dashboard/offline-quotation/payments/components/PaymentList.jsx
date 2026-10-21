@@ -1,4 +1,4 @@
-import { formatCurrency, formatDate } from '@/shared/lib/format';
+import { formatCurrencyPreserve, formatDate } from '@/shared/lib/format';
 import QuotationViewAction from '../../view/components/QuotationViewAction';
 import { formatMethod, formatPayee, paymentStatusMeta } from '../../lib/paymentFormat';
 
@@ -71,7 +71,7 @@ function PaymentTable({ payments }) {
               </td>
 
               <td className="font-data-currency text-data-currency px-3 py-3 text-right text-on-surface">
-                {formatCurrency(payment.amount)}
+                {formatCurrencyPreserve(payment.amount)}
               </td>
 
               <td className="px-3 py-3">
@@ -106,7 +106,7 @@ function PaymentCard({ payment }) {
           {payment.quoteNumber || '—'}
         </p>
         <p className="font-data-currency text-data-currency shrink-0 text-on-surface">
-          {formatCurrency(payment.amount)}
+          {formatCurrencyPreserve(payment.amount)}
         </p>
       </div>
 
