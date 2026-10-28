@@ -4,7 +4,8 @@ import { Inbox, Loader2, RefreshCw, TriangleAlert } from 'lucide-react';
 import CustomButton from '@/shared/components/CustomButton';
 import QuoteNotice from '../../components/QuoteNotice';
 import { useRankedResponses } from '../hooks/useRankedResponses';
-import { findQuoteDocument, quoteDocumentLabel } from '../lib/insurerResponse';
+import { quoteDocumentLabel } from '../lib/insurerResponse';
+import { docFromPath } from '../api/quoteDocumentListApi';
 import DocumentPreviewDialog from './DocumentPreviewDialog';
 import InsurerResponseCard from './InsurerResponseCard';
 import ResponseSortSelect from './ResponseSortSelect';
@@ -21,7 +22,6 @@ const noop = () => {};
 function InsurerResponsePanel({
   quoteId,
   responses = [],
-  documents = [],
   loading,
   error,
   onRetry,
@@ -101,7 +101,6 @@ function InsurerResponsePanel({
           <ul className="mt-4 flex flex-col gap-3">
             {rows.map((row, index) => {
               const { response } = row;
-              const quoteDocument = findQuoteDocument(documents, response.quoteDocPath);
 
               return (
                 <InsurerResponseCard
@@ -109,9 +108,11 @@ function InsurerResponsePanel({
                   row={row}
                   index={index}
                   dimmed={anySelected && !response.isSelected}
-                  quoteDocument={quoteDocument}
                   onView={() =>
-                    setPreview({ document: quoteDocument, label: quoteDocumentLabel(response) })
+                    setPreview({
+                      document: docFromPath(response.quoteDocPath),
+                      label: quoteDocumentLabel(response),
+                    })
                   }
                   onSelect={onSelect}
                   selecting={Boolean(response.responseId) && response.responseId === selectingId}

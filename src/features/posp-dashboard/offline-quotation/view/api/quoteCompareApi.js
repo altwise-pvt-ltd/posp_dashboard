@@ -98,10 +98,7 @@ const normalizeResponse = (entry, index) => {
 
     isSelected: flag(source.isSelected),
 
-    /**
-     * A storage path, not a URL. Opened by matching it to a document's
-     * `filePath` on `/quote/<id>/documents`. ⚠ That match is unverified.
-     */
+    /** A storage path, fetched as `<VITE_API_BASE_URL>/<path>`. ⚠ Unverified. */
     quoteDocPath: text(source.quoteDocPath),
 
     /** The agent's commission on this response. Not the customer's money. */

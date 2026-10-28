@@ -1,7 +1,7 @@
 import QuotationStatusPill from './QuotationStatusPill';
-import QuotationViewAction from './QuotationViewAction';
 import { formatDate } from '@/shared/lib/format';
-import { formatAge, formatLob, formatSumInsured } from '../lib/quotationFormat';
+import { useOpenQuotation } from '../hooks/useOpenQuotation';
+import { formatAge, formatPremium, formatProduct, formatSumInsured } from '../lib/quotationFormat';
 
 /**
  * The desktop layout, rendered from `md` up; below that `QuotationCard` takes
@@ -9,13 +9,17 @@ import { formatAge, formatLob, formatSumInsured } from '../lib/quotationFormat';
  * identifies the row, with the workflow remark under it.
  */
 
-/** Index 2 is Sum insured — its header follows the figures under it right. */
-const HEADINGS = ['Reference', 'Line of business', 'Sum insured', 'Status', 'Raised', ''];
+const HEADINGS = ['Reference', 'Product', 'Sum insured', 'Premium', 'Status', 'Raised'];
+
+// Money columns are right-aligned, headers included.
+const RIGHT_ALIGNED = new Set([2, 3]);
 
 function QuotationTable({ quotations }) {
+  const rowLink = useOpenQuotation();
+
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-180 border-collapse text-left">
+      <table className="w-full min-w-210 border-collapse text-left">
         <caption className="sr-only">
           Quotations you have raised, newest first
         </caption>
@@ -24,15 +28,13 @@ function QuotationTable({ quotations }) {
           <tr className="border-b border-hairline-cool">
             {HEADINGS.map((heading, index) => (
               <th
-                key={heading || 'actions'}
+                key={heading}
                 scope="col"
                 className={`font-label-caps text-label-caps px-3 py-2.5 font-semibold uppercase text-on-surface-variant ${
-                  index === 2 ? 'text-right' : ''
+                  RIGHT_ALIGNED.has(index) ? 'text-right' : ''
                 }`}
               >
-                {/* The last cell holds the row action and is labelled for
-                    assistive tech only. */}
-                {heading || <span className="sr-only">Actions</span>}
+                {heading}
               </th>
             ))}
           </tr>
@@ -41,11 +43,13 @@ function QuotationTable({ quotations }) {
         <tbody>
           {quotations.map((quotation) => {
             const age = formatAge(quotation.ageDays);
+            const { className: linkClass = '', ...link } = rowLink(quotation.id);
 
             return (
               <tr
                 key={quotation.id ?? quotation.quoteNumber}
-                className="border-b border-hairline-soft transition-colors last:border-0 hover:bg-well/70"
+                {...link}
+                className={`border-b border-hairline-soft transition-colors last:border-0 hover:bg-well/70 ${linkClass}`}
               >
                 <td className="px-3 py-3">
                   <span className="font-data-mono text-data-mono font-semibold text-on-surface">
@@ -60,12 +64,23 @@ function QuotationTable({ quotations }) {
                   )}
                 </td>
 
-                <td className="font-body-md text-body-md px-3 py-3 text-on-surface-variant">
-                  {formatLob(quotation)}
+                <td className="font-body-md text-body-md px-3 py-3 whitespace-nowrap text-on-surface-variant">
+                  {formatProduct(quotation)}
                 </td>
 
                 <td className="font-data-currency text-data-currency px-3 py-3 text-right text-on-surface">
                   {formatSumInsured(quotation.sumInsured)}
+                </td>
+
+                <td className="px-3 py-3 text-right">
+                  <p className="font-data-currency text-data-currency text-on-surface">
+                    {formatPremium(quotation.premium)}
+                  </p>
+                  {quotation.insurerName && (
+                    <p className="font-body-md text-body-md text-on-surface-variant">
+                      {quotation.insurerName}
+                    </p>
+                  )}
                 </td>
 
                 <td className="px-3 py-3">
@@ -80,10 +95,6 @@ function QuotationTable({ quotations }) {
                   {age && (
                     <p className="font-body-md text-body-md text-on-surface-variant/70">{age}</p>
                   )}
-                </td>
-
-                <td className="px-3 py-3 text-right">
-                  <QuotationViewAction quotation={quotation} />
                 </td>
               </tr>
             );

@@ -16,7 +16,7 @@ const TINTS = [
     ink: 'text-amber-600',
     wash: 'from-amber-50 to-amber-100',
     edge: 'border-amber-200/70',
-    fade: 'from-amber-50 via-amber-50/70 to-amber-50/0',
+    fade: 'from-amber-50 via-amber-50/60 to-amber-50/0',
   },
   {
     bg: 'bg-sky-50',
@@ -24,7 +24,7 @@ const TINTS = [
     ink: 'text-sky-600',
     wash: 'from-sky-50 to-sky-100',
     edge: 'border-sky-200/70',
-    fade: 'from-sky-50 via-sky-50/70 to-sky-50/0',
+    fade: 'from-sky-50 via-sky-50/60 to-sky-50/0',
   },
   {
     bg: 'bg-emerald-50',
@@ -32,7 +32,7 @@ const TINTS = [
     ink: 'text-emerald-600',
     wash: 'from-emerald-50 to-emerald-100',
     edge: 'border-emerald-200/70',
-    fade: 'from-emerald-50 via-emerald-50/70 to-emerald-50/0',
+    fade: 'from-emerald-50 via-emerald-50/60 to-emerald-50/0',
   },
   {
     bg: 'bg-violet-50',
@@ -40,7 +40,7 @@ const TINTS = [
     ink: 'text-violet-600',
     wash: 'from-violet-50 to-violet-100',
     edge: 'border-violet-200/70',
-    fade: 'from-violet-50 via-violet-50/70 to-violet-50/0',
+    fade: 'from-violet-50 via-violet-50/60 to-violet-50/0',
   },
   {
     bg: 'bg-rose-50',
@@ -48,7 +48,7 @@ const TINTS = [
     ink: 'text-rose-600',
     wash: 'from-rose-50 to-rose-100',
     edge: 'border-rose-200/70',
-    fade: 'from-rose-50 via-rose-50/70 to-rose-50/0',
+    fade: 'from-rose-50 via-rose-50/60 to-rose-50/0',
   },
 ];
 
@@ -200,11 +200,11 @@ function BentoTile({ lob, index, variant, placement = '' }) {
           <img
             src={image}
             alt=""
-            className="pointer-events-none absolute inset-0 -z-20 size-full object-cover"
+            className="pointer-events-none absolute inset-0 -z-20 size-full object-cover object-top"
           />
           <span
             aria-hidden="true"
-            className={`pointer-events-none absolute inset-0 -z-10 bg-linear-to-t from-50% via-75% ${tint.fade}`}
+            className={`pointer-events-none absolute inset-0 -z-10 bg-linear-to-t from-15% via-40% to-70% ${tint.fade}`}
           />
         </>
       ) : (

@@ -502,7 +502,8 @@ export const ENDPOINTS = {
      * no way to ask for anyone else's.
      *
      * A QueueRow is a *workflow* record, not the customer-facing quote the
-     * create screen builds. It carries no customer name, mobile or premium:
+     * create screen builds. It carries no customer name or mobile (seen live
+     * 2026-10-26):
      *
      *   id            uuid — what `/quote/<quoteId>/documents` takes
      *   quoteNumber   `QT-2026-000008`, the human reference
@@ -516,8 +517,11 @@ export const ENDPOINTS = {
      *                 it by accident.
      *   colorHex      `#9AA3B2` — the server owns the status colour, so the
      *                 pill is tinted from this rather than a table in the app.
-     *   sumInsured    nullable — a draft that hasn't been priced has none.
-     *                 ⚠ Sum insured, NOT premium.
+     *   sumInsured    nullable, and not tied to status: null on some paid
+     *                 quotes, set on some drafts. ⚠ Source field unconfirmed.
+     *   premium, insurerName  the selected offer; null until one is selected
+     *   policyNumber, policyId  null on every row seen so far
+     *   assignedToUserId, originatorType  internal; not shown
      *   ageDays       whole days since `createdAt`, computed server-side
      *   lastRemark    nullable workflow note
      *   originator*   Type/Code/Name/Mobile — who raised it. All null on a
@@ -765,6 +769,17 @@ export const ENDPOINTS = {
      */
     documentFile: (quoteId, documentId) =>
       `/quote/${encodeURIComponent(quoteId)}/documents/${encodeURIComponent(documentId)}`,
+
+    /*
+     * GET (bearer) `<VITE_API_BASE_URL>/<path>` → a stored file by its storage
+     * path, e.g. an insurer response's `quoteDocPath`. Each segment is encoded,
+     * slashes are kept.
+     *
+     * ⚠ UNVERIFIED — the base URL ends in `/api`; whether files are served
+     * under it, and whether the reply is the file or JSON, has not been seen.
+     */
+    storedFile: (path) =>
+      `/${String(path).split('/').filter(Boolean).map(encodeURIComponent).join('/')}`,
   },
 
   onboarding: {

@@ -8,7 +8,7 @@ import { isImage, isPdf } from '../api/quoteDocumentListApi';
  */
 function DocumentThumbnail({ quoteId, doc, compact = false }) {
   const image = isImage(doc);
-  const { url, loading } = useDocumentBlob(quoteId, image ? doc.id : null);
+  const { url, loading } = useDocumentBlob(quoteId, image ? doc : null);
 
   if (image && url) {
     return (

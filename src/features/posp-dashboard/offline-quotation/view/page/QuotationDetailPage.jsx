@@ -420,7 +420,6 @@ function QuotationDetailPage() {
                   <InsurerResponsePanel
                     quoteId={id}
                     responses={insurer.responses}
-                    documents={docs.documents}
                     loading={insurer.loading}
                     error={insurer.error}
                     onRetry={insurer.retry}

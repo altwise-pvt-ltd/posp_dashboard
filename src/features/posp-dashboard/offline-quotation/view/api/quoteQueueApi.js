@@ -70,8 +70,12 @@ export const normalizeRow = (entry = {}) => {
     /** `#9AA3B2`. The server owns the status palette — see `quotationStatus.js`. */
     colorHex: text(entry.colorHex),
 
-    /** ⚠ Sum insured, not premium. Null until the quote is priced. */
+    /** ⚠ Sum insured, not premium. Filled or null regardless of status; source field unconfirmed. */
     sumInsured: number(entry.sumInsured),
+
+    /** The selected offer's premium and insurer. Null until an offer is selected. */
+    premium: number(entry.premium),
+    insurerName: text(entry.insurerName),
 
     createdAt: entry.createdAt ?? null,
     /** Whole days since `createdAt`, counted server-side. Null when absent. */

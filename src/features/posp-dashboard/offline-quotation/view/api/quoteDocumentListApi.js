@@ -36,12 +36,11 @@ const blobRequests = new Map();
 // Past this the oldest entry is dropped; a dropped document is fetched again.
 const CACHE_MAX = 24;
 
-export function fetchQuoteDocumentBlob(quoteId, documentId) {
-  const key = `${quoteId}|${documentId}`;
+function cachedBlob(key, url) {
   const cached = blobRequests.get(key);
   if (cached) return cached;
 
-  const request = requestBlob(quoteId, documentId).catch((error) => {
+  const request = requestBlob(url).catch((error) => {
     blobRequests.delete(key);
     throw error;
   });
@@ -52,11 +51,30 @@ export function fetchQuoteDocumentBlob(quoteId, documentId) {
   return request;
 }
 
+export const fetchQuoteDocumentBlob = (quoteId, documentId) =>
+  cachedBlob(`${quoteId}|${documentId}`, ENDPOINTS.quotation.documentFile(quoteId, documentId));
+
+/** A stored file fetched by its storage path, e.g. an insurer's `quoteDocPath`. */
+export const fetchStoredFileBlob = (path) =>
+  cachedBlob(`path|${path}`, ENDPOINTS.quotation.storedFile(path));
+
+/** A document with a `path` is fetched by path; otherwise by its id on the quote. */
+export const fetchDocBlob = (quoteId, doc) =>
+  doc.path ? fetchStoredFileBlob(doc.path) : fetchQuoteDocumentBlob(quoteId, doc.id);
+
+/** A preview entry for a file known only by its storage path. */
+export const docFromPath = (path) => ({
+  id: `path|${path}`,
+  path,
+  fileName: String(path).split('/').filter(Boolean).pop() ?? 'Document',
+  contentType: '',
+  sizeBytes: null,
+  uploadedAt: null,
+});
+
 /** If the server answers with JSON instead of the file, its message is raised. */
-async function requestBlob(quoteId, documentId) {
-  const response = await api.get(ENDPOINTS.quotation.documentFile(quoteId, documentId), {
-    responseType: 'blob',
-  });
+async function requestBlob(url) {
+  const response = await api.get(url, { responseType: 'blob' });
 
   const blob = response.data;
 

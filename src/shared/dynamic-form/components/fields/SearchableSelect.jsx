@@ -138,6 +138,8 @@ export default function SearchableSelect({
                     id={code}
                     type="text"
                     role="combobox"
+                    autoComplete="off"
+                    spellCheck={false}
                     aria-expanded={isOpen}
                     aria-controls={listboxId}
                     aria-autocomplete="list"

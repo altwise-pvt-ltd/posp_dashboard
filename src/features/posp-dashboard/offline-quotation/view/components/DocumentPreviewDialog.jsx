@@ -123,7 +123,7 @@ function Stage({ doc, file, isMobile }) {
  */
 function DocumentPreviewDialog({ quoteId, documents, index, labelFor, onClose, onNavigate }) {
   const current = index == null ? null : documents[index];
-  const file = useDocumentBlob(quoteId, current?.id ?? null);
+  const file = useDocumentBlob(quoteId, current);
   const isMobile = useMatchMedia(MOBILE_QUERY);
   const dialogRef = useRef(null);
 

@@ -1,5 +1,5 @@
 import { formatCurrencyPreserve, formatDate } from '@/shared/lib/format';
-import QuotationViewAction from '../../view/components/QuotationViewAction';
+import { useOpenQuotation } from '../../view/hooks/useOpenQuotation';
 import { formatMethod, formatPayee, paymentStatusMeta } from '../../lib/paymentFormat';
 
 function PaymentStatusPill({ status }) {
@@ -14,13 +14,12 @@ function PaymentStatusPill({ status }) {
   );
 }
 
-// QuotationViewAction expects a queue row; a payment carries the same two fields.
-const quoteOf = (payment) => ({ id: payment.quoteId, quoteNumber: payment.quoteNumber });
-
 /** Index 3 is Amount — its header follows the figures right. */
-const HEADINGS = ['Quote', 'Proposal', 'Method', 'Amount', 'Status', 'Paid on', ''];
+const HEADINGS = ['Quote', 'Proposal', 'Method', 'Amount', 'Status', 'Paid on'];
 
 function PaymentTable({ payments }) {
+  const rowLink = useOpenQuotation();
+
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-200 border-collapse text-left">
@@ -30,23 +29,27 @@ function PaymentTable({ payments }) {
           <tr className="border-b border-hairline-cool">
             {HEADINGS.map((heading, index) => (
               <th
-                key={heading || 'actions'}
+                key={heading}
                 scope="col"
                 className={`font-label-caps text-label-caps px-3 py-2.5 font-semibold uppercase text-on-surface-variant ${
                   index === 3 ? 'text-right' : ''
                 }`}
               >
-                {heading || <span className="sr-only">Actions</span>}
+                {heading}
               </th>
             ))}
           </tr>
         </thead>
 
         <tbody>
-          {payments.map((payment) => (
+          {payments.map((payment) => {
+            const { className: linkClass = '', ...link } = rowLink(payment.quoteId);
+
+            return (
             <tr
               key={payment.paymentId}
-              className="border-b border-hairline-soft transition-colors last:border-0 hover:bg-well/70"
+              {...link}
+              className={`border-b border-hairline-soft transition-colors last:border-0 hover:bg-well/70 ${linkClass}`}
             >
               <td className="px-3 py-3">
                 <span className="font-data-mono text-data-mono font-semibold text-on-surface">
@@ -86,12 +89,9 @@ function PaymentTable({ payments }) {
                     : 'Not yet received'}
                 </p>
               </td>
-
-              <td className="px-3 py-3 text-right">
-                <QuotationViewAction quotation={quoteOf(payment)} />
-              </td>
             </tr>
-          ))}
+            );
+          })}
         </tbody>
       </table>
     </div>
@@ -99,8 +99,13 @@ function PaymentTable({ payments }) {
 }
 
 function PaymentCard({ payment }) {
+  const { className: linkClass = '', ...link } = useOpenQuotation()(payment.quoteId);
+
   return (
-    <div className="rounded-xl border border-slate-200 bg-white px-3 py-2.5">
+    <div
+      {...link}
+      className={`rounded-xl border border-slate-200 bg-white px-3 py-2.5 ${linkClass}`}
+    >
       <div className="flex items-baseline justify-between gap-3">
         <p className="font-data-mono text-data-mono min-w-0 truncate font-semibold text-on-surface">
           {payment.quoteNumber || '—'}
@@ -117,13 +122,10 @@ function PaymentCard({ payment }) {
         <PaymentStatusPill status={payment.status} />
       </div>
 
-      <div className="mt-1 flex items-center justify-between gap-3">
-        <p className="font-data-mono text-data-mono min-w-0 truncate text-on-surface-variant">
-          {payment.utrNo ? `UTR ${payment.utrNo}` : 'No UTR yet'}
-          {payment.proposalNumber && ` · ${payment.proposalNumber}`}
-        </p>
-        <QuotationViewAction quotation={quoteOf(payment)} className="-mr-2 shrink-0" />
-      </div>
+      <p className="font-data-mono text-data-mono mt-1 min-w-0 truncate text-on-surface-variant">
+        {payment.utrNo ? `UTR ${payment.utrNo}` : 'No UTR yet'}
+        {payment.proposalNumber && ` · ${payment.proposalNumber}`}
+      </p>
     </div>
   );
 }

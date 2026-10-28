@@ -13,7 +13,10 @@ const LABEL = 'text-[11px] font-semibold uppercase tracking-wider text-on-surfac
 const NOTE = 'block text-xs text-on-surface-variant';
 const PILL = 'inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold';
 
-const VALIDITY_TONE = { muted: 'text-on-surface-variant', warning: 'font-medium text-warning' };
+// Shown in place of a field the response did not send.
+const MISSING = '—';
+
+const VALIDITY_TONE ={ muted: 'text-on-surface-variant', warning: 'font-medium text-warning' };
 
 /** Border, tint and hover lift for one row; opacity is animated separately. */
 const rowClasses = ({ selected, expired }) =>
@@ -35,17 +38,15 @@ function Metric({ label, children }) {
 }
 
 /** One insurer response: identity and badges, premium / IDV / validity, then earning and actions. */
-function InsurerResponseCard({ row, index, dimmed, quoteDocument, onView, onSelect, selecting, busy }) {
+function InsurerResponseCard({ row, index, dimmed, onView, onSelect, selecting, busy }) {
   const { response, expired, isBest, premiumDelta, lowerIdv } = row;
-  const { insurerId, insurerName, insurerLogoUrl, insurerQuoteRef, premium, idv, validTill, isSelected, earning, extras } =
+  const { insurerName, insurerLogoUrl, insurerQuoteRef, premium, idv, validTill, isSelected, earning, extras } =
     response;
 
   // Drops the entrance stagger once the card has risen in.
   const [entered, setEntered] = useState(false);
 
   const validity = formatValidity(validTill);
-  // The uuid only stands in when there is neither a name nor a reference.
-  const reference = insurerQuoteRef ? `Ref ${insurerQuoteRef}` : !insurerName && insurerId;
 
   return (
     <motion.li
@@ -71,7 +72,7 @@ function InsurerResponseCard({ row, index, dimmed, quoteDocument, onView, onSele
           <InsurerLogo url={insurerLogoUrl} name={insurerName} />
           <div className="min-w-0">
             <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-              <p className="truncate text-[15px] font-semibold text-ink">{insurerName || 'Insurer'}</p>
+              <p className="truncate text-[15px] font-semibold text-ink">{insurerName ?? MISSING}</p>
               {isBest && (
                 <span className={`${PILL} bg-brand-tint text-brand ring-1 ring-brand/30`}>
                   <Star aria-hidden="true" className="size-3 fill-current" />
@@ -84,9 +85,9 @@ function InsurerResponseCard({ row, index, dimmed, quoteDocument, onView, onSele
                 </span>
               )}
             </div>
-            {reference && (
-              <p className="font-data-mono truncate text-xs text-on-surface-variant">{reference}</p>
-            )}
+            <p className="font-data-mono truncate text-xs text-on-surface-variant">
+              Ref {insurerQuoteRef ?? MISSING}
+            </p>
           </div>
         </div>
 
@@ -128,7 +129,6 @@ function InsurerResponseCard({ row, index, dimmed, quoteDocument, onView, onSele
         <EarningChip earning={earning} />
         <ResponseActions
           response={response}
-          quoteDocument={quoteDocument}
           expired={expired}
           onView={onView}
           onSelect={onSelect}

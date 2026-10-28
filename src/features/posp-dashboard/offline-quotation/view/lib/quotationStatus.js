@@ -108,12 +108,8 @@ export const statusStyle = (colorHex) => {
   };
 };
 
-/**
- * What to print on the pill: the server's label, else the code made readable
- * (`IN_REVIEW` → "In Review").
- */
-export const statusLabel = ({ statusLabel: label, statusCode } = {}) =>
-  label || humaniseCode(statusCode) || 'Unknown';
+/** What to print on the pill: the server's label as sent, or `—`. */
+export const statusLabel = ({ statusLabel: label } = {}) => label || '—';
 
 /* ── The toolbar's vocabulary ──────────────────────────────────────────── */
 
@@ -183,7 +179,8 @@ export const mergeStatuses = (known = SEEN_STATUSES, rows = []) => {
 
   for (const row of rows) {
     if (!row?.statusCode) continue;
-    byCode.set(row.statusCode, row.statusLabel || statusLabel(row));
+    // A filter option needs a name, so a code without a label is made readable here.
+    byCode.set(row.statusCode, row.statusLabel || humaniseCode(row.statusCode));
   }
 
   // Same identity back when nothing was learned. The caller holds this in state

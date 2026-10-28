@@ -1,19 +1,22 @@
 import { useEffect, useState } from 'react';
-import { fetchQuoteDocumentBlob } from '../api/quoteDocumentListApi';
+import { fetchDocBlob } from '../api/quoteDocumentListApi';
 
 /**
- * One quote document's bytes and its own object URL for them. Nothing is
- * fetched while `documentId` is null. The URL is revoked when the document
- * changes or the component unmounts.
+ * One document's bytes and its own object URL for them. A document with a
+ * `path` is fetched by path, otherwise by its id on the quote. Nothing is
+ * fetched while `doc` is null. The URL is revoked when the document changes
+ * or the component unmounts.
  *
  * The result is stored against the request it answers, so a result for a
  * previous document is never shown for the current one.
  */
-export function useDocumentBlob(quoteId, documentId) {
+export function useDocumentBlob(quoteId, doc) {
   const [attempt, setAttempt] = useState(0);
   const [result, setResult] = useState({ key: null, blob: null, url: null, error: null });
 
-  const key = quoteId && documentId ? `${quoteId}|${documentId}|${attempt}` : null;
+  const docId = doc?.id ?? null;
+  const docPath = doc?.path ?? null;
+  const key = docId && (docPath || quoteId) ? `${quoteId}|${docId}|${attempt}` : null;
 
   useEffect(() => {
     if (!key) return undefined;
@@ -21,7 +24,7 @@ export function useDocumentBlob(quoteId, documentId) {
     let url = null;
     let live = true;
 
-    fetchQuoteDocumentBlob(quoteId, documentId)
+    fetchDocBlob(quoteId, { id: docId, path: docPath })
       .then((blob) => {
         if (!live) return;
         url = URL.createObjectURL(blob);
@@ -35,7 +38,7 @@ export function useDocumentBlob(quoteId, documentId) {
       live = false;
       if (url) URL.revokeObjectURL(url);
     };
-  }, [key, quoteId, documentId]);
+  }, [key, quoteId, docId, docPath]);
 
   const current = key !== null && result.key === key;
 

@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { getFieldComponent, isValuelessControl } from './fields/registry';
 import { resolveVisibleSections } from '../lib/visibleSections';
+import { toFieldCells } from '../lib/fieldCells';
 import { useLookupState } from '../hooks/useLookupOptions';
 
 const WIDE_CONTROLS = new Set(['textarea', 'multiselect', 'radio', 'label']);
@@ -36,6 +37,39 @@ function DynamicForm({
   const requiredFields = new Set(directives?.requiredFields ?? []);
   const disabledFields = new Set(directives?.disabledFields ?? []);
 
+  const renderField = (field) => {
+    const Component = getFieldComponent(field.control);
+    const valueless = isValuelessControl(field.control);
+    const lookupState = field.lookupSource ? resolvedStatus[field.code] : null;
+
+    const resolved = {
+      ...field,
+      required: field.required || requiredFields.has(field.code),
+      options: field.lookupSource
+        ? (resolvedLookups[field.code] ?? field.options)
+        : field.options,
+      loading: lookupState === 'loading',
+      loadError: lookupState === 'error',
+    };
+
+    return (
+      <Component
+        key={field.code}
+        field={resolved}
+        value={valueless ? undefined : values[field.code]}
+        error={errors[field.code]}
+        disabled={disabledFields.has(field.code)}
+        onChange={(next) => onChange?.(field.code, next)}
+        onBlur={() => onBlur?.(field.code)}
+        onRetry={
+          lookupState === 'error' && retryLookup
+            ? () => retryLookup(field.code)
+            : undefined
+        }
+      />
+    );
+  };
+
   return (
     <div className="flex flex-col gap-gutter">
       {visibleSections.map((section) => (
@@ -54,42 +88,15 @@ function DynamicForm({
                 : 'grid gap-gutter sm:grid-cols-2'
             }
           >
-            {section.fields.map((field) => {
-              const Component = getFieldComponent(field.control);
-              const valueless = isValuelessControl(field.control);
-              const lookupState = field.lookupSource ? resolvedStatus[field.code] : null;
-
-              const resolved = {
-                ...field,
-                required: field.required || requiredFields.has(field.code),
-                options: field.lookupSource
-                  ? (resolvedLookups[field.code] ?? field.options)
-                  : field.options,
-                loading: lookupState === 'loading',
-                loadError: lookupState === 'error',
-              };
-
-              return (
-                <div
-                  key={field.code}
-                  className={WIDE_CONTROLS.has(field.control) ? 'sm:col-span-2' : ''}
-                >
-                  <Component
-                    field={resolved}
-                    value={valueless ? undefined : values[field.code]}
-                    error={errors[field.code]}
-                    disabled={disabledFields.has(field.code)}
-                    onChange={(next) => onChange?.(field.code, next)}
-                    onBlur={() => onBlur?.(field.code)}
-                    onRetry={
-                      lookupState === 'error' && retryLookup
-                        ? () => retryLookup(field.code)
-                        : undefined
-                    }
-                  />
-                </div>
-              );
-            })}
+            {toFieldCells(section.fields).map(({ field, attached }) => (
+              <div
+                key={field.code}
+                className={`flex flex-col gap-3 ${WIDE_CONTROLS.has(field.control) ? 'sm:col-span-2' : ''}`}
+              >
+                {renderField(field)}
+                {attached.map(renderField)}
+              </div>
+            ))}
           </div>
         </section>
       ))}

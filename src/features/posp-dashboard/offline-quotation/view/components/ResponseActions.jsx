@@ -21,10 +21,9 @@ function DrawnCheck() {
   );
 }
 
-/** "View quote" and "Select policy" for one response, or the "Selected" pill once chosen. */
+/** "View quote document" and "Select policy" for one response, or the "Selected" pill once chosen. */
 function ResponseActions({
   response,
-  quoteDocument,
   expired,
   onView,
   onSelect,
@@ -42,11 +41,9 @@ function ResponseActions({
           size="md"
           leftIcon={<FileText />}
           className="flex-1 md:flex-none"
-          disabled={!quoteDocument}
-          title={quoteDocument ? undefined : 'The quote document is not available yet'}
           onClick={onView}
         >
-          View quote
+          View quote document
         </CustomButton>
       )}
 

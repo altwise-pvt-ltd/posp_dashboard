@@ -85,10 +85,6 @@ export function rankResponses(responses, sortKey = DEFAULT_SORT) {
 export const hasEarningPoints = (earning) =>
   earning?.points != null && earning.status !== 'NO_GRID';
 
-/** The stored document whose `filePath` is this response's `quoteDocPath`, or null. */
-export const findQuoteDocument = (documents, path) =>
-  (path && documents.find((doc) => doc.filePath === path)) || null;
-
 /** "Insurer quote" for the preview header, with the insurer's name when known. */
 export const quoteDocumentLabel = (response) =>
   response.insurerName ? `${response.insurerName} quote` : 'Insurer quote';

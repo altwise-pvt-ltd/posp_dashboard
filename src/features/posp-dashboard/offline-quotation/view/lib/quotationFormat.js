@@ -5,14 +5,11 @@
 
 import { daysUntil, formatCurrency, formatDate } from '@/shared/lib/format';
 
-/**
- * A quote's sum insured. `—` when a draft has not been priced.
- *
- * ⚠ Sum insured, not premium. The queue carries no premium at all, and the two
- * are nowhere near each other in size — labelling this one "Premium" would put
- * a ₹5,00,000 cover where an agent expects a ₹14,250 bill.
- */
+/** A quote's sum insured, or `—` when the server sent none. */
 export const formatSumInsured = formatCurrency;
+
+/** The selected offer's premium, or `—` when no offer is selected. */
+export const formatPremium = formatCurrency;
 
 /**
  * "Motor · Two Wheeler" — the line of business and the product under it.
@@ -23,12 +20,6 @@ export const formatSumInsured = formatCurrency;
  */
 export const formatProduct = (row) =>
   [row?.lob, row?.product].filter(Boolean).join(' · ') || '—';
-
-/**
- * "Motor" — the line of business alone, for the list's rows and cards. The
- * product under it is left to the detail page.
- */
-export const formatLob = (row) => row?.lob || '—';
 
 /**
  * How long this quote has been sitting — "today", "yesterday", "13 days old".
