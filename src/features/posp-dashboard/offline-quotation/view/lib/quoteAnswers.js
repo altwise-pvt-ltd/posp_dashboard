@@ -1,23 +1,10 @@
 import { formatDate } from '@/shared/lib/format';
-import { humaniseCode } from '../../lib/normalize';
+import { humaniseCode } from '@/features/posp-dashboard/offline-quotation/lib/normalize';
 
-/**
- * The answers on a quote, read through the form they were given on.
- *
- * `GET /quote/<id>` returns `values: [{ fieldCode, rowIndex, value }]` — codes
- * and strings, with no labels and no order. `GET /quote/metadata` returns the
- * questions. This module is the join: it walks the metadata's sections in their
- * published order and pulls each field's answer out of the values list, so the
- * detail page reads as the filled-in form rather than a dump of field codes.
- *
- * Going through `buildQuoteSections` (the same function the create wizard
- * builds its screens from) rather than metadata's raw `sections` is what makes
- * add-ons and documents come out labelled too — they are folded in there as
- * ordinary fields, so `ZERO_DEP` arrives as a checkbox called "Zero
- * Depreciation" instead of falling out the bottom as an unrecognised code.
- */
+// Joins a quote's stored values ({ fieldCode, rowIndex, value }) with the form sections,
+// so answers get labels and appear in form order.
 
-/** `"true"` / `"false"` arrive as strings — every value in the list does. */
+/** Every stored value is a string, booleans included. */
 const BOOLEAN = { true: 'Yes', false: 'No' };
 
 /** The label for one option value, or the value itself when there is no match. */
@@ -25,19 +12,8 @@ const optionText = (field, value) =>
   field.options?.find((option) => String(option.value) === String(value))?.text ?? value;
 
 /**
- * One answer as something a person reads, or null when there is nothing to
- * read.
- *
- * Null and `''` both mean unanswered. They are not the same event — one field
- * was never sent, the other was sent empty — but they say the same thing to
- * someone reading the quote back, and a page of "—" is not a page.
- *
- * Values from a `lookupSource` field (MAKE, MODEL, VARIANT, RTO_CODE) come
- * through as the stored code, because their option lists arrive empty on the
- * metadata reply and are fetched per-field from `/quote/lookup` only once a
- * parent answer exists. Resolving them here would mean a request per field on
- * every quote opened; `KOENINSEGG_AGERA` is at least the value the quote
- * actually holds.
+ * One answer as display text, or null when blank. Lookup fields (MAKE, MODEL, ...) show
+ * the stored code, since their options are only fetched per field from `/quote/lookup`.
  */
 function answerText(field, raw) {
   if (raw === null || raw === undefined) return null;
@@ -76,18 +52,7 @@ function answerText(field, raw) {
   }
 }
 
-/**
- * Indian digit grouping, but only once a number is long enough to need it.
- *
- * The threshold is what stops `MFG_YEAR` rendering as "2,020". Years, PIN
- * codes, CC figures and NCB percentages all come through the same `number`
- * control as a sum insured does, and nothing on the field says which is which —
- * so the number itself decides: five digits or more is a quantity worth
- * grouping, four or fewer is almost always an identifier or a small count.
- *
- * The cost is that a four-digit amount reads "9500" rather than "9,500". That
- * is plain where the other is wrong, which is the right way round.
- */
+/** Indian digit grouping from five digits up, so years and short codes stay ungrouped. */
 const groupDigits = (value) => {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return value;
@@ -95,22 +60,7 @@ const groupDigits = (value) => {
   return Math.abs(parsed) >= 10000 ? parsed.toLocaleString('en-IN') : String(parsed);
 };
 
-/**
- * What an answer looks like when there is no field to describe it.
- *
- * Only one inference is made: every value in this API is a string, booleans
- * included, so `"true"` is read as a tick-box. That one is unambiguous and it
- * is the difference between "Zero Dep: Yes" and "Zero Dep: true".
- *
- * Digits are deliberately *not* inferred as a quantity. A bare run of digits
- * here is as likely to be a mobile number, an Aadhaar or a PIN as an amount,
- * and grouping one of those produces "8,45,91,32,835" — visibly wrong, where
- * an ungrouped amount is merely plain. With no field to say which it is, the
- * value is left exactly as stored.
- *
- * Inferring at all is only safe here. A real text field whose answer happens to
- * be the word "true" keeps it, because that field says what it is.
- */
+/** A stand-in field for an answer with no metadata: "true"/"false" as a checkbox, else plain text. */
 const inferField = (value) => {
   const raw = String(value).trim().toLowerCase();
 
@@ -119,13 +69,7 @@ const inferField = (value) => {
     : { control: 'text', options: [] };
 };
 
-/**
- * Index the answers by field, then by row.
- *
- * Two levels because a repeatable section stores its second entry under
- * `rowIndex: 1`. Flattening to one answer per code would render the first and
- * lose the rest without saying so.
- */
+/** Indexes answers by field code, then by rowIndex (repeatable sections use rows above 0). */
 const indexValues = (values = []) => {
   const byField = new Map();
 
@@ -139,19 +83,8 @@ const indexValues = (values = []) => {
 };
 
 /**
- * The view model the detail page renders.
- *
- *   sections — only those with at least one answer, in metadata order, each
- *              holding one `row` per `rowIndex` that carried anything
- *   orphans  — answers whose field code is in no section at all
- *
- * Blank answers are left out of both.
- *
- * `orphans` is not a defensive flourish. The metadata is fetched for the
- * product *as it is published today*, and the quote was answered against it as
- * it stood whenever it was raised — a question since removed still has its
- * answer stored, and dropping it silently would quietly rewrite what the agent
- * submitted.
+ * Answered sections in metadata order (one row per rowIndex), plus orphans: answers
+ * whose field is no longer in the metadata. Blank answers are skipped.
  */
 export function buildAnswerView(sections = [], values = []) {
   const byField = indexValues(values);
@@ -162,8 +95,7 @@ export function buildAnswerView(sections = [], values = []) {
   for (const section of sections) {
     const fields = section.fields ?? [];
 
-    // Which rows this section actually has answers for. Almost always just
-    // row 0; a repeatable section is the reason this is a set.
+    // Row indexes this section has answers for.
     const indexes = new Set();
     for (const field of fields) {
       for (const index of byField.get(field.code)?.keys() ?? []) indexes.add(index);
@@ -178,7 +110,7 @@ export function buildAnswerView(sections = [], values = []) {
         if (!byField.has(field.code)) continue;
         claimed.add(field.code);
 
-        // Uploaded files are shown by the documents panel, with previews.
+        // File answers are skipped; documents are listed separately.
         if (field.control === 'file') continue;
 
         const text = answerText(field, byField.get(field.code).get(index));
@@ -210,16 +142,8 @@ export function buildAnswerView(sections = [], values = []) {
 }
 
 /**
- * The stored answers as the form's own values, ready to seed the edit mode.
- *
- * The inverse of `buildDraftValues`: every value arrives as a string, and each
- * control wants its own shape back — a tick-box a boolean, a multiselect an
- * array. Anything else stays the string it was stored as.
- *
- * Only row 0. The form edits one entry per section, and a repeatable section's
- * later rows have nowhere to go on it.
- *
- * File fields are left out: their uploads are seeded by `storedDocumentValues`.
+ * Stored answers (row 0 only) turned back into form values for editing: checkboxes to
+ * booleans, multiselects to arrays. File fields come from `storedDocumentValues`.
  */
 export function storedFormValues(sections = [], values = []) {
   const byField = indexValues(values);
@@ -240,8 +164,7 @@ export function storedFormValues(sections = [], values = []) {
           seeded[field.code] = value.trim().toLowerCase() === 'true';
           break;
 
-        // Mapped back onto the option's own value, which may be a number —
-        // the control ticks a box by strict equality with it.
+        // Map each entry back to the option's own value, which may be a number.
         case 'multiselect':
           seeded[field.code] = value
             .split(',')

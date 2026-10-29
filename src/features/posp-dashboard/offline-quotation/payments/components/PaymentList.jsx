@@ -1,6 +1,7 @@
 import { formatCurrencyPreserve, formatDate } from '@/shared/lib/format';
-import { useOpenQuotation } from '../../view/hooks/useOpenQuotation';
-import { formatMethod, formatPayee, paymentStatusMeta } from '../../lib/paymentFormat';
+import QuoteLink from '@/features/posp-dashboard/offline-quotation/components/QuoteLink';
+import { useOpenQuotation } from '@/features/posp-dashboard/offline-quotation/hooks/useOpenQuotation';
+import { formatMethod, formatPayee, paymentStatusMeta } from '@/features/posp-dashboard/offline-quotation/lib/paymentFormat';
 
 function PaymentStatusPill({ status }) {
   const { label, pill } = paymentStatusMeta(status);
@@ -14,7 +15,6 @@ function PaymentStatusPill({ status }) {
   );
 }
 
-/** Index 3 is Amount — its header follows the figures right. */
 const HEADINGS = ['Quote', 'Proposal', 'Method', 'Amount', 'Status', 'Paid on'];
 
 function PaymentTable({ payments }) {
@@ -52,9 +52,12 @@ function PaymentTable({ payments }) {
               className={`border-b border-hairline-soft transition-colors last:border-0 hover:bg-well/70 ${linkClass}`}
             >
               <td className="px-3 py-3">
-                <span className="font-data-mono text-data-mono font-semibold text-on-surface">
+                <QuoteLink
+                  quoteId={payment.quoteId}
+                  className="font-data-mono text-data-mono font-semibold text-on-surface"
+                >
                   {payment.quoteNumber || '—'}
-                </span>
+                </QuoteLink>
                 <p className="font-body-md text-body-md text-on-surface-variant">
                   To {formatPayee(payment.payee)}
                 </p>
@@ -108,7 +111,7 @@ function PaymentCard({ payment }) {
     >
       <div className="flex items-baseline justify-between gap-3">
         <p className="font-data-mono text-data-mono min-w-0 truncate font-semibold text-on-surface">
-          {payment.quoteNumber || '—'}
+          <QuoteLink quoteId={payment.quoteId}>{payment.quoteNumber || '—'}</QuoteLink>
         </p>
         <p className="font-data-currency text-data-currency shrink-0 text-on-surface">
           {formatCurrencyPreserve(payment.amount)}
@@ -130,7 +133,6 @@ function PaymentCard({ payment }) {
   );
 }
 
-/** Cards below `md`, the table from `md` up — the same split as QuotationList. */
 function PaymentList({ payments }) {
   return (
     <>

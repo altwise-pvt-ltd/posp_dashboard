@@ -1,16 +1,7 @@
 import { ArrowLeft } from 'lucide-react';
 import CustomButton from '@/shared/components/CustomButton';
 
-/**
- * `backLabel` exists because the button does not always mean "one step back".
- * On the first section of the form it leaves the form altogether and throws
- * every answer away, so it names its destination instead of a direction.
- *
- * `tone` colours the message and decides how it reaches a screen reader. Only
- * the two loud tones announce themselves: the quiet default is a running
- * commentary on the step ("6 questions in this section") that would be read out
- * on every move for no gain, while a failed save or a stored draft is news.
- */
+// Only error and success messages are announced to screen readers.
 const TONES = {
   default: 'text-on-surface-variant',
   error: 'text-red-500',
@@ -25,9 +16,13 @@ function QuoteWizardFooter({
   backVariant = 'secondary',
   backDisabled = false,
   children,
+  ref,
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-unit border-t border-hairline pt-gutter">
+    <div
+      ref={ref}
+      className="flex flex-wrap items-center gap-unit border-t border-hairline pt-gutter"
+    >
       {onBack && (
         <CustomButton
           variant={backVariant}
@@ -40,7 +35,6 @@ function QuoteWizardFooter({
         </CustomButton>
       )}
 
-      {/* Own row above the buttons on mobile, between them from md up */}
       <p
         role={tone === 'error' ? 'alert' : tone === 'success' ? 'status' : undefined}
         aria-live={tone === 'default' ? undefined : 'polite'}

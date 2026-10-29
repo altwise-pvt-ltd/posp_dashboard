@@ -43,6 +43,9 @@ coverage
 *.sw?
 
 
+# Local code review reports
+code-review-*.txt
+
 # Windows OS files
 Thumbs.db
 ehthumbs.db

@@ -1,8 +1,8 @@
 import { RefreshCw } from 'lucide-react';
 import AppLink from '@/shared/components/AppLink';
-import LobIcon from '@/features/posp-dashboard/offline-quotation/components/LobIcon';
-import { useCatalogImage } from '@/features/posp-dashboard/offline-quotation/hooks/useCatalogImage';
-import { useQuoteCatalog } from '@/features/posp-dashboard/offline-quotation/hooks/useQuoteCatalog';
+import LobIcon from '@/shared/components/LobIcon';
+import { useCatalogImage } from '@/shared/hooks/useCatalogImage';
+import { useQuoteCatalog } from '@/shared/hooks/useQuoteCatalog';
 
 const CREATE_QUOTE_PATH = '/offline-quotation/create';
 
@@ -182,11 +182,19 @@ function BentoTile({ lob, index, variant, placement = '' }) {
   const names = tall ? productNames(lob) : '';
   const image = useCatalogImage(lob.imageUrl);
 
-  // With an image, the text sits at the bottom over the fade.
+  // With an image, tall tiles put the text at the bottom and short tiles put it on the left.
   let layout =
     'items-center gap-2.5 max-[399px]:flex-col max-[399px]:items-start max-[399px]:justify-between max-[399px]:gap-0';
-  if (image) layout = 'flex-col justify-end';
+  if (image) layout = tall ? 'flex-col justify-end' : 'flex-col justify-center';
   else if (tall) layout = 'flex-col justify-between';
+
+  // The image shrinks to fit instead of cropping: top part on tall tiles, right half on short ones.
+  const imageFit = tall
+    ? 'inset-x-0 top-0 h-3/4 w-full object-contain object-top'
+    : 'inset-y-0 right-0 h-full w-1/2 object-contain object-right';
+  const fadeDirection = tall ? 'bg-linear-to-t' : 'bg-linear-to-r';
+  // Half the content box ends where the image box starts; the padding keeps a small gap.
+  const textWidth = image && !tall ? 'max-w-1/2 pr-2' : '';
 
   return (
     <AppLink
@@ -200,11 +208,11 @@ function BentoTile({ lob, index, variant, placement = '' }) {
           <img
             src={image}
             alt=""
-            className="pointer-events-none absolute inset-0 -z-20 size-full object-cover object-top"
+            className={`pointer-events-none absolute -z-20 ${imageFit}`}
           />
           <span
             aria-hidden="true"
-            className={`pointer-events-none absolute inset-0 -z-10 bg-linear-to-t from-15% via-40% to-70% ${tint.fade}`}
+            className={`pointer-events-none absolute inset-0 -z-10 ${fadeDirection} from-15% via-40% to-70% ${tint.fade}`}
           />
         </>
       ) : (
@@ -221,7 +229,7 @@ function BentoTile({ lob, index, variant, placement = '' }) {
         </>
       )}
 
-      <span className="flex min-w-0 flex-col">
+      <span className={`flex min-w-0 flex-col ${textWidth}`}>
         <span
           className={`line-clamp-2 wrap-break-word font-semibold text-on-surface ${
             tall ? 'font-body-lg text-body-lg' : 'font-body-md text-body-md'

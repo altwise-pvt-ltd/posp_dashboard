@@ -2,17 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { documentKey, pendingDocuments, uploadQuoteDocument } from '../api/quoteDocumentsApi';
 import { saveQuoteDraft } from '../api/quoteDraftApi';
 
-/**
- * Saving a quote is two calls, not one: the answers go to `/quote/draft`, and
- * only the uuid that comes back can address `/quote/<id>/documents`. So the
- * files cannot be sent in parallel with the draft — they are sent after it, and
- * a draft that fails takes the uploads with it.
- *
- * The phases below are what the footer and the button read. `partial` is the
- * one worth naming: the answers are stored and some file is not, which is
- * neither a success to celebrate nor a failure to re-save over. It offers to
- * retry the uploads alone, against the quote that already exists.
- */
+// Saves the answers to /quote/draft, then uploads documents to the returned quote id.
+// `partial` means the answers are stored but some uploads failed; those can be retried alone.
 const IDLE = { phase: 'idle', draft: null, error: '', uploads: null };
 
 const message = (error, fallback) => error?.message || fallback;
@@ -20,13 +11,7 @@ const message = (error, fallback) => error?.message || fallback;
 export function useQuoteDraft({ quoteId = null, productId, subProductId }) {
   const [state, setState] = useState(IDLE);
 
-  /**
-   * One token for both questions a late reply has to answer: has this component
-   * gone, and has the run it belongs to been superseded? Every settle checks it,
-   * and `reset` bumps it — so an edit made mid-flight retires the save in
-   * progress instead of letting it report success over answers the server never
-   * saw.
-   */
+  // Run token: bumped on unmount, new save and reset, so a late reply from an old run is ignored.
   const runRef = useRef(0);
 
   useEffect(() => {
@@ -36,10 +21,13 @@ export function useQuoteDraft({ quoteId = null, productId, subProductId }) {
     };
   }, []);
 
-  // Files already accepted, keyed by quote *and* file, so a second save doesn't
-  // upload the same bytes again while a new quote still gets its own copies.
+  // Files already uploaded, keyed by quote and file, so a re-save skips them.
   const uploadedRef = useRef(new Set());
   const draftRef = useRef(null);
+
+  // Id from the first save; later saves send it to update that quote instead of creating another.
+  const savedIdRef = useRef(null);
+  const pendingRef = useRef(null);
 
   const runUploads = useCallback(async (token, draft, fields, values) => {
     const settle = (next) => {
@@ -57,8 +45,7 @@ export function useQuoteDraft({ quoteId = null, productId, subProductId }) {
       return;
     }
 
-    // Nothing to address the upload to. The answers are stored, so this is not
-    // a failed save -- it is a saved quote whose files have nowhere to go.
+    // Saved but no quote id came back, so the files have nowhere to upload.
     if (!draft.id) {
       settle({
         phase: 'partial',
@@ -90,8 +77,7 @@ export function useQuoteDraft({ quoteId = null, productId, subProductId }) {
       return;
     }
 
-    // One at a time: a counter that says "2 of 3" has to mean it, and a stack of
-    // parallel uploads on a phone connection is how the last one times out.
+    // Upload one file at a time.
     for (const entry of queue) {
       try {
         await uploadQuoteDocument({ quoteId: draft.id, code: entry.code, file: entry.file });
@@ -127,10 +113,27 @@ export function useQuoteDraft({ quoteId = null, productId, subProductId }) {
 
       setState({ phase: 'saving', draft: null, error: '', uploads: null });
 
+      // Wait for an earlier save still in flight, so its quote id is known.
+      if (!savedIdRef.current && pendingRef.current) {
+        await pendingRef.current.catch(() => {});
+        if (runRef.current !== token) return;
+      }
+
+      const id = savedIdRef.current || quoteId;
+
+      // The id is kept even if this run is superseded by an edit.
+      const request = saveQuoteDraft({ quoteId: id, productId, subProductId, fields, values }).then(
+        (result) => {
+          if (result.id) savedIdRef.current = result.id;
+          return result;
+        }
+      );
+      pendingRef.current = request;
+
       let draft;
 
       try {
-        draft = await saveQuoteDraft({ quoteId, productId, subProductId, fields, values });
+        draft = await request;
       } catch (error) {
         if (runRef.current === token) {
           setState({
@@ -145,9 +148,8 @@ export function useQuoteDraft({ quoteId = null, productId, subProductId }) {
 
       if (runRef.current !== token) return;
 
-      // An update may answer without the uuid; the quote being edited is the
-      // one any documents belong to, so it stands in.
-      if (quoteId && !draft.id) draft = { ...draft, id: quoteId };
+      // ⚠ Unconfirmed whether an update reply includes the id; fall back to the one sent.
+      if (id && !draft.id) draft = { ...draft, id };
 
       draftRef.current = draft;
       await runUploads(token, draft, fields, values);
@@ -155,11 +157,7 @@ export function useQuoteDraft({ quoteId = null, productId, subProductId }) {
     [quoteId, productId, subProductId, runUploads]
   );
 
-  /**
-   * Retry the files only, against the quote already stored. The answers are not
-   * re-posted: they are saved, and a second POST to `/quote/draft` may well open
-   * a second quote rather than update the first.
-   */
+  // Retry the files only, against the quote already stored.
   const retryUploads = useCallback(
     async (fields, values) => {
       const draft = draftRef.current;
@@ -171,11 +169,7 @@ export function useQuoteDraft({ quoteId = null, productId, subProductId }) {
     [runUploads]
   );
 
-  /**
-   * The form has changed, so whatever is on screen is no longer what was saved.
-   * The stored draft stays on the server and `uploadedRef` keeps its record of
-   * what reached it -- only the claim being made to the user is withdrawn.
-   */
+  // Called on edit: cancels any run and clears the saved state; uploaded files stay recorded.
   const reset = useCallback(() => {
     runRef.current += 1;
     setState((prev) => (prev.phase === 'idle' ? prev : IDLE));

@@ -2,7 +2,7 @@ import { Loader2, PackageOpen, RefreshCw, TriangleAlert } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import DashboardLayout from '@/shared/layouts/DashboardLayout';
 import CustomButton from '@/shared/components/CustomButton';
-import { useQuoteCatalog } from '../hooks/useQuoteCatalog';
+import { useQuoteCatalog } from '@/shared/hooks/useQuoteCatalog';
 import QuoteNotice from '../components/QuoteNotice';
 import QuoteWizard from '../components/QuoteWizard';
 

@@ -1,11 +1,8 @@
 import { api, unwrap } from '@/shared/api/client';
 import { ENDPOINTS } from '@/shared/api/endpoints';
-import { text } from '../../lib/normalize';
+import { text } from '@/features/posp-dashboard/offline-quotation/lib/normalize';
 
-/**
- * The documents stored on one quote — `GET /quote/<quoteId>/documents` — and
- * the bytes behind each one.
- */
+// GET /quote/<quoteId>/documents, plus the file bytes behind each one.
 
 const normalizeDocument = (entry = {}) => ({
   id: text(entry.id),
@@ -26,11 +23,7 @@ export async function fetchQuoteDocuments(quoteId, { signal } = {}) {
   return Array.isArray(data) ? data.map(normalizeDocument).filter((doc) => doc.id) : [];
 }
 
-/**
- * The file as a Blob, shared between the thumbnail and the preview so each
- * document is downloaded once. A failed request is dropped from the cache so
- * it can be retried.
- */
+// Blob requests cached per document so each is downloaded once; failures are dropped so they can retry.
 const blobRequests = new Map();
 
 // Past this the oldest entry is dropped; a dropped document is fetched again.
@@ -51,6 +44,7 @@ function cachedBlob(key, url) {
   return request;
 }
 
+// ⚠ The /quote/<quoteId>/documents/<docId> file route was probed, not confirmed.
 export const fetchQuoteDocumentBlob = (quoteId, documentId) =>
   cachedBlob(`${quoteId}|${documentId}`, ENDPOINTS.quotation.documentFile(quoteId, documentId));
 

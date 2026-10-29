@@ -1,13 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { fetchQuoteDocuments } from '../api/quoteDocumentListApi';
 
-/**
- * The documents stored on one quote. The last good list stays on screen while
- * a refresh is in flight.
- */
+// Loads a quote's documents. The last good list is kept while the same quote
+// refreshes, but never shown under a different quote.
 export function useQuoteDocuments(quoteId) {
   const [attempt, setAttempt] = useState(0);
-  const [documents, setDocuments] = useState([]);
+  const [loaded, setLoaded] = useState({ quoteId: null, documents: [] });
   const [settled, setSettled] = useState({ key: null, error: null });
 
   const key = quoteId ? `${quoteId}|${attempt}` : null;
@@ -21,7 +19,7 @@ export function useQuoteDocuments(quoteId) {
     fetchQuoteDocuments(quoteId, { signal })
       .then((result) => {
         if (signal.aborted) return;
-        setDocuments(result);
+        setLoaded({ quoteId, documents: result });
         setSettled({ key, error: null });
       })
       .catch((error) => {
@@ -36,7 +34,7 @@ export function useQuoteDocuments(quoteId) {
   const current = settled.key === key;
 
   return {
-    documents,
+    documents: loaded.quoteId === quoteId ? loaded.documents : [],
     loading: key !== null && !current,
     error: current ? settled.error : null,
     refresh,

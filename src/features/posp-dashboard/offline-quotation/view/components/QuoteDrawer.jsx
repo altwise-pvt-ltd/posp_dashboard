@@ -2,47 +2,25 @@ import { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, X } from 'lucide-react';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
+import { useScrollLock } from '@/shared/hooks/useScrollLock';
 
-/* Counted so one drawer closing while the next opens doesn't unlock the page. */
-let locks = 0;
-let savedOverflow = '';
-
-const lockScroll = () => {
-  if (locks === 0) {
-    savedOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-  }
-  locks += 1;
-};
-
-const unlockScroll = () => {
-  locks = Math.max(0, locks - 1);
-  if (locks === 0) document.body.style.overflow = savedOverflow;
-};
-
-/**
- * Right-hand drawer frame for the quote detail page. Render it inside an
- * `AnimatePresence` so it can animate out.
- */
+// Render inside AnimatePresence so the exit animation runs.
 function QuoteDrawer({ title, reference, onClose, onBack, footer, children, labelId }) {
   const closeRef = useRef(null);
   const panelRef = useRef(null);
 
   useFocusTrap(panelRef);
+  useScrollLock();
 
   useEffect(() => {
     const onKeyDown = (event) => {
       if (event.key === 'Escape') onClose();
     };
 
-    lockScroll();
     document.addEventListener('keydown', onKeyDown);
     closeRef.current?.focus();
 
-    return () => {
-      unlockScroll();
-      document.removeEventListener('keydown', onKeyDown);
-    };
+    return () => document.removeEventListener('keydown', onKeyDown);
   }, [onClose]);
 
   return (

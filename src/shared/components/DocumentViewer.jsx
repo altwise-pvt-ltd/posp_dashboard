@@ -1,53 +1,15 @@
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { ExternalLink, FileText, X } from "lucide-react";
-import { useMatchMedia, MOBILE_QUERY } from "@/shared/hooks/useMatchMedia";
-
-/** Shows an image or PDF from a URL. Android Chrome can't render a PDF in an iframe, so phones get a link out. */
-function Stage({ url, type, title, isMobile }) {
-  if (type?.startsWith("image/")) {
-    return (
-      <motion.img
-        key={url}
-        src={url}
-        alt={title}
-        draggable={false}
-        initial={{ opacity: 0, scale: 0.98 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.2 }}
-        className="max-h-full max-w-full rounded-md object-contain shadow-2xl"
-      />
-    );
-  }
-
-  if (type === "application/pdf" && !isMobile) {
-    return <iframe src={url} title={title} className="size-full max-w-5xl rounded-lg bg-white shadow-2xl" />;
-  }
-
-  return (
-    <div className="flex flex-col items-center gap-4 text-center text-white/80">
-      <FileText className="size-10" aria-hidden="true" />
-      <p className="text-sm">This file opens in your phone's viewer.</p>
-      <a
-        href={url}
-        target="_blank"
-        rel="noreferrer"
-        className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-medium text-slate-900 transition-colors hover:bg-white/90"
-      >
-        <ExternalLink className="size-4" aria-hidden="true" />
-        Open file
-      </a>
-    </div>
-  );
-}
+import { X } from "lucide-react";
+import DocumentStage from "@/shared/components/DocumentStage";
+import { documentKind } from "@/shared/lib/documentKind";
 
 /**
  * Full-screen view of one uploaded document. Open while `url` is set.
  * `type` is the file's MIME type.
  */
 export default function DocumentViewer({ url, type, title, onClose }) {
-  const isMobile = useMatchMedia(MOBILE_QUERY);
   const open = Boolean(url);
 
   useEffect(() => {
@@ -102,7 +64,7 @@ export default function DocumentViewer({ url, type, title, onClose }) {
             className="relative flex min-h-0 flex-1 items-center justify-center px-4 pb-4 sm:px-20"
             onClick={(event) => event.target === event.currentTarget && onClose()}
           >
-            <Stage url={url} type={type} title={title} isMobile={isMobile} />
+            <DocumentStage url={url} kind={documentKind(type)} title={title} />
           </div>
         </motion.div>
       )}

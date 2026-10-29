@@ -3,11 +3,8 @@ import { fetchPaymentInstruction } from '../api/paymentInstructionApi';
 import { hasPaymentInstruction } from '../lib/quotationStatus';
 
 /**
- * The payment instruction on one quote. Only fetched once the quote's own
- * status is `PROPOSAL_CREATED`; every other state makes no request.
- *
- * `instruction` stays null both before the RM publishes one and when the
- * request fails; the page only offers the drawer when it is set.
+ * Fetches the payment instruction once the quote is PROPOSAL_CREATED.
+ * Stays null until the RM publishes one, and on any failure.
  */
 export function usePaymentInstruction(quoteId, statusCode) {
   const target = hasPaymentInstruction(statusCode) && quoteId ? quoteId : null;

@@ -1,7 +1,4 @@
-/**
- * Display formatting for the queue rows and the detail page. Generic money and
- * date formatting lives in `@/shared/lib/format`.
- */
+// Formatting for the quote queue and detail page.
 
 import { daysUntil, formatCurrency, formatDate } from '@/shared/lib/format';
 
@@ -11,27 +8,10 @@ export const formatSumInsured = formatCurrency;
 /** The selected offer's premium, or `—` when no offer is selected. */
 export const formatPremium = formatCurrency;
 
-/**
- * "Motor · Two Wheeler" — the line of business and the product under it.
- *
- * Joined here so a row missing either side doesn't render a dangling
- * separator, and returns `—` rather than an empty cell when it has neither:
- * a blank table cell reads as a rendering fault, an em dash reads as no answer.
- */
+/** "Motor · Two Wheeler" from line of business and product; `—` when both are missing. */
 export const formatProduct = (row) =>
   [row?.lob, row?.product].filter(Boolean).join(' · ') || '—';
 
-/**
- * How long this quote has been sitting — "today", "yesterday", "13 days old".
- *
- * `ageDays` is computed server-side, which is the right place for it: the
- * client's clock can be wrong and its timezone usually is, and every row in a
- * queue is being compared against every other one.
- *
- * Age rather than only the date because this is a *queue*. "10 Sep 2026" needs
- * arithmetic before it means anything; "13 days old" is the fact the agent is
- * actually sorting on.
- */
 // A string with a non-midnight clock part, e.g. "2026-10-16T14:41:00".
 const hasClockTime = (value) =>
   typeof value === 'string' && /T\d{2}:\d{2}/.test(value) && !/T00:00(:00(\.0+)?)?(Z|[+-]00:?00)?$/.test(value);
@@ -48,6 +28,7 @@ export const formatDateTime = (value) => {
 /** True when the value parses as a date. */
 export const hasDate = (value) => Boolean(value) && !Number.isNaN(new Date(value).getTime());
 
+/** A quote's age in days as "today", "yesterday" or "13 days old"; null when invalid. */
 export const formatAge = (days) => {
   if (!Number.isFinite(days) || days < 0) return null;
   if (days === 0) return 'today';

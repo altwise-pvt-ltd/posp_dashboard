@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { MotionConfig } from 'framer-motion';
 import { Inbox, Loader2, RefreshCw, TriangleAlert } from 'lucide-react';
 import CustomButton from '@/shared/components/CustomButton';
-import QuoteNotice from '../../components/QuoteNotice';
+import QuoteNotice from '@/features/posp-dashboard/offline-quotation/components/QuoteNotice';
 import { useRankedResponses } from '../hooks/useRankedResponses';
 import { quoteDocumentLabel } from '../lib/insurerResponse';
 import { docFromPath } from '../api/quoteDocumentListApi';
@@ -11,11 +11,7 @@ import InsurerResponseCard from './InsurerResponseCard';
 import ResponseSortSelect from './ResponseSortSelect';
 import { PANEL, PANEL_TITLE } from '../lib/panel';
 
-/**
- * What the insurers answered — `GET /quote/<id>/compare` — as a sortable
- * comparison list, one row per response. Only mounted on a quote whose status
- * says responses exist (see `useQuoteResponses`).
- */
+// Insurer responses from GET /quote/<id>/compare; only mounted when the status says responses exist.
 
 const noop = () => {};
 
@@ -28,17 +24,15 @@ function InsurerResponsePanel({
   onSelect,
   selectingId,
 }) {
-  /** True while any selection is in flight. */
   const busy = Boolean(selectingId);
 
   const { sortKey, setSortKey, rows, anySelected } = useRankedResponses(responses);
   const ready = !loading && !error && responses.length > 0;
 
-  /** The quote document open in the preview: `{ document, label }` or null. */
+  // { document, label } of the open preview, or null.
   const [preview, setPreview] = useState(null);
   const closePreview = useCallback(() => setPreview(null), []);
-  // The dialog calls this with a document; only one is ever previewed here, so the
-  // argument is ignored and the label comes from the response that opened it.
+  // Only one document is previewed here, so the label comes from the response that opened it.
   const labelFor = useCallback(() => preview?.label ?? 'Insurer quote', [preview]);
   const previewDocuments = useMemo(() => (preview ? [preview.document] : []), [preview]);
 
@@ -88,7 +82,6 @@ function InsurerResponsePanel({
           action={retryButton('Try again')}
         />
       ) : responses.length === 0 ? (
-        // The status says a response exists, so an empty list is most likely a lag.
         <QuoteNotice
           icon={<Inbox size={20} />}
           title="Nothing to show yet"
@@ -96,7 +89,6 @@ function InsurerResponsePanel({
           action={retryButton('Check again')}
         />
       ) : (
-        // Movement drops to fades for users who ask the OS for reduced motion.
         <MotionConfig reducedMotion="user">
           <ul className="mt-4 flex flex-col gap-3">
             {rows.map((row, index) => {

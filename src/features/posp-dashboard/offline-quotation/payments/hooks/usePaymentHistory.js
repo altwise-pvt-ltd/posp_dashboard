@@ -1,15 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { fetchMyPayments } from '../api/paymentHistoryApi';
+import { fetchMyPayments } from '@/features/posp-dashboard/offline-quotation/api/paymentHistoryApi';
+import { timeOf } from '@/features/posp-dashboard/offline-quotation/lib/normalize';
 
-/**
- * The payment history page's state: every payment, newest first, and a search
- * over quote number, proposal number and UTR.
- */
-
-const time = (value) => {
-  const t = value ? new Date(value).getTime() : NaN;
-  return Number.isNaN(t) ? 0 : t;
-};
+// All payments newest first, with search over quote number, proposal number and UTR.
 
 export function usePaymentHistory() {
   const [payments, setPayments] = useState([]);
@@ -22,9 +15,6 @@ export function usePaymentHistory() {
     const controller = new AbortController();
     const { signal } = controller;
     let live = true;
-
-    setLoading(true);
-    setError(null);
 
     fetchMyPayments({ signal })
       .then((result) => {
@@ -44,10 +34,15 @@ export function usePaymentHistory() {
     };
   }, [attempt]);
 
-  const retry = useCallback(() => setAttempt((n) => n + 1), []);
+  // Loading starts true, so only a retry needs to reset it.
+  const retry = useCallback(() => {
+    setLoading(true);
+    setError(null);
+    setAttempt((n) => n + 1);
+  }, []);
 
   const sorted = useMemo(
-    () => [...payments].sort((a, b) => time(b.paidAt) - time(a.paidAt)),
+    () => [...payments].sort((a, b) => timeOf(b.paidAt) - timeOf(a.paidAt)),
     [payments]
   );
 

@@ -1,14 +1,10 @@
 import { FileSearch, Loader2, RefreshCw, Search, TriangleAlert, Wallet, X } from 'lucide-react';
 import DashboardLayout from '@/shared/layouts/DashboardLayout';
 import CustomButton from '@/shared/components/CustomButton';
-import QuoteNotice from '../../components/QuoteNotice';
+import QuoteNotice from '@/features/posp-dashboard/offline-quotation/components/QuoteNotice';
 import PaymentList from '../components/PaymentList';
 import { usePaymentHistory } from '../hooks/usePaymentHistory';
 
-/**
- * "Payment history" — every premium payment recorded against the agent's
- * quotes, from `GET /quote/payments/my`. Each row opens its quote.
- */
 function PaymentHistoryPage() {
   const { payments, visible, query, setQuery, filtered, loading, error, retry } =
     usePaymentHistory();

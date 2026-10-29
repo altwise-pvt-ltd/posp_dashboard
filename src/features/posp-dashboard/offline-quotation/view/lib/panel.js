@@ -1,7 +1,4 @@
-/**
- * The detail page's panel chrome. Shared so the seven panels can't drift apart;
- * each keeps its own header markup, which differs between them.
- */
+/** Shared class names for the detail page panels. */
 
 export const PANEL = 'anim-fade-d2 rounded-xl border border-hairline bg-white p-4 sm:p-gutter';
 

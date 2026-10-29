@@ -1,11 +1,7 @@
 import { useEffect, useState } from 'react';
-import { fetchCatalogImage } from '../api/quoteCatalogApi';
+import { fetchCatalogImage } from '@/shared/api/quoteCatalogApi';
 
-/**
- * A catalogue image URL as something an `<img src>` can take. Null while there
- * is no URL, while it loads, and if it fails, so the caller shows its fallback.
- * The object URL is revoked on the way out.
- */
+// Fetches a catalog image into an object URL; null while loading or on failure. Revoked on cleanup.
 export function useCatalogImage(url) {
   const [image, setImage] = useState({ url: null, src: null });
 

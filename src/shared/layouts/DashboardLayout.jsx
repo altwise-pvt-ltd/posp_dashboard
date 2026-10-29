@@ -187,7 +187,7 @@ function DashboardLayout({ children }) {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto">
+        <main data-scroll-root className="flex-1 overflow-y-auto">
           <div className={DASHBOARD_SHELL}>{children}</div>
         </main>
 

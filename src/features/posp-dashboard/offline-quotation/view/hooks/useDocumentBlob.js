@@ -2,13 +2,8 @@ import { useEffect, useState } from 'react';
 import { fetchDocBlob } from '../api/quoteDocumentListApi';
 
 /**
- * One document's bytes and its own object URL for them. A document with a
- * `path` is fetched by path, otherwise by its id on the quote. Nothing is
- * fetched while `doc` is null. The URL is revoked when the document changes
- * or the component unmounts.
- *
- * The result is stored against the request it answers, so a result for a
- * previous document is never shown for the current one.
+ * Fetches one document's bytes (by path if it has one, else by id) and makes an object URL.
+ * Results are keyed by request so a stale document is never shown; the URL is revoked on change.
  */
 export function useDocumentBlob(quoteId, doc) {
   const [attempt, setAttempt] = useState(0);

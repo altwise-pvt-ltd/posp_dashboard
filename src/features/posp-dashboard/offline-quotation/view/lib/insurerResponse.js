@@ -2,7 +2,7 @@ import { daysUntil } from '@/shared/lib/format';
 
 /** Helpers for rendering and ranking insurer responses from `/quote/<id>/compare`. */
 
-/** Column template shared by every response row, so the figures line up across cards. */
+/** Grid columns shared by every response row. */
 export const RESPONSE_COLUMNS =
   'md:grid md:grid-cols-[minmax(0,1.6fr)_repeat(3,minmax(0,1fr))] md:items-center md:gap-x-6';
 

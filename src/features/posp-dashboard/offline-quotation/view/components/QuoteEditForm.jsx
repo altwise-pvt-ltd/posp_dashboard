@@ -1,46 +1,20 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { RefreshCw, Save } from "lucide-react";
 import DynamicForm from "@/shared/dynamic-form/components/DynamicForm";
-import { useDynamicFormValues } from "@/shared/dynamic-form/hooks/useDynamicFormValues";
-import { useLookupState } from "@/shared/dynamic-form/hooks/useLookupOptions";
-import { resolveVisibleSections } from "@/shared/dynamic-form/lib/visibleSections";
-import {
-  isFieldAnswered,
-  validateField,
-  validateFields,
-} from "@/shared/dynamic-form/lib/validateFields";
 import CustomButton from "@/shared/components/CustomButton";
 import { showAlert } from "@/shared/store/alertStore";
-import { storedDocumentFile } from "../../api/quoteDocumentsApi";
-import { fetchLookupOptions } from "../../api/quoteMetadataApi";
-import QuoteWizardFooter from "../../components/QuoteWizardFooter";
+import { storedDocumentFile } from "@/features/posp-dashboard/offline-quotation/api/quoteDocumentsApi";
+import QuoteWizardFooter from "@/features/posp-dashboard/offline-quotation/components/QuoteWizardFooter";
 import { PANEL } from '../lib/panel';
-import { useQuoteDraft } from "../../hooks/useQuoteDraft";
-import { useQuoteRules } from "../../hooks/useQuoteRules";
-import {
-  addOnValueCode,
-  buildQuoteSections,
-  pruneAddOnValues,
-} from "../../lib/quoteSections";
-import { fetchQuoteDocumentBlob } from "../api/quoteDocumentListApi";
+import { useQuoteDraft } from "@/features/posp-dashboard/offline-quotation/hooks/useQuoteDraft";
+import { useQuoteForm } from "@/features/posp-dashboard/offline-quotation/hooks/useQuoteForm";
+import { focusField } from "@/features/posp-dashboard/offline-quotation/lib/focusField";
+import { buildQuoteSections } from "@/features/posp-dashboard/offline-quotation/lib/quoteSections";
+import { fetchQuoteDocumentBlob, isImage } from "../api/quoteDocumentListApi";
 import { storedDocumentValues, storedFormValues } from "../lib/quoteAnswers";
 
-const focusField = (code) => {
-  const node = document.getElementById(code);
-  node?.scrollIntoView({ behavior: "smooth", block: "center" });
-  node?.focus?.({ preventScroll: true });
-};
-
-/**
- * A draft or returned quote, reopened for editing: the create wizard's form —
- * same renderers, rules, lookups and validation — with every section on one
- * page instead of one per screen. Every question is rendered, answered or not,
- * seeded with what the quote holds, uploaded documents included.
- *
- * Saved through the same `POST /quote/draft` a new quote uses, with `quoteId`
- * added to the body so the server updates this quote rather than raising a new
- * one (see `saveQuoteDraft`).
- */
+// Edits a draft or returned quote, seeded with its stored answers and documents.
+// Saves through POST /quote/draft with quoteId in the body (see saveQuoteDraft).
 function QuoteEditForm({ quote, metadata, documents, onCancel, onSaved }) {
   const baseSections = useMemo(() => buildQuoteSections(metadata), [metadata]);
 
@@ -49,8 +23,7 @@ function QuoteEditForm({ quote, metadata, documents, onCancel, onSaved }) {
     [baseSections, documents],
   );
 
-  // What the quote holds wins over the product's own defaults and presets —
-  // this is the agent's answer, not the form's suggestion.
+  // Stored answers override the product's preset values.
   const seeded = useMemo(
     () => ({
       ...(metadata.directives?.setValues ?? {}),
@@ -60,19 +33,36 @@ function QuoteEditForm({ quote, metadata, documents, onCancel, onSaved }) {
     [metadata, baseSections, quote.values, storedDocs],
   );
 
-  const { values, setValue, setAllValues } = useDynamicFormValues(
-    baseSections,
-    seeded,
-  );
-  const [errors, setErrors] = useState({});
+  const productId = metadata.productId ?? quote.productId;
+  const subProductId = metadata.subProductId ?? quote.subProductId;
 
-  // Swap each stored document's name for its file once fetched, so it previews
-  // like a picked one. Left as the name if the fetch fails or the agent has
-  // already changed that field.
+  // Edit mode opens with saved answers, so the rules run on them at once.
+  const form = useQuoteForm({
+    metadata,
+    baseSections,
+    seed: seeded,
+    productId,
+    subProductId,
+    evaluateOnMount: true,
+  });
+  const {
+    values,
+    setAllValues,
+    errors,
+    directives,
+    sections,
+    fields,
+    lookups,
+    checking,
+    rulesError,
+  } = form;
+
+  // Swaps each stored image's name for its fetched file, for the thumbnail. Other
+  // documents keep their name. The name also stays if the fetch fails or the field changed.
   useEffect(() => {
     let live = true;
 
-    for (const doc of storedDocs.documents) {
+    for (const doc of storedDocs.documents.filter(isImage)) {
       fetchQuoteDocumentBlob(quote.id, doc.id)
         .then((blob) => {
           if (!live) return;
@@ -98,63 +88,13 @@ function QuoteEditForm({ quote, metadata, documents, onCancel, onSaved }) {
     };
   }, [quote.id, storedDocs, setAllValues]);
 
-  const draft = useQuoteDraft({
-    quoteId: quote.id,
-    productId: metadata.productId ?? quote.productId,
-    subProductId: metadata.subProductId ?? quote.subProductId,
-  });
+  const draft = useQuoteDraft({ quoteId: quote.id, productId, subProductId });
 
-  const busy = draft.phase === "saving" || draft.phase === "uploading";
+  const busy =
+    checking || draft.phase === "saving" || draft.phase === "uploading";
 
-  const ruleDirectives = useQuoteRules({
-    productId: metadata.productId ?? quote.productId,
-    subProductId: metadata.subProductId ?? quote.subProductId,
-    values,
-  });
-
-  const directives = ruleDirectives ?? metadata.directives;
-
-  const sections = useMemo(
-    () =>
-      resolveVisibleSections(
-        pruneAddOnValues(baseSections, values),
-        directives,
-      ),
-    [baseSections, values, directives],
-  );
-
-  const fields = useMemo(
-    () => sections.flatMap((entry) => entry.fields),
-    [sections],
-  );
-  const fieldsByCode = useMemo(
-    () => new Map(fields.map((field) => [field.code, field])),
-    [fields],
-  );
-
-  const lookups = useLookupState(fields, values, fetchLookupOptions);
-
-  const requiredCodes = useMemo(
-    () => new Set(directives?.requiredFields ?? []),
-    [directives],
-  );
-
-  const addOnsWithValue = useMemo(
-    () =>
-      new Set(
-        baseSections
-          .flatMap((entry) => entry.fields)
-          .map((field) => field.addOnFor)
-          .filter(Boolean),
-      ),
-    [baseSections],
-  );
-
-  /**
-   * Once, on the save landing: tell the agent, then hand back to the page so it
-   * re-reads the quote. `partial` stays here — the retry for the files that
-   * didn't make it is on this form.
-   */
+  // Once the save is done, show an alert and hand back to the page to reload the quote.
+  // A partial save stays here so failed files can be retried.
   const leftRef = useRef(false);
 
   useEffect(() => {
@@ -170,57 +110,34 @@ function QuoteEditForm({ quote, metadata, documents, onCancel, onSaved }) {
     onSaved?.();
   }, [draft.phase, onSaved]);
 
-  const clearError = (code) =>
-    setErrors((prev) => {
-      if (!prev[code]) return prev;
-      const rest = { ...prev };
-      delete rest[code];
-      return rest;
-    });
-
   const handleChange = (code, next) => {
-    setValue(code, next);
-    clearError(code);
+    form.change(code, next);
     draft.reset();
     leftRef.current = false;
-
-    if (!next && addOnsWithValue.has(code)) {
-      const valueCode = addOnValueCode(code);
-      setValue(valueCode, "");
-      clearError(valueCode);
-    }
   };
 
-  const handleBlur = (code) => {
-    const field = fieldsByCode.get(code);
-    if (!field || !isFieldAnswered(field, values[code])) return;
-
-    const message = validateField(field, values[code], requiredCodes);
-    if (message) setErrors((prev) => ({ ...prev, [code]: message }));
-    else clearError(code);
-  };
-
-  // Every visible field is checked, as the wizard's save does.
-  const handleSave = () => {
+  // Validates every visible field against the rules for the current answers.
+  const handleSave = async () => {
     if (busy) return;
 
-    const found = validateFields(fields, values, requiredCodes);
-    setErrors(found);
+    const checked = await form.validateForSave();
+    if (!checked) return;
 
-    const first = fields.find((field) => found[field.code]);
-    if (first) {
+    if (checked.first) {
       if (draft.phase === "error") draft.reset();
-      focusField(first.code);
+      focusField(checked.first.code);
       return;
     }
 
-    draft.save(fields, values);
+    draft.save(checked.fields, values);
   };
 
   const errorCount = Object.keys(errors).length;
   const failed = draft.uploads?.failed ?? [];
 
   const statusMessage = () => {
+    if (checking) return "Checking the form…";
+    if (rulesError) return rulesError;
     if (draft.phase === "saving") return "Saving your changes…";
     if (draft.phase === "uploading") {
       const { done, total } = draft.uploads;
@@ -240,7 +157,10 @@ function QuoteEditForm({ quote, metadata, documents, onCancel, onSaved }) {
   };
 
   const tone =
-    errorCount > 0 || draft.phase === "error" || draft.phase === "partial"
+    rulesError ||
+    errorCount > 0 ||
+    draft.phase === "error" ||
+    draft.phase === "partial"
       ? "error"
       : draft.phase === "done"
         ? "success"
@@ -259,7 +179,7 @@ function QuoteEditForm({ quote, metadata, documents, onCancel, onSaved }) {
             values={values}
             errors={errors}
             onChange={handleChange}
-            onBlur={handleBlur}
+            onBlur={form.blur}
             lookupOptions={lookups.options}
             lookupStatus={lookups.status}
             onLookupRetry={lookups.retry}
@@ -289,14 +209,18 @@ function QuoteEditForm({ quote, metadata, documents, onCancel, onSaved }) {
             variant="primary"
             size="md"
             loading={busy}
-            leftIcon={draft.phase === "error" ? <RefreshCw /> : <Save />}
+            leftIcon={
+              draft.phase === "error" || rulesError ? <RefreshCw /> : <Save />
+            }
             onClick={handleSave}
           >
-            {draft.phase === "error"
-              ? "Try again"
-              : busy
-                ? "Saving"
-                : "Save changes"}
+            {checking
+              ? "Checking"
+              : draft.phase === "error"
+                ? "Try again"
+                : busy
+                  ? "Saving"
+                  : "Save changes"}
           </CustomButton>
         )}
       </QuoteWizardFooter>

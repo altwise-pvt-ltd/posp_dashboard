@@ -1,10 +1,10 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Eye, FolderOpen, Loader2, RefreshCw, TriangleAlert } from 'lucide-react';
 import CustomButton from '@/shared/components/CustomButton';
-import QuoteNotice from '../../components/QuoteNotice';
+import QuoteNotice from '@/features/posp-dashboard/offline-quotation/components/QuoteNotice';
 import DocumentPreviewDialog from './DocumentPreviewDialog';
 import DocumentThumbnail from './DocumentThumbnail';
-import { humaniseCode } from '../../lib/normalize';
+import { humaniseCode } from '@/features/posp-dashboard/offline-quotation/lib/normalize';
 import { formatBytes } from '../api/quoteDocumentListApi';
 import { formatDate } from '@/shared/lib/format';
 import { PANEL, PANEL_TITLE } from '../lib/panel';
@@ -13,7 +13,6 @@ import { PANEL, PANEL_TITLE } from '../lib/panel';
 const extension = (doc) =>
   (/\.([a-z0-9]+)$/i.exec(doc.fileName)?.[1] ?? doc.contentType.split('/')[1] ?? 'file').toUpperCase();
 
-/** One document card; opens the preview. */
 function DocumentTile({ quoteId, doc, label, onOpen }) {
   return (
     <button
@@ -54,7 +53,6 @@ function DocumentTile({ quoteId, doc, label, onOpen }) {
   );
 }
 
-/** Every document stored on the quote, each opening a full preview. */
 function QuoteDocumentsPanel({ quoteId, documents, loading, error, onRetry, metadata }) {
   const [openIndex, setOpenIndex] = useState(null);
 
@@ -70,8 +68,8 @@ function QuoteDocumentsPanel({ quoteId, documents, loading, error, onRetry, meta
 
   const close = useCallback(() => setOpenIndex(null), []);
 
-  // Files whose code isn't a form document were added later (receipts, policy copies);
-  // they lead. Only grouped when the form's document list is known.
+  // Files whose code isn't a form document were added later and go first.
+  // Only grouped when the form's document list is known.
   const groups = useMemo(() => {
     if (names.size === 0) return [{ key: 'all', title: null, docs: documents }];
 
@@ -85,7 +83,7 @@ function QuoteDocumentsPanel({ quoteId, documents, loading, error, onRetry, meta
     ];
   }, [documents, names]);
 
-  // One flat list in display order, so the preview's index and arrows follow the grid.
+  // One flat list in display order, so the preview index matches the grid.
   const ordered = useMemo(() => groups.flatMap((group) => group.docs), [groups]);
 
   return (

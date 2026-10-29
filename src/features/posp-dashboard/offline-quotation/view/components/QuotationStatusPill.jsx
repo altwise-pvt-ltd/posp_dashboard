@@ -1,18 +1,7 @@
 import { recallStatusColor, statusLabel, statusStyle } from '../lib/quotationStatus';
 
-/**
- * The one place a quote's status becomes something visible.
- *
- * Both the wording and the colour come off the row — `/quote/queue/mine` sends
- * `status: "Draft"` and `colorHex: "#9AA3B2"` — so this component decides
- * nothing about the vocabulary. `statusStyle` only makes the server's colour
- * legible; see the note on INK_LUMINANCE there.
- *
- * The detail reply carries no `colorHex`, so a missing one falls back to what
- * the queue said about that status rather than straight to neutral: the same
- * quote should not wear a coloured pill in the list and a grey one on the page
- * that list opens.
- */
+// Label and colour come from the row; with no colorHex (the detail reply has none),
+// falls back to the colour the queue last gave this status.
 function QuotationStatusPill({ quotation, className = '' }) {
   const color = quotation?.colorHex ?? recallStatusColor(quotation?.statusCode);
 

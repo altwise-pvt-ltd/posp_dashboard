@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Building2 } from 'lucide-react';
 import { insurerInitials } from '../lib/insurerResponse';
 
-/** 40px insurer logo; a neutral circular avatar with initials (or an icon) when there is none or it fails. */
+// Falls back to initials (or an icon) when there's no logo or it fails to load.
 function InsurerLogo({ url, name }) {
   const [failedUrl, setFailedUrl] = useState(null);
   const initials = insurerInitials(name);

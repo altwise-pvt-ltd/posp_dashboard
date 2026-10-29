@@ -125,22 +125,14 @@ const normalizeSection = (entry = {}) => ({
   fields: (entry.fields ?? []).map(normalizeField),
 });
 
-/**
- * A count the server may not send at all. Anything that isn't a positive number
- * -- `null`, `0`, `"many"` -- means one file, which is what every document asked
- * for one attachment before `maxCount` existed.
- */
+// A missing or non-positive maxCount means one file.
 const toCount = (raw) => {
   const count = Number(raw);
   return Number.isFinite(count) && count > 0 ? Math.floor(count) : 1;
 };
 
-/**
- * Documents and add-ons carry a `controlType` of their own, so both resolve
- * through the same table the fields do. The `dataType` fallbacks below only
- * decide what an *older* payload -- one with no `controlType` -- renders as, and
- * a document is a file and an add-on a checkbox in every such payload.
- */
+// Documents and add-ons resolve controlType like fields; without one, a document
+// falls back to a file and an add-on to a checkbox.
 const normalizeDocument = (entry = {}) => ({
   code: entry.code ?? '',
   name: entry.name ?? '',
@@ -184,9 +176,7 @@ export async function fetchQuoteMetadata({ productId, subProductId, fileType, si
       subProductId: subProductId || undefined,
       fileType: fileType || undefined,
     },
-    /* Optional, and only passed by callers that can be unmounted mid-flight --
-       the quote detail screen fetches this as the second half of a pair and has
-       to be able to abandon both. */
+    // Optional; lets a caller abort the request on unmount.
     signal,
   });
 

@@ -4,7 +4,8 @@ import { FileSearch, FileText, Loader2, Plus, RefreshCw, TriangleAlert } from 'l
 import DashboardLayout from '@/shared/layouts/DashboardLayout';
 import CustomButton from '@/shared/components/CustomButton';
 import Pagination from '@/shared/components/Pagination';
-import QuoteNotice from '../../components/QuoteNotice';
+import QuoteNotice from '@/features/posp-dashboard/offline-quotation/components/QuoteNotice';
+import { QUOTE_CREATE_PATH } from '@/features/posp-dashboard/offline-quotation/lib/quotePaths';
 import QuotationFilters from '../components/QuotationFilters';
 import QuotationList from '../components/QuotationList';
 import { useQuotationList } from '../hooks/useQuotationList';
@@ -34,14 +35,14 @@ function ViewQuotationsPage() {
     clearFilters,
   } = useQuotationList();
 
-  const goCreate = () => navigate('/offline-quotation/create');
+  const goCreate = () => navigate(QUOTE_CREATE_PATH);
 
-  /** A failure with nothing on screen behind it — the whole panel is the error. */
+  // An error with no rows to fall back on.
   const blocked = Boolean(error) && rows.length === 0;
 
   const showFilters = rows.length > 0 || status !== ALL;
 
-  // Bring the top of the list back into view when the page changes.
+  // Scroll back to the top of the list on page change.
   const listRef = useRef(null);
   const changePage = (next) => {
     setPage(next);

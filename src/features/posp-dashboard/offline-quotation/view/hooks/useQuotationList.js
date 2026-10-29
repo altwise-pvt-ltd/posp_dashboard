@@ -2,23 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { fetchQuoteQueue } from '../api/quoteQueueApi';
 import { ALL, SEEN_STATUSES, mergeStatuses } from '../lib/quotationStatus';
 
-/**
- * The list screen's whole state: the rows, the status filter, the search box
- * and the paging.
- *
- *   status  — filtered by the server (`?status=`); a change goes back to page 1.
- *   paging  — the server too; each page replaces the rows on screen.
- *   search  — the client, over the page on screen only. The endpoint has no
- *             search parameter.
- */
+// Status and paging are server-side; search filters only the current page (the endpoint has no search param).
 
 const PAGE_SIZE = 10;
 
-/**
- * Reference, product, status, remark and originator — everything on a row that
- * is a word rather than a number. Matched as a substring on a lowercased
- * haystack, so "000008" finds a reference and "two" finds Two Wheeler.
- */
+// Case-insensitive substring match over the row's text fields.
 const matchesQuery = (row, needle) => {
   if (!needle) return true;
 
@@ -50,10 +38,7 @@ export function useQuotationList() {
   const [attempt, setAttempt] = useState(0);
 
   const [rows, setRows] = useState([]);
-  /**
-   * The status chips to offer. Held apart from `rows` and only ever grown, so
-   * filtering to one status doesn't remove the chips that undo it.
-   */
+  // Every status seen so far; only ever grows, so filtering doesn't drop the others.
   const [statuses, setStatuses] = useState(SEEN_STATUSES);
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
@@ -65,7 +50,7 @@ export function useQuotationList() {
     let live = true;
 
     fetchQuoteQueue({
-      // ALL means "every state", which is the parameter left off entirely.
+      // ALL leaves the status parameter off.
       status: status === ALL ? null : status,
       page,
       pageSize: PAGE_SIZE,
@@ -76,8 +61,7 @@ export function useQuotationList() {
 
         const lastPage = result.totalPages || Math.ceil(result.totalCount / PAGE_SIZE);
 
-        // The queue shrank under us (e.g. a quote changed status) and this
-        // page no longer exists — go to the new last page instead.
+        // The queue shrank and this page no longer exists; go to the new last page.
         if (result.items.length === 0 && page > 1 && lastPage >= 1 && page > lastPage) {
           setPageRaw(lastPage);
           return;
@@ -93,7 +77,7 @@ export function useQuotationList() {
       .catch((err) => {
         if (!live || controller.signal.aborted) return;
 
-        // Rows already on screen are kept; the page shows the error beside them.
+        // Existing rows are kept on error.
         setError(err);
         setLoading(false);
       });
@@ -104,7 +88,7 @@ export function useQuotationList() {
     };
   }, [status, page, attempt]);
 
-  /** Changing the status clears the rows and goes back to page 1. */
+  // Changing the status clears the rows and goes back to page 1.
   const chosen = useRef(ALL);
 
   const setStatus = useCallback((next) => {
@@ -123,7 +107,7 @@ export function useQuotationList() {
 
   const setPage = useCallback((next) => {
     setPageRaw(next);
-    // Also bumped so asking again for a page that just failed refetches it.
+    // Bumped so re-asking for a page that just failed refetches it.
     setAttempt((n) => n + 1);
     setLoading(true);
     setError(null);
@@ -151,13 +135,10 @@ export function useQuotationList() {
   const start = (shownPage - 1) * PAGE_SIZE;
 
   return {
-    /** The rows of the page on screen, in the order the server returned them. */
     rows,
-    /** Those of them that survive the search box. */
     visible,
-    /** Every status this session has been told about, for the filter chips. */
     statuses,
-    /** How many rows the *server* holds for the current status. */
+    // Server total for the current status.
     totalCount,
 
     query,
@@ -165,22 +146,22 @@ export function useQuotationList() {
     status,
     setStatus,
 
-    /** The page being fetched while loading, else the page on screen. */
+    // The page being fetched while loading, else the page shown.
     page: loading ? page : shownPage,
     pageCount: Math.max(1, totalPages),
     setPage,
-    /** 1-based, inclusive, for the "Showing 11–20 of 87" line. */
+    // 1-based, inclusive.
     rangeStart: rows.length === 0 ? 0 : start + 1,
     rangeEnd: start + rows.length,
 
-    /** True while there is nothing on screen yet: first load or a new status. */
+    // First load or new status, with no rows yet.
     loading: loading && rows.length === 0,
-    /** True while another page is fetching, with the old page still on screen. */
+    // Another page is loading while the old rows are kept.
     paging: loading && rows.length > 0,
 
     error,
     retry,
-    /** True when rows are held but the search box hides all of them. */
+    // Rows exist but the search hides all of them.
     filtered: rows.length > 0 && visible.length === 0,
     clearFilters,
   };

@@ -3,7 +3,6 @@ import { FileText } from 'lucide-react';
 import CustomButton from '@/shared/components/CustomButton';
 import { BUTTON_OUT, CHECK_DRAW, PILL_IN, SHINE } from '../lib/responseMotion';
 
-/** Check mark whose stroke draws in. */
 function DrawnCheck() {
   return (
     <svg
@@ -21,7 +20,6 @@ function DrawnCheck() {
   );
 }
 
-/** "View quote document" and "Select policy" for one response, or the "Selected" pill once chosen. */
 function ResponseActions({
   response,
   expired,
@@ -47,7 +45,6 @@ function ResponseActions({
         </CustomButton>
       )}
 
-      {/* Skips the entrance on first render so only a fresh selection animates. */}
       <AnimatePresence mode="wait" initial={false}>
         {isSelected ? (
           <motion.span

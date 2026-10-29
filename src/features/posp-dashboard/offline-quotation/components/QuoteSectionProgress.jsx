@@ -1,14 +1,4 @@
-/**
- * The wizard's *inner* progress indicator: which section of the quote form the
- * user is on, inside the form panel.
- *
- * It is a bar at every width, unlike the three top-level steps above it, which
- * become chips from `sm` up. Chips stay reserved for those three: a product can
- * publish any number of sections, and a chip row with no ceiling overflows.
- *
- * The fill counts sections *completed* (`current / total`), so arriving at the
- * last screen does not read as finished.
- */
+// Progress through the form's sections; the fill counts completed sections (current / total).
 function QuoteSectionProgress({ label, current, total, headingRef }) {
   const percent = total > 0 ? (current / total) * 100 : 0;
 

@@ -1,66 +1,38 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { fetchQuoteMetadata } from '../../api/quoteMetadataApi';
-import { buildQuoteSections } from '../../lib/quoteSections';
+import { fetchQuoteMetadata } from '@/features/posp-dashboard/offline-quotation/api/quoteMetadataApi';
+import { buildQuoteSections } from '@/features/posp-dashboard/offline-quotation/lib/quoteSections';
 import { showAlert } from '@/shared/store/alertStore';
 import { fetchQuote, submitQuoteForVerification } from '../api/quoteDetailApi';
 import { buildAnswerView } from '../lib/quoteAnswers';
 
+const NO_FORM = { scope: null, metadata: null, sections: [], error: null };
+
 /**
- * One quote, by uuid — the detail screen's whole state.
- *
- * Two requests, in sequence and not in parallel: the quote says which form it
- * was raised on (`productId`, `subProductId`, `fileType`), and only then can
- * the form be fetched to turn `MFG_YEAR: "2020"` into "Manufacturing year:
- * 2020". See `quoteDetailApi`.
- *
- * Only the first of the two can fail the page. If the metadata call falls over,
- * the quote is still shown — header, status, and every answer it holds, under
- * codes made readable instead of the server's own labels. A quote an agent can
- * read imperfectly beats an error screen over a request that was only ever
- * about wording.
- *
- * Deliberately not seeded from the row the user clicked. Passing the list row
- * through router state would paint the header instantly, and would also mean
- * the page renders a status that was true when the *list* was fetched: a quote
- * sent to the insurer five minutes ago would still read "Draft" because that is
- * what the list said. The detail page is the one place a quote's current state
- * is worth being right about, so it asks.
+ * Loads one quote, and separately the form metadata used to label its answers.
+ * The page shows as soon as the quote arrives. Metadata is fetched again only when
+ * the product changes, or after it failed. A metadata failure leaves codes as labels.
  */
 export function useQuoteDetail(quoteId) {
   const [quote, setQuote] = useState(null);
-  const [sections, setSections] = useState([]);
-  /** The form the quote was raised on, whole — what the edit mode renders. */
-  const [metadata, setMetadata] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  /** A metadata failure. Soft — it costs labels, not the page. */
-  const [formError, setFormError] = useState(null);
   const [attempt, setAttempt] = useState(0);
+  const [form, setForm] = useState(NO_FORM);
+  const [formAttempt, setFormAttempt] = useState(0);
   const [submitting, setSubmitting] = useState(false);
 
-  /**
-   * Which quote the state above describes.
-   *
-   * Reset during render rather than in an effect — React's own "adjusting state
-   * when a prop changes" pattern. Done in an effect it would take a second
-   * commit, and the gap between them paints the *previous* quote's reference
-   * and answers under the new URL. Done here, the stale quote never reaches the
-   * screen at all.
-   */
+  // Reset state during render when the id changes, so the old quote is never shown.
   const [shown, setShown] = useState(quoteId);
 
   if (shown !== quoteId) {
     setShown(quoteId);
     setQuote(null);
-    setSections([]);
-    setMetadata(null);
     setError(null);
-    setFormError(null);
     setLoading(true);
   }
 
   useEffect(() => {
-    // No id in the URL — nothing to ask for. `missing` covers it below.
+    // No id: nothing to fetch; `missing` covers it.
     if (!quoteId) return undefined;
 
     const controller = new AbortController();
@@ -68,40 +40,10 @@ export function useQuoteDetail(quoteId) {
     let live = true;
 
     fetchQuote(quoteId, { signal })
-      .then(async (result) => {
+      .then((result) => {
         if (!live) return;
-
         setQuote(result);
         setError(null);
-
-        // Nothing to look the answers up against — a quote with no product is
-        // rendered from its own fields alone.
-        if (!result?.productId) {
-          setSections([]);
-          setMetadata(null);
-          return;
-        }
-
-        try {
-          const metadata = await fetchQuoteMetadata({
-            productId: result.productId,
-            subProductId: result.subProductId,
-            fileType: result.fileType,
-            signal,
-          });
-          if (!live) return;
-
-          // The same builder the create wizard uses, so add-ons and documents
-          // arrive labelled rather than as loose codes.
-          setSections(buildQuoteSections(metadata));
-          setMetadata(metadata);
-          setFormError(null);
-        } catch (err) {
-          if (!live || signal.aborted) return;
-          setSections([]);
-          setMetadata(null);
-          setFormError(err);
-        }
       })
       .catch((err) => {
         if (!live || signal.aborted) return;
@@ -118,28 +60,46 @@ export function useQuoteDetail(quoteId) {
     };
   }, [quoteId, attempt]);
 
+  const productId = quote?.productId ?? null;
+  const subProductId = quote?.subProductId ?? null;
+  const fileType = quote?.fileType ?? null;
+
+  // The product the labels belong to; null when there is no product to fetch for.
+  const scope = productId ? JSON.stringify([productId, subProductId, fileType]) : null;
+
+  useEffect(() => {
+    if (!scope) return undefined;
+
+    const controller = new AbortController();
+    const { signal } = controller;
+
+    fetchQuoteMetadata({ productId, subProductId, fileType, signal })
+      .then((metadata) => {
+        if (signal.aborted) return;
+        // Same builder as the create wizard.
+        setForm({ scope, metadata, sections: buildQuoteSections(metadata), error: null });
+      })
+      .catch((err) => {
+        if (signal.aborted) return;
+        setForm({ ...NO_FORM, scope, error: err });
+      });
+
+    return () => controller.abort();
+  }, [scope, formAttempt, productId, subProductId, fileType]);
+
+  // A retry for the same product keeps the last result on screen until the new one lands.
+  const current = scope !== null && form.scope === scope ? form : NO_FORM;
+  const labelsLoading = scope !== null && form.scope !== scope;
+  const formFailed = Boolean(current.error);
+
+  // Answers wait for their labels instead of showing raw codes first.
   const answers = useMemo(
-    () => buildAnswerView(sections, quote?.values ?? []),
-    [sections, quote]
+    () => buildAnswerView(current.sections, labelsLoading ? [] : quote?.values ?? []),
+    [current.sections, labelsLoading, quote]
   );
 
-  /**
-   * Hand the quote to the back office.
-   *
-   * Resolves true when it landed, and does not refetch: the caller leaves this
-   * screen for the list, which mounts fresh and asks for page 1 of its own
-   * accord. Refetching a quote we are about to navigate away from would be a
-   * request whose answer nothing renders.
-   *
-   * The success wording is the server's own — the reply's `message` field —
-   * rather than a sentence kept in the app. There is then one place that
-   * decides how this reads, and it is the place that decides what happened.
-   *
-   * Feedback goes through the global alert store rather than local state: the
-   * outcome is an event, not a property of the quote, and it has to survive the
-   * navigation that follows it. A failure keeps the agent where they are, with
-   * the server's reason on screen and the button still there to try again.
-   */
+  // Submits the quote for verification and shows the outcome as a global alert.
+  // Resolves true on success; no refetch, since the caller navigates away.
   const submitForVerification = useCallback(async () => {
     if (!quoteId || submitting) return false;
 
@@ -170,50 +130,35 @@ export function useQuoteDetail(quoteId) {
   const retry = useCallback(() => {
     setLoading(true);
     setError(null);
-    setFormError(null);
     setAttempt((n) => n + 1);
-  }, []);
+    if (formFailed) setFormAttempt((n) => n + 1);
+  }, [formFailed]);
 
-  /**
-   * Re-read the quote after something changed it, without emptying the screen.
-   *
-   * The same request `retry` makes and deliberately not the same state: `retry`
-   * answers a page that has *failed*, so it raises `loading` and the screen
-   * becomes the loading notice. This answers a page that is fine and is about
-   * to be out of date — accepting an insurer's quote moves the status, and the
-   * pill above would otherwise keep saying what was true before the POST.
-   *
-   * Holding the old values until the new ones land is the point. Blanking a
-   * page the user is reading, to fetch something they cannot yet tell has
-   * changed, reads as the app losing their place; the header simply updates
-   * under them instead. A failure mid-refresh is the one cost — `setQuote(null)`
-   * in the catch turns a working page into the error state — and that is the
-   * honest outcome: the quote's state is exactly what is no longer known.
-   */
+  // Refetches without setting loading, so the current quote stays until the reply lands.
+  // Metadata is fetched again only if it failed last time.
   const refresh = useCallback(() => {
     setAttempt((n) => n + 1);
-  }, []);
+    if (formFailed) setFormAttempt((n) => n + 1);
+  }, [formFailed]);
 
-  /** A 404 is reported through `missing`; everything else is a real failure. */
+  // A 404 is reported through `missing`; anything else is a real failure.
   const failure = error?.status === 404 ? null : error;
   const busy = Boolean(quoteId) && loading;
 
   return {
     quote,
-    /** The product's form as `/quote/metadata` gave it; null if it couldn't be fetched. */
-    metadata,
-    /** `{ sections, orphans }` — see `buildAnswerView`. */
+    // Null if the metadata couldn't be fetched.
+    metadata: current.metadata,
+    // `{ sections, orphans }` from buildAnswerView.
     answers,
-    /** True when the questions couldn't be fetched, so labels are codes. */
-    unlabelled: Boolean(formError) && (quote?.values?.length ?? 0) > 0,
+    // Metadata failed, so answers are labelled by code.
+    unlabelled: formFailed && (quote?.values?.length ?? 0) > 0,
     loading: busy,
     error: failure,
     submitForVerification,
     submitting,
-    /** True when there is no such quote to show. */
     missing: !quoteId || error?.status === 404 || (!busy && !failure && !quote),
     retry,
-    /** Re-read after a write, keeping what's on screen until the reply lands. */
     refresh,
   };
 }

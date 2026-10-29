@@ -1,6 +1,6 @@
 import { CircleCheck, Clock } from 'lucide-react';
 import { formatCurrencyPreserve } from '@/shared/lib/format';
-import { formatMethod, formatPayee, paymentStatusMeta } from '../../lib/paymentFormat';
+import { formatMethod, formatPayee, paymentStatusMeta } from '@/features/posp-dashboard/offline-quotation/lib/paymentFormat';
 import { useCopied } from '../hooks/useCopied';
 import { formatDateTime, hasDate } from '../lib/quotationFormat';
 import CopyIconButton from './CopyIconButton';

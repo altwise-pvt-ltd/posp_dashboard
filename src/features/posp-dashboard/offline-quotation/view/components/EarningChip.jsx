@@ -5,7 +5,6 @@ import { hasEarningPoints } from '../lib/insurerResponse';
 const CHIP =
   'inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1';
 
-/** The agent's earning on one response, or a note explaining why there is none. */
 function EarningChip({ earning }) {
   const tooltipId = useId();
   if (!earning) return null;

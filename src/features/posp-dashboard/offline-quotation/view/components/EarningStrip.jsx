@@ -1,13 +1,11 @@
 import { hasEarningPoints } from '../lib/insurerResponse';
 
-/** The agent's commission on one insurer response; nothing when it carries no earning data. */
 function EarningStrip({ earning }) {
   if (!earning) return null;
 
   const { points, status, planName, note } = earning;
   if (points === null && !status && !note) return null;
 
-  // Same rule as the chip on the comparison list, so the figure can't disagree with it.
   const showPoints = hasEarningPoints(earning);
 
   return (
@@ -18,7 +16,7 @@ function EarningStrip({ earning }) {
           {planName && <span className="normal-case"> · {planName} plan</span>}
         </p>
         <p className="font-body-md text-body-md mt-1 text-on-surface">
-          {showPoints ? `${points} points` : note || status}
+          {showPoints ? `${points} points` : note || 'Earning unavailable'}
         </p>
         {showPoints && note && (
           <p className="font-body-md text-body-md mt-0.5 text-on-surface-variant">{note}</p>

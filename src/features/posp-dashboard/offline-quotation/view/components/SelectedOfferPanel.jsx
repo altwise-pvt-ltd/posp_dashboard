@@ -4,7 +4,6 @@ import EarningStrip from './EarningStrip';
 import { PANEL, PANEL_TITLE } from '../lib/panel';
 import Fact, { FACT_LABEL } from './Fact';
 
-/** The insurer response the agent accepted, the proposal raised on it, and the agent's earning. */
 function SelectedOfferPanel({ offer, earning }) {
   const {
     insurerName,

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { fetchQuoteCatalog } from '../api/quoteCatalogApi';
+import { fetchQuoteCatalog } from '@/shared/api/quoteCatalogApi';
 
 export function useQuoteCatalog() {
   const [catalog, setCatalog] = useState([]);

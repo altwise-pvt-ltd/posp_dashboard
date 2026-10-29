@@ -2,12 +2,7 @@ import { api, unwrap } from '@/shared/api/client';
 import { ENDPOINTS } from '@/shared/api/endpoints';
 import { normalizeDirectives } from './quoteMetadataApi';
 
-/**
- * `values` posts as a flat map of strings, so anything that isn't one is
- * dropped rather than stringified. That now includes attachments: a `File`
- * joined into a list reads as `[object File]` on the wire, which the server
- * would take for an answer.
- */
+// values posts as a flat map of strings; blanks and objects (including Files) are dropped, not stringified.
 const toRuleValue = (value) => {
   if (Array.isArray(value)) {
     const parts = value.filter(

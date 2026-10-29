@@ -6,15 +6,16 @@ import {
   ChevronRight,
   Download,
   ExternalLink,
-  FileText,
   Loader2,
   RefreshCw,
   TriangleAlert,
   X,
 } from 'lucide-react';
 import { saveBlob } from '@/shared/lib/saveFile';
-import { useMatchMedia, MOBILE_QUERY } from '@/shared/hooks/useMatchMedia';
+import DocumentStage from '@/shared/components/DocumentStage';
+import { documentKind } from '@/shared/lib/documentKind';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
+import { useScrollLock } from '@/shared/hooks/useScrollLock';
 import { useDocumentBlob } from '../hooks/useDocumentBlob';
 import { formatBytes, isImage, isPdf } from '../api/quoteDocumentListApi';
 import { formatDate } from '@/shared/lib/format';
@@ -26,7 +27,7 @@ const TOOL =
 const ARROW =
   'absolute top-1/2 z-10 hidden size-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur-md transition-colors hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 sm:inline-flex';
 
-function Stage({ doc, file, isMobile }) {
+function Stage({ doc, file }) {
   if (file.loading) {
     return (
       <div className="flex flex-col items-center gap-3 text-white/70">
@@ -57,74 +58,25 @@ function Stage({ doc, file, isMobile }) {
 
   if (!file.url) return null;
 
-  if (isImage(doc) || file.blob?.type?.startsWith('image/')) {
-    return (
-      <motion.img
-        key={file.url}
-        src={file.url}
-        alt={doc.fileName}
-        draggable={false}
-        initial={{ opacity: 0, scale: 0.98 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.2 }}
-        className="max-h-full max-w-full rounded-md object-contain shadow-2xl"
-      />
-    );
-  }
-
-  if (isPdf(doc) || file.blob?.type === 'application/pdf') {
-    // Android Chrome can't render a PDF in an iframe, so phones get a link out.
-    if (isMobile) {
-      return (
-        <div className="flex flex-col items-center gap-4 text-center text-white/80">
-          <FileText className="size-10" aria-hidden="true" />
-          <p className="text-sm">This file opens in your phone&apos;s viewer.</p>
-          <a
-            href={file.url}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-medium text-slate-900 transition-colors hover:bg-white/90"
-          >
-            <ExternalLink className="size-4" aria-hidden="true" />
-            Open file
-          </a>
-        </div>
-      );
-    }
-
-    return (
-      <iframe
-        src={file.url}
-        title={doc.fileName}
-        className="size-full max-w-5xl rounded-lg bg-white shadow-2xl"
-      />
-    );
-  }
+  // The file name decides first, then the downloaded file's type.
+  const blobKind = documentKind(file.blob?.type);
+  const kind =
+    isImage(doc) || blobKind === 'image' ? 'image' : isPdf(doc) || blobKind === 'pdf' ? 'pdf' : 'other';
 
   return (
-    <div className="flex flex-col items-center gap-3 text-center text-white/80">
-      <FileText className="size-10" aria-hidden="true" />
-      <p className="text-sm">No preview for this file type.</p>
-      <button
-        type="button"
-        onClick={() => saveBlob(file.blob, doc.fileName)}
-        className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-medium text-slate-900 transition-colors hover:bg-white/90"
-      >
-        <Download className="size-4" aria-hidden="true" />
-        Download
-      </button>
-    </div>
+    <DocumentStage
+      url={file.url}
+      kind={kind}
+      title={doc.fileName}
+      onDownload={() => saveBlob(file.blob, doc.fileName)}
+    />
   );
 }
 
-/**
- * Full-screen viewer for a quote's documents. Rendered into `<body>` through a
- * portal — inside the page's transformed sections, its fixed positioning breaks.
- */
+// Portalled into <body>; fixed positioning breaks inside the page's transformed sections.
 function DocumentPreviewDialog({ quoteId, documents, index, labelFor, onClose, onNavigate }) {
   const current = index == null ? null : documents[index];
   const file = useDocumentBlob(quoteId, current);
-  const isMobile = useMatchMedia(MOBILE_QUERY);
   const dialogRef = useRef(null);
 
   const open = Boolean(current);
@@ -132,6 +84,7 @@ function DocumentPreviewDialog({ quoteId, documents, index, labelFor, onClose, o
   const hasNext = open && index < documents.length - 1;
 
   useFocusTrap(dialogRef, open);
+  useScrollLock(open);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -142,15 +95,8 @@ function DocumentPreviewDialog({ quoteId, documents, index, labelFor, onClose, o
       if (event.key === 'ArrowRight' && hasNext) onNavigate(index + 1);
     };
 
-    const body = document.body;
-    const savedOverflow = body.style.overflow;
-    body.style.overflow = 'hidden';
     document.addEventListener('keydown', onKeyDown);
-
-    return () => {
-      body.style.overflow = savedOverflow;
-      document.removeEventListener('keydown', onKeyDown);
-    };
+    return () => document.removeEventListener('keydown', onKeyDown);
   }, [open, index, hasPrev, hasNext, onClose, onNavigate]);
 
   const meta = current
@@ -173,7 +119,6 @@ function DocumentPreviewDialog({ quoteId, documents, index, labelFor, onClose, o
           aria-labelledby="document-preview-title"
           className="fixed inset-0 z-60 flex flex-col bg-slate-950/95 backdrop-blur-sm"
         >
-          {/* Top bar */}
           <header className="flex items-center justify-between gap-4 px-4 py-3 sm:px-6">
             <div className="min-w-0">
               <p className="truncate text-status-pill font-semibold uppercase tracking-wider text-white/50">
@@ -230,7 +175,6 @@ function DocumentPreviewDialog({ quoteId, documents, index, labelFor, onClose, o
             </div>
           </header>
 
-          {/* Stage — clicking the empty area around the document closes */}
           <div
             className="relative flex min-h-0 flex-1 items-center justify-center px-4 pb-4 sm:px-20"
             onClick={(event) => event.target === event.currentTarget && onClose()}
@@ -246,7 +190,7 @@ function DocumentPreviewDialog({ quoteId, documents, index, labelFor, onClose, o
               </button>
             )}
 
-            <Stage doc={current} file={file} isMobile={isMobile} />
+            <Stage doc={current} file={file} />
 
             {hasNext && (
               <button
@@ -260,7 +204,6 @@ function DocumentPreviewDialog({ quoteId, documents, index, labelFor, onClose, o
             )}
           </div>
 
-          {/* Filmstrip */}
           {documents.length > 1 && (
             <nav aria-label="Documents" className="flex justify-center px-4 pb-4">
               <ul className="flex max-w-full gap-2 overflow-x-auto rounded-xl bg-white/5 p-2">

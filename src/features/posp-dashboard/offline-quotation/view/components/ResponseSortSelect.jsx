@@ -1,7 +1,6 @@
 import { ArrowUpDown, ChevronDown } from 'lucide-react';
 import { SORT_OPTIONS } from '../lib/insurerResponse';
 
-/** Native sort dropdown for the insurer responses. */
 function ResponseSortSelect({ value, onChange }) {
   return (
     <div className="relative w-full sm:w-48">

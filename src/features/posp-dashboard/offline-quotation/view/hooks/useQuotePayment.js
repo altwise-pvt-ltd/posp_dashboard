@@ -1,14 +1,9 @@
 import { useEffect, useState } from 'react';
-import { fetchMyPayments } from '../../payments/api/paymentHistoryApi';
-
-const time = (value) => {
-  const t = value ? new Date(value).getTime() : NaN;
-  return Number.isNaN(t) ? 0 : t;
-};
+import { fetchMyPayments } from '@/features/posp-dashboard/offline-quotation/api/paymentHistoryApi';
+import { timeOf } from '@/features/posp-dashboard/offline-quotation/lib/normalize';
 
 /**
- * The latest payment recorded against this quote, read from the agent's payment history.
- * Only asked once the quote has a selected offer; any failure leaves it null.
+ * Finds the latest payment for this quote in the agent's payment history; null on failure.
  * ⚠ Reads every page of GET /quote/payments/my; a per-quote endpoint would be lighter.
  */
 export function useQuotePayment(quoteId, quoteNumber, enabled) {
@@ -35,7 +30,7 @@ export function useQuotePayment(quoteId, quoteNumber, enabled) {
 
         const mine = payments
           .filter((p) => p.quoteId === target || (quoteNumber && p.quoteNumber === quoteNumber))
-          .sort((a, b) => time(b.paidAt) - time(a.paidAt));
+          .sort((a, b) => timeOf(b.paidAt) - timeOf(a.paidAt));
 
         setPayment(mine[0] ?? null);
       })

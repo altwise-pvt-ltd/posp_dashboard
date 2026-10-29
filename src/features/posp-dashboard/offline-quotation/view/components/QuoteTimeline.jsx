@@ -13,7 +13,6 @@ function buildEvents(quote, payment) {
     .sort((a, b) => new Date(a.at) - new Date(b.at));
 }
 
-/** Shown only when there are at least two events to put in order. */
 function QuoteTimeline({ quote, payment }) {
   const events = buildEvents(quote, payment);
   if (events.length < 2) return null;

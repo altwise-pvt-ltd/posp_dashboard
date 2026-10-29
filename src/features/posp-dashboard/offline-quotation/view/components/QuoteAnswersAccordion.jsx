@@ -44,13 +44,12 @@ function AnswerPanel({ panel, open, onToggle }) {
   );
 }
 
-/** The quote's answers, one collapsible panel per section row, orphans last. */
+// One panel per section row; orphan answers go last.
 function QuoteAnswersAccordion({ sections = [], orphans = [], unlabelled = false, defaultOpen = true }) {
   const panels = sections.flatMap((section) =>
     section.rows.map((row) => ({
       key: `${section.code}-${row.index}`,
       title: section.name,
-      // Only numbered when the section actually repeated.
       caption: section.rows.length > 1 ? `Entry ${row.index + 1}` : null,
       entries: row.entries,
     })),
@@ -69,11 +68,7 @@ function QuoteAnswersAccordion({ sections = [], orphans = [], unlabelled = false
   const [known, setKnown] = useState(() => new Set(keys));
   const [openKeys, setOpenKeys] = useState(() => new Set(defaultOpen ? keys : []));
 
-  /**
-   * A quiet refresh swaps the answers under a mounted accordion, so the panels
-   * can change without a remount. Keys that are new follow `defaultOpen`; keys
-   * the agent closed by hand stay closed; keys that have gone are dropped.
-   */
+  // When the panels change: new keys follow defaultOpen, closed keys stay closed, removed keys are dropped.
   if (keys.length !== known.size || keys.some((key) => !known.has(key))) {
     const current = new Set(keys);
     setKnown(current);
@@ -111,7 +106,6 @@ function QuoteAnswersAccordion({ sections = [], orphans = [], unlabelled = false
         </button>
       </div>
 
-      {/* Labels fall back to field codes when the question list didn't load. */}
       {unlabelled && (
         <p className="font-body-md text-body-md mt-3 flex items-start gap-2 rounded-xl border border-warning-outline bg-warning-container px-3 py-2 text-on-warning-container">
           <Info aria-hidden="true" className="mt-0.5 size-4 shrink-0" />

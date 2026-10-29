@@ -6,14 +6,7 @@ import KpiGrid from '@/features/overview/components/KpiGrid';
 import MonthlySalesChart from '@/features/overview/components/MonthlySalesChart';
 import RightRail from '@/features/overview/components/RightRail';
 
-/**
- * The rail pulls out of the flow at `md` — every screen above a phone gets the
- * two-column view. That costs the left column 280px it used to keep until
- * `2xl`, so the grids inside it (hero products, KPI cards) each carry their own
- * later breakpoints to stay above their minimum card width. The rail itself is
- * 16rem until `2xl` for the same reason; it only reaches 20rem once the shell
- * is wide enough to give it away.
- */
+
 function OverviewPage() {
   return (
     <DashboardLayout>

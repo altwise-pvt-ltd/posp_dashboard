@@ -1,21 +1,22 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ShieldCheck } from 'lucide-react';
 import CustomButton from '@/shared/components/CustomButton';
+import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
+import { useScrollLock } from '@/shared/hooks/useScrollLock';
 
-/**
- * Confirmation for sending a quote to be verified. One way: there is no route to
- * withdraw a quote once it is with the back office.
- *
- * Focus lands on Cancel; Escape and the backdrop close.
- */
+// Sending for verification is one-way: there is no route to withdraw a quote afterwards.
 function VerificationDialog({ open, reference, submitting, onCancel, onConfirm }) {
+  const dialogRef = useRef(null);
+
+  useFocusTrap(dialogRef, open);
+  useScrollLock(open);
+
   useEffect(() => {
     if (!open) return undefined;
 
     const onKeyDown = (event) => {
-      // A dialog mid-request has already committed — closing it would leave the
-      // call in flight with nothing on screen saying so.
+      // Escape is ignored while the request is in flight.
       if (event.key === 'Escape' && !submitting) onCancel();
     };
 
@@ -31,6 +32,7 @@ function VerificationDialog({ open, reference, submitting, onCancel, onConfirm }
           onClick={() => !submitting && onCancel()}
         >
           <motion.div
+            ref={dialogRef}
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
@@ -70,9 +72,7 @@ function VerificationDialog({ open, reference, submitting, onCancel, onConfirm }
                 variant="secondary"
                 size="md"
                 fullWidth
-                /* `autoFocus` rather than a ref: CustomButton spreads unknown
-                   props onto its <button> but does not forward refs, and the
-                   dialog mounts on open so this fires exactly once. */
+                /* autoFocus, not a ref: CustomButton doesn't forward refs. */
                 autoFocus
                 disabled={submitting}
                 onClick={onCancel}

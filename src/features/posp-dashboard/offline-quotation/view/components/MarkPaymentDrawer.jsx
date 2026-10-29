@@ -40,7 +40,7 @@ const TEXTAREA =
 const amountDefault = (amount) => (Number.isFinite(amount) ? String(amount) : '');
 
 function MarkPaymentForm({ amount, reference, onClose, onBack, onSubmit }) {
-  // Read per render, not captured once — a drawer left open past midnight would go stale.
+  // Read every render so it stays correct if the drawer is open past midnight.
   const today = toLocalIsoDate();
 
   const form = useForm({
@@ -173,10 +173,7 @@ function MarkPaymentForm({ amount, reference, onClose, onBack, onSubmit }) {
   );
 }
 
-/**
- * The agent's proof of payment against a payment instruction.
- * `onSubmit(values)` resolves true when the payment was recorded.
- */
+// onSubmit(values) resolves true when the payment was recorded.
 function MarkPaymentDrawer({ open, amount, reference, onClose, onBack, onSubmit }) {
   return (
     <AnimatePresence>

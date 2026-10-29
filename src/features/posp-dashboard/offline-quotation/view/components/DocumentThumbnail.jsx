@@ -2,10 +2,7 @@ import { FileText, ImageIcon } from 'lucide-react';
 import { useDocumentBlob } from '../hooks/useDocumentBlob';
 import { isImage, isPdf } from '../api/quoteDocumentListApi';
 
-/**
- * Image thumbnail fetched with the bearer token; an icon for anything else.
- * Cards show the whole image (`contain`); the compact filmstrip fills (`cover`).
- */
+// Image documents are fetched with the bearer token; other types show an icon.
 function DocumentThumbnail({ quoteId, doc, compact = false }) {
   const image = isImage(doc);
   const { url, loading } = useDocumentBlob(quoteId, image ? doc : null);

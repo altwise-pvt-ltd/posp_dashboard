@@ -1,13 +1,7 @@
-/**
- * Labels for a payment row's status, method and payee.
- *
- * ⚠ Only "Success", "NEFT_RTGS" and "Insurer" have been seen. The other
- * entries are guesses; an unknown value is shown as the server sent it, in a
- * neutral pill, rather than mapped to the wrong one.
- */
+// Labels for a payment's status, method and payee; unknown values are shown as sent.
+// ⚠ Only "Success", "NEFT_RTGS" and "Insurer" have been seen; the other entries are guesses.
 
 import { humanizeLabel } from '@/shared/lib/humanize';
-import { formatCurrencyPreserve } from '@/shared/lib/format';
 
 const normalise = (value) =>
   typeof value === 'string' ? value.trim().toUpperCase().replace(/[\s-]+/g, '_') : '';

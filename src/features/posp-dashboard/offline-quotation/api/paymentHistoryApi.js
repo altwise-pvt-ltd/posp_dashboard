@@ -1,26 +1,12 @@
 import { api, unwrap } from '@/shared/api/client';
 import { ENDPOINTS } from '@/shared/api/endpoints';
+import { numeric, text } from '@/features/posp-dashboard/offline-quotation/lib/normalize';
 
-/**
- * The agent's premium payments — `GET /quote/payments/my?page=&pageSize=`.
- *
- * Every page is fetched so search covers the whole history.
- */
+// Fetches every page of the agent's payments so search covers the whole history.
 
 const PAGE_SIZE = 100;
 // Stops a server that always reports hasNextPage from looping forever.
 const MAX_PAGES = 50;
-
-const text = (value) => {
-  const trimmed = typeof value === 'string' ? value.trim() : '';
-  return trimmed || null;
-};
-
-const number = (value) => {
-  if (Number.isFinite(value)) return value;
-  const parsed = typeof value === 'string' ? Number(value) : NaN;
-  return Number.isFinite(parsed) ? parsed : null;
-};
 
 const normalizePayment = (item, index) => ({
   paymentId: text(item.paymentId) ?? `payment-${index}`,
@@ -28,7 +14,7 @@ const normalizePayment = (item, index) => ({
   quoteNumber: text(item.quoteNumber),
   proposalId: text(item.proposalId),
   proposalNumber: text(item.proposalNumber),
-  amount: number(item.amount),
+  amount: numeric(item.amount),
   payee: text(item.payee),
   method: text(item.method),
   status: text(item.status),

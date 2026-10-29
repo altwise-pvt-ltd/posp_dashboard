@@ -4,8 +4,9 @@ import { Check, Copy, ExternalLink, Landmark, Link2, TriangleAlert } from 'lucid
 import CustomButton from '@/shared/components/CustomButton';
 import { formatCurrencyPreserve } from '@/shared/lib/format';
 import { PAYMENT_METHODS } from '../api/paymentInstructionApi';
-import { formatMethod } from '../../lib/paymentFormat';
+import { formatMethod } from '@/features/posp-dashboard/offline-quotation/lib/paymentFormat';
 import { formatDateTime, hasDate } from '../lib/quotationFormat';
+import { webLink } from '../lib/webLink';
 import { useCopied } from '../hooks/useCopied';
 import CopyIconButton from './CopyIconButton';
 import QuoteDrawer from './QuoteDrawer';
@@ -42,7 +43,7 @@ function DetailRow({ label, value, mono = false, copyKey, copied, onCopy }) {
   );
 }
 
-/** Plain-text version of the instruction, for copying or sharing with the customer. */
+// Plain-text instruction for copying or sharing.
 const shareText = (instruction, reference) => {
   const { bank } = instruction;
   const lines = [`Payment details${reference ? ` for ${reference}` : ''}`];
@@ -57,7 +58,7 @@ const shareText = (instruction, reference) => {
 
   if (instruction.paymentLink) {
     lines.push(`Payment link: ${instruction.paymentLink}`);
-    // Guarded on the raw value: the shared formatter renders a missing date as an em dash.
+    // Checked on the raw value; the formatter turns a missing date into an em dash.
     if (hasDate(instruction.linkExpiresAt)) {
       lines.push(`Link valid until: ${formatDateTime(instruction.linkExpiresAt)}`);
     }
@@ -86,6 +87,9 @@ function DrawerContent({ instruction, reference, onClose, onMarkPayment }) {
   const expiresAt = instruction.linkExpiresAt ? new Date(instruction.linkExpiresAt) : null;
   const expiryValid = expiresAt && !Number.isNaN(expiresAt.getTime());
   const linkExpired = expiryValid && expiresAt.getTime() < openedAt;
+
+  // Only http(s) links are clickable; other text is shown and copyable but not opened.
+  const linkHref = webLink(instruction.paymentLink);
 
   const published = hasDate(instruction.publishedAt)
     ? formatDateTime(instruction.publishedAt)
@@ -185,15 +189,17 @@ function DrawerContent({ instruction, reference, onClose, onMarkPayment }) {
               </p>
             ))}
 
-          <a
-            href={instruction.paymentLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-body-md text-body-md mt-3 inline-flex items-center gap-1.5 rounded-lg font-medium text-orange-700 transition-colors hover:text-orange-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40"
-          >
-            <ExternalLink aria-hidden="true" className="size-4" />
-            Open payment link
-          </a>
+          {linkHref && (
+            <a
+              href={linkHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-body-md text-body-md mt-3 inline-flex items-center gap-1.5 rounded-lg font-medium text-orange-700 transition-colors hover:text-orange-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40"
+            >
+              <ExternalLink aria-hidden="true" className="size-4" />
+              Open payment link
+            </a>
+          )}
         </section>
       )}
 

@@ -1,6 +1,6 @@
 import { createElement } from 'react';
-import { useCatalogImage } from '../hooks/useCatalogImage';
-import { iconFor } from '../lib/lobIcon';
+import { useCatalogImage } from '@/shared/hooks/useCatalogImage';
+import { iconFor } from '@/shared/lib/lobIcon';
 
 // Uses the LOB's uploaded icon when it has one, otherwise the matching glyph.
 function LobIcon({ lob, size, strokeWidth, className = '' }) {

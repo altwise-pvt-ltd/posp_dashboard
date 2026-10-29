@@ -18,7 +18,6 @@ const MISSING = '—';
 
 const VALIDITY_TONE ={ muted: 'text-on-surface-variant', warning: 'font-medium text-warning' };
 
-/** Border, tint and hover lift for one row; opacity is animated separately. */
 const rowClasses = ({ selected, expired }) =>
   [
     'relative rounded-xl border p-4 transition-[translate,box-shadow,border-color,background-color] duration-300 md:p-5 motion-reduce:transition-none',
@@ -37,13 +36,12 @@ function Metric({ label, children }) {
   );
 }
 
-/** One insurer response: identity and badges, premium / IDV / validity, then earning and actions. */
 function InsurerResponseCard({ row, index, dimmed, onView, onSelect, selecting, busy }) {
   const { response, expired, isBest, premiumDelta, lowerIdv } = row;
   const { insurerName, insurerLogoUrl, insurerQuoteRef, premium, idv, validTill, isSelected, earning, extras } =
     response;
 
-  // Drops the entrance stagger once the card has risen in.
+  // Set after the entrance animation so later updates skip the stagger.
   const [entered, setEntered] = useState(false);
 
   const validity = formatValidity(validTill);
@@ -113,7 +111,6 @@ function InsurerResponseCard({ row, index, dimmed, onView, onSelect, selecting, 
         </dl>
       </div>
 
-      {/* Fields the server sends that the normalizer does not name yet. */}
       {extras.length > 0 && (
         <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-xs">
           {extras.map((extra) => (

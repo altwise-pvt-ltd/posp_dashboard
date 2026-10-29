@@ -1,24 +1,13 @@
-/**
- * `documents` and `addOns` arrive beside `sections` on the metadata reply, in
- * shapes of their own -- but each entry now carries a `controlType`, which is
- * the one thing the dynamic-form registry ever needed to dispatch on.
- *
- * So neither gets a bespoke screen. Both are folded into the section list as
- * ordinary fields, and from there they render, validate, step and post exactly
- * like every other question. The cost of a new control type on either of them
- * is zero: the registry already answers for it.
- *
- * What is *not* built here is the upload itself. A picked file lives in form
- * state like any other answer and goes nowhere -- `/quote/documents` stays
- * unwired, deliberately, along with submit.
- */
+// Folds metadata documents and add-ons into the section list as ordinary fields,
+// so they render and validate like any other question.
 
+import { resolveVisibleSections } from '@/shared/dynamic-form/lib/visibleSections';
 import { humaniseCode } from './normalize';
 
 export const DOCUMENTS_SECTION_CODE = 'DOCUMENTS';
 export const ADD_ONS_SECTION_CODE = 'ADD_ONS';
 
-/** The amount that rides along with an add-on the server wants a value for. */
+// Field code for the amount an add-on asks for.
 export const addOnValueCode = (code) => `${code}__VALUE`;
 
 const SECTION_NAMES = {
@@ -28,12 +17,7 @@ const SECTION_NAMES = {
 
 const sectionName = (code) => SECTION_NAMES[code] ?? humaniseCode(code);
 
-/**
- * Every field the form renders is this shape, whether it came from `fields`,
- * `documents` or `addOns`. Building the extras through one factory keeps them
- * from drifting: a renderer reading `helperText` or `options` off a document
- * finds the same key it finds on a field.
- */
+// Shared shape for every form field, whether it came from fields, documents or add-ons.
 const makeField = (entry) => ({
   code: '',
   label: '',
@@ -69,12 +53,7 @@ const documentHint = (doc) => {
   return parts.length > 0 ? parts.join(' · ') : null;
 };
 
-/**
- * `allowedExtensions` and `maxSizeMb` are rules the server states in its own
- * words; restating them as `validations` entries hands them to the same
- * validator every other rule goes through, rather than growing a second place
- * where a field can be found wanting.
- */
+// Turns a document's extension, size and count limits into validation rules.
 const documentValidations = (doc) => {
   const rules = [];
 
@@ -117,12 +96,7 @@ const addOnField = (addOn) =>
     helperText: addOn.description,
   });
 
-/**
- * The amount an add-on asks for is a field in its own right rather than a prop
- * on the checkbox, so it validates and reports errors like anything else. It is
- * marked with `addOnFor`, which is what `pruneAddOnValues` reads to keep it off
- * the screen until the add-on above it is ticked.
- */
+// The add-on's amount as its own field; pruneAddOnValues uses addOnFor to drop it until the add-on is ticked.
 const addOnValueField = (addOn) =>
   makeField({
     code: addOnValueCode(addOn.code),
@@ -142,15 +116,8 @@ const makeSection = (code, fields, displayOrder) => ({
   fields,
 });
 
-/**
- * The full section list the quote form works from: the published sections, then
- * add-ons, then documents.
- *
- * A document names the section it belongs to. When that names a section the
- * product already publishes, its fields are appended to it rather than opening
- * a second screen under the same code -- two sections sharing a code would
- * collide as React keys and read as a duplicated heading.
- */
+// Published sections, then add-ons, then documents. A document whose sectionCode matches
+// an existing section is appended to it, so no two sections share a code.
 export function buildQuoteSections(metadata) {
   const sections = (metadata?.sections ?? []).map((section) => ({
     ...section,
@@ -184,12 +151,8 @@ export function buildQuoteSections(metadata) {
   return sections;
 }
 
-/**
- * Drops the amount field of every add-on that is not ticked. It runs before the
- * directives are applied, so an add-on hidden by a rule takes its amount off
- * the screen with it -- and off the validation sweep, which walks the visible
- * fields only.
- */
+// Drops the amount field of every unticked add-on. Runs before directives, so an add-on
+// hidden by a rule also drops its amount from validation.
 export function pruneAddOnValues(sections = [], values = {}) {
   return sections.map((section) => {
     const fields = (section.fields ?? []).filter(
@@ -198,4 +161,15 @@ export function pruneAddOnValues(sections = [], values = {}) {
 
     return fields.length === (section.fields ?? []).length ? section : { ...section, fields };
   });
+}
+
+// The visible sections, their fields and the required codes for these answers and rules.
+export function resolveQuoteForm(baseSections, values, directives) {
+  const sections = resolveVisibleSections(pruneAddOnValues(baseSections, values), directives);
+
+  return {
+    sections,
+    fields: sections.flatMap((entry) => entry.fields),
+    requiredCodes: new Set(directives?.requiredFields ?? []),
+  };
 }

@@ -1,17 +1,11 @@
 import QuotationStatusPill from './QuotationStatusPill';
 import { formatDate } from '@/shared/lib/format';
-import { useOpenQuotation } from '../hooks/useOpenQuotation';
+import QuoteLink from '@/features/posp-dashboard/offline-quotation/components/QuoteLink';
+import { useOpenQuotation } from '@/features/posp-dashboard/offline-quotation/hooks/useOpenQuotation';
 import { formatAge, formatPremium, formatProduct, formatSumInsured } from '../lib/quotationFormat';
-
-/**
- * The desktop layout, rendered from `md` up; below that `QuotationCard` takes
- * over. The queue carries no customer (see `quoteQueueApi.js`), so the reference
- * identifies the row, with the workflow remark under it.
- */
 
 const HEADINGS = ['Reference', 'Product', 'Sum insured', 'Premium', 'Status', 'Raised'];
 
-// Money columns are right-aligned, headers included.
 const RIGHT_ALIGNED = new Set([2, 3]);
 
 function QuotationTable({ quotations }) {
@@ -52,11 +46,12 @@ function QuotationTable({ quotations }) {
                 className={`border-b border-hairline-soft transition-colors last:border-0 hover:bg-well/70 ${linkClass}`}
               >
                 <td className="px-3 py-3">
-                  <span className="font-data-mono text-data-mono font-semibold text-on-surface">
+                  <QuoteLink
+                    quoteId={quotation.id}
+                    className="font-data-mono text-data-mono font-semibold text-on-surface"
+                  >
                     {quotation.quoteNumber ?? '—'}
-                  </span>
-                  {/* Most rows have no remark — the line is dropped rather than
-                      rendered empty, so they stay a single line tall. */}
+                  </QuoteLink>
                   {quotation.lastRemark && (
                     <p className="font-body-md text-body-md max-w-xs truncate text-on-surface-variant">
                       {quotation.lastRemark}
@@ -91,7 +86,6 @@ function QuotationTable({ quotations }) {
                   <p className="font-body-md text-body-md text-on-surface-variant">
                     {formatDate(quotation.createdAt)}
                   </p>
-                  {/* The operative fact in a queue: how long it has sat. */}
                   {age && (
                     <p className="font-body-md text-body-md text-on-surface-variant/70">{age}</p>
                   )}

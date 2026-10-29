@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowRight, Loader2, PackageOpen, RefreshCw, TriangleAlert } from 'lucide-react';
 import { resolveVisibleSections } from '@/shared/dynamic-form/lib/visibleSections';
 import CustomButton from '@/shared/components/CustomButton';
-import { findLobProducts, findProductSubProducts } from '../api/quoteCatalogApi';
+import { findLobProducts, findProductSubProducts } from '@/shared/api/quoteCatalogApi';
 import { useQuoteMetadata } from '../hooks/useQuoteMetadata';
 import { buildQuoteSections } from '../lib/quoteSections';
 import LobGrid from './LobGrid';
@@ -38,6 +38,7 @@ function QuoteWizard({ catalog, initialLob = null }) {
 
   const topRef = useRef(null);
   const steppedRef = useRef(false);
+  const formRef = useRef(null);
 
   const {
     metadata,
@@ -53,8 +54,7 @@ function QuoteWizard({ catalog, initialLob = null }) {
   const selectedProduct = products.find((entry) => entryKey(entry) === product);
   const selectedSubProduct = subProducts.find((entry) => entryKey(entry) === subProduct);
 
-  // Counted the way the form counts them -- documents and add-ons are sections
-  // too, so a product that asks for nothing but an RC copy still has a form.
+  // Includes document and add-on sections, the same as the form does.
   const sections = useMemo(
     () =>
       metadata ? resolveVisibleSections(buildQuoteSections(metadata), metadata.directives) : [],
@@ -82,7 +82,15 @@ function QuoteWizard({ catalog, initialLob = null }) {
   };
 
   const jumpTo = (index) => {
-    if (index <= furthestIndex) goTo(index);
+    if (index > furthestIndex) return;
+
+    // Leaving the form goes through its discard confirmation.
+    if (stepIndex === FORM_STEP && index < FORM_STEP && formRef.current) {
+      formRef.current.requestLeave(index);
+      return;
+    }
+
+    goTo(index);
   };
 
   const selectLob = (next) => {
@@ -102,17 +110,20 @@ function QuoteWizard({ catalog, initialLob = null }) {
     goTo(1);
   };
 
+  // The form's questions start loading as soon as the product choice is complete,
+  // so they are usually ready when Continue is pressed.
   const selectProduct = (next) => {
+    const complete = next && findProductSubProducts(catalog, lob, next).length === 0;
     setProduct(next);
     setSubProduct('');
-    setQuoteScope(null);
+    setQuoteScope(complete ? { productId: next, subProductId: null } : null);
     setCatalogError('');
     setFurthestIndex(1);
   };
 
   const selectSubProduct = (next) => {
     setSubProduct(next);
-    setQuoteScope(null);
+    setQuoteScope(next ? { productId: product, subProductId: next } : null);
     setCatalogError('');
     setFurthestIndex(1);
   };
@@ -247,8 +258,10 @@ function QuoteWizard({ catalog, initialLob = null }) {
     return (
       <QuoteFormFields
         key={`${metadata.productId}-${metadata.subProductId ?? ''}`}
+        ref={formRef}
         metadata={metadata}
         onBack={goBack}
+        onJump={goTo}
       />
     );
   };

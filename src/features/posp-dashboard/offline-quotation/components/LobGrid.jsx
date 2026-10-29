@@ -1,6 +1,6 @@
 import { Check } from 'lucide-react';
-import { useCatalogImage } from '../hooks/useCatalogImage';
-import LobIcon from './LobIcon';
+import { useCatalogImage } from '@/shared/hooks/useCatalogImage';
+import LobIcon from '@/shared/components/LobIcon';
 
 const lobKey = (entry) => entry?.id ?? entry?.code ?? null;
 
@@ -27,7 +27,6 @@ function LobTile({ lob, active, onSelect }) {
         )}
       </span>
 
-      {/* Fixed-size well, so every card is the same height whether or not its image has loaded. */}
       <span className="flex size-[72px] shrink-0 items-center justify-center">
         {image ? (
           <img
